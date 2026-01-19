@@ -1,6 +1,8 @@
 import json
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
+from .models import ChatMessage
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +23,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        messages = await database_sync_to_async(
+            lambda: list(
+                ChatMessage.objects
+                .filter(room=self.room_name)
+                .order_by("timestamp")
+                .values_list("content", flat=True)
+            )
+        )()
+
         await self.accept()
         await self.send(text_data=json.dumps({
             'type': 'init',
-            'message_history': message_history
+            'message_history': messages
         }))
 
         logger.info(f"consumers.py: connect(): sent {message_history}")
@@ -61,6 +72,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = data.get('message', '')
             logger.info(f"consumers.py: receive(): {message}")
             message_history.append(message)
+
+            await database_sync_to_async(lambda: ChatMessage.objects.create(
+                room = self.room_name,
+                content = message
+            ))()
 
             await self.channel_layer.group_send(
                 self.room_group_name,
