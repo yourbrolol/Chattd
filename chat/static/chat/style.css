@@ -1,14 +1,16 @@
 body {
     margin: 0;
+    background: linear-gradient(to right, #0f2027 0%, #2c5364 50%, #2c5364 50%, #0f2027 100%);
 }
 
 .nav {
     display: flex;
     width: 100%;
     height: 4rem;
-    background-color: #f3f3f4;
+    background: #1d2a37;
     align-items: center;
-    border-bottom: 1rem solid #e4e4e7;
+    border-bottom: 1rem solid rgb(23, 33, 44);
+    backdrop-filter: blur(8px);
 }
 
 #title-decorator {
@@ -32,24 +34,72 @@ body {
     font-weight: bold;
 }
 
+#chat {
+    display: flex;
+    width: 80%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+}
+
 #chat-log {
     display: flex;
     width: 95%;
-    height: 36rem;
-    margin: auto;
+    height: 35rem;
     background-color: rgb(22, 22, 22);
     margin-top: 1rem;
     border-radius: 2rem;
     flex-direction: column;
+    align-items: center;
 }
 
 #chat-input {
-    padding-top: 1rem;
+    display: flex;
+    width: 95%;
+    height: 3.5rem;
+    background-color: rgb(22, 22, 22);
+    margin-top: 0.5rem;
     padding-left: 0.5rem;
+    border-radius: 1rem;
+    align-items: center;
+    justify-content: center;
+}
+
+#avatar {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    background-color: black;
+    border: 0.15rem solid cyan;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+#chat-message-input {
+    width: 80%;
+    height: 1.75rem;
+    border-radius: 1rem;
+    border: 0.15rem solid cyan;
+}
+
+#chat-message-submit {
+    width: 10%;
+    height: 2.5rem;
+    border-radius: 1rem;
+    border: 0.15rem solid cyan;
+    background-color: black;
+    color: white;
+    margin-left: 0.5rem;
 }
 
 .message {
-    margin-left: 2rem;
+    display: flex;
+    width: 95%;
+    height: 2rem;
     margin-top: 1rem;
-    color: green;
+    background-color: white;
+    border-radius: 1rem;
+    align-items: center;
+    padding-left: 1rem;
 }

@@ -1,5 +1,6 @@
 console.log("JS loaded!")
 const roomName = "general";
+const input = document.getElementById('chat-message-input');
 // const chatSocket = new WebSocket(
 //     'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
 // )
@@ -7,17 +8,27 @@ const chatSocket = new WebSocket(
     'ws://' + window.location.host + '/ws/chat/general/'
 );
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOMContentLoaded");
-});
-
 function appendMessage(message) {
     console.log("Appending to DOM:", message);
     const log = document.getElementById('chat-log');
-    const li = document.createElement('li');
-    li.className = "message";
-    li.textContent = message;
-    log.appendChild(li);
+    const div = document.createElement('div');
+    div.className = "message";
+    div.textContent = message;
+    log.appendChild(div);
+}
+
+function sendMessage() {
+    const input = document.getElementById('chat-message-input');
+    if(input.value === "") {
+        console.log("Empty message revieved!")
+        return;
+    }
+    chatSocket.send(JSON.stringify({
+        'type': 'chat_message',
+        'message': input.value
+    }));
+    console.log("Sent a message!")
+    input.value = '';
 }
 
 chatSocket.onmessage = async function (e) {
@@ -45,16 +56,16 @@ chatSocket.onmessage = async function (e) {
     }
 };
 
-document.getElementById('chat-message-submit').onclick = function() {
-    const input = document.getElementById('chat-message-input');
-    if(input.value === "") {
-        console.log("Empty message revieved!")
-        return;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded");
+});
+
+input.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        sendMessage()
     }
-    chatSocket.send(JSON.stringify({
-        'type': 'chat_message',
-        'message': input.value
-    }));
-    console.log("Sent a message!")
-    input.value = '';
+});
+
+document.getElementById('chat-message-submit').onclick = function() {
+    sendMessage()
 }
