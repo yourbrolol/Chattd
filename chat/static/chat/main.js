@@ -7,6 +7,10 @@ const chatSocket = new WebSocket(
     'ws://' + window.location.host + '/ws/chat/general/'
 );
 
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded");
+});
+
 function appendMessage(message) {
     console.log("Appending to DOM:", message);
     const log = document.getElementById('chat-log');
@@ -25,8 +29,6 @@ chatSocket.onmessage = async function (e) {
         text = e.data;
     }
 
-    console.log("WS text:", text);
-
     let data;
     try {
         data = JSON.parse(text);
@@ -35,10 +37,9 @@ chatSocket.onmessage = async function (e) {
         return;
     }
 
-    console.log("Parsed object:", data);
-
     if (data.type === "init") {
         data.message_history.forEach(appendMessage);
+        console.log("Appended history:", data.message_history);
     } else if (data.type === "chat_message") {
         appendMessage(data.message);
     }
@@ -50,7 +51,10 @@ document.getElementById('chat-message-submit').onclick = function() {
         console.log("Empty message revieved!")
         return;
     }
-    chatSocket.send(JSON.stringify({'message': input.value}));
+    chatSocket.send(JSON.stringify({
+        'type': 'chat_message',
+        'message': input.value
+    }));
     console.log("Sent a message!")
     input.value = '';
 }
