@@ -10,11 +10,26 @@ const chatSocket = new WebSocket(
 chatSocket.onmessage = function(e) {
     console.log("Recieved data!")
     const data = JSON.parse(e.data);
-    const log = document.getElementById('chat-log');
-    const li = document.createElement('li');
-    li.id = "message"
-    li.textContent = data.message;
-    log.appendChild(li);
+    if(data.type === 'init') {
+        console.log("Initial message history received!")
+        const messageHistory = data.message_history;
+        const log = document.getElementById('chat-log');
+        messageHistory.forEach(message => {
+            const li = document.createElement('li');
+            li.id = "message"
+            li.textContent = message;
+            log.appendChild(li);
+        });
+    }
+    else if(data.type === 'chat_message') {
+        console.log("Chat message received!")
+        const message = data.message;
+        const log = document.getElementById('chat-log');
+        const li = document.createElement('li');
+        li.id = "message"
+        li.textContent = message;
+        log.appendChild(li);
+    }
 }
 
 document.getElementById('chat-message-submit').onclick = function() {

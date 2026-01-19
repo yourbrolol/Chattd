@@ -5,6 +5,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message_history = []
+
     async def connect(self):
         logger.info("consumers.py: connect()")
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -16,7 +20,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
-    
+        await self.send(text_data=json.dumps({
+            'type': 'init',
+            'message_history': self.message_history
+        }))
+
     async def disconnect(self, close_code):
         logger.info("consumers.py: disconnect()")
         await self.channel_layer.group_discard(
@@ -28,6 +36,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message = data['message']
         logger.info(f"consumers.py: recieve(): {message}")
+        self.message_history.append(message)
 
         await self.channel_layer.group_send(
             self.room_group_name,
