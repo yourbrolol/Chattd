@@ -44,6 +44,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'WARNING',
         },
+        'chat': {                      # add this
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
 
