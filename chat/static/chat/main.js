@@ -1,12 +1,28 @@
 console.log("JS loaded!")
 const roomName = "general";
 const input = document.getElementById('chat-message-input');
-// const chatSocket = new WebSocket(
-//     'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
-// )
+const roomsDiv = document.getElementById('chats')
+const currentRoom = "general"
+
 const chatSocket = new WebSocket(
-    'ws://' + window.location.host + '/ws/chat/general/'
+    'ws://' + window.location.host + '/ws/chat/' + currentRoom + '/'
 );
+
+function loadRooms() {
+    fetch("/chat/rooms/")
+        .then(r => r.json())
+        .then(rooms => {
+            rooms.forEach(r => {
+                console.log(r.name);
+                const btn = document.createElement('btn');
+                btn.className = "room";
+                btn.textContent = r.name;
+                roomsDiv.appendChild(btn);
+            });
+        })
+}
+
+loadRooms()
 
 function appendMessage(message) {
     console.log("Appending to DOM:", message);

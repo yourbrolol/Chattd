@@ -1,4 +1,6 @@
-from django.http import HttpResponse
+from django.http import JsonResponse
+from chat.models import ChatRoom
 
-def test(request):
-    return HttpResponse("It works!")
+def list_rooms(request):
+    rooms = list(ChatRoom.objects.values("id", "name"))
+    return JsonResponse(rooms, safe=False)

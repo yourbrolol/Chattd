@@ -2,18 +2,15 @@ import json
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
-from .models import ChatMessage
+from .models import ChatMessage, ChatRoom
 
 logger = logging.getLogger(__name__)
-
-message_history = []
 
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def connect(self):
-        global message_history
         logger.info("consumers.py: connect()")
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f"chat_{self.room_name}"
@@ -23,10 +20,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        room = await database_sync_to_async(
+            lambda: ChatRoom.objects.get_or_create(name=self.room_name)[0]
+        )()
+
         messages = await database_sync_to_async(
             lambda: list(
                 ChatMessage.objects
-                .filter(room=self.room_name)
+                .filter(room=room)
                 .order_by("timestamp")
                 .values_list("content", flat=True)
             )
@@ -38,7 +39,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_history': messages
         }))
 
-        logger.info(f"consumers.py: connect(): sent {message_history}")
+        logger.info(f"consumers.py: connect(): sent {messages}")
 
     async def disconnect(self, close_code):
         logger.info("consumers.py: disconnect()")
@@ -48,7 +49,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data=None, bytes_data=None):
-        global message_history
         if not text_data:
             return  # ignore empty messages
 
@@ -71,10 +71,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if message_type == 'chat_message':
             message = data.get('message', '')
             logger.info(f"consumers.py: receive(): {message}")
-            message_history.append(message)
+
+            room = await database_sync_to_async(
+                lambda: ChatRoom.objects.get_or_create(name=self.room_name)[0]
+            )()
 
             await database_sync_to_async(lambda: ChatMessage.objects.create(
-                room = self.room_name,
+                room = room,
                 content = message
             ))()
 
