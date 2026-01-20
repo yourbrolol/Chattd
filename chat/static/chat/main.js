@@ -28,6 +28,8 @@ function createChatSocket(room) {
             return;
         }
 
+        console.log(data.user, data.message)
+
         if (data.type === "init") {
             clearDOM();
             data.message_history.forEach(appendMessage);

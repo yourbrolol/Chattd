@@ -57,6 +57,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except json.JSONDecodeError:
             logger.warning(f"Received non-JSON message: {text_data}")
             return
+        
+        user = self.scope["user"]
+
+        if not user.is_authenticated:
+            logger.warning("Unauthenticated user tried to send a message!")
+            return
+        
+        user = await database_sync_to_async(lambda: user if user.is_authenticated else None)()
 
         message_type = data.get('type')  # <-- safe access
         if not message_type:
@@ -78,6 +86,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             await database_sync_to_async(lambda: ChatMessage.objects.create(
                 room = room,
+                user = user,
                 content = message
             ))()
 
@@ -85,15 +94,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'chat_message',
+                    'user': user.username,
                     'message': message
                 }
             )
         
     async def chat_message(self, event):
+        user = event['user']
         message = event['message']
-        logger.info(f"consumers.py: chat_message(): {message}")
 
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
+            'user': user,
             'message': message
         }))
+
+        logger.info(f"consumers.py: chat_message(): {message}")
