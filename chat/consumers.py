@@ -29,14 +29,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 ChatMessage.objects
                 .filter(room=room)
                 .order_by("timestamp")
-                .values_list("content", flat=True)
+                .values("user__username", "content")
             )
         )()
 
         await self.accept()
         await self.send(text_data=json.dumps({
             'type': 'init',
-            'message_history': messages
+            'message_history': [
+                {"user": msg["user__username"], "content": msg["content"]} for msg in messages
+            ]
         }))
 
         logger.info(f"consumers.py: connect(): sent {messages}")
@@ -67,6 +69,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         user = await database_sync_to_async(lambda: user if user.is_authenticated else None)()
 
         message_type = data.get('type')  # <-- safe access
+
         if not message_type:
             logger.warning(f"Received message without type: {data}")
             return
@@ -77,36 +80,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
         #         'message_history': message_history
         #     }))
         if message_type == 'chat_message':
-            message = data.get('message', '')
-            logger.info(f"consumers.py: receive(): {message}")
+            msg = data.get('message', '')
+            logger.info(f"consumers.py: receive(): {msg}")
 
             room = await database_sync_to_async(
                 lambda: ChatRoom.objects.get_or_create(name=self.room_name)[0]
             )()
 
-            await database_sync_to_async(lambda: ChatMessage.objects.create(
+            message = await database_sync_to_async(lambda: ChatMessage.objects.create(
                 room = room,
                 user = user,
-                content = message
+                content = msg
             ))()
 
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'chat_message',
-                    'user': user.username,
-                    'message': message
+                    'message': {"user": user.username, "content": message.content}
                 }
             )
         
     async def chat_message(self, event):
-        user = event['user']
-        message = event['message']
+        content = event['message']
+        user = content['user']
+        message = content['content']
 
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'user': user,
-            'message': message
+            'content': message
         }))
 
-        logger.info(f"consumers.py: chat_message(): {message}")
+        logger.info(f"consumers.py: chat_message(): {user}: {message}")

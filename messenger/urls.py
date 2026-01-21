@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+    path('', include('chat.urls')),
     path('admin/', admin.site.urls),
     path('chat/', include('chat.urls')),
     path('login/', auth_views.LoginView.as_view(template_name="login.html", redirect_authenticated_user=True, next_page='/chat/'), name='login'),

@@ -11,6 +11,24 @@ function clearDOM() {
     chatLog.innerHTML = '';
 }
 
+function appendMessage(data) {
+    console.log("Appending to DOM:", data);
+    const log = document.getElementById('chat-log');
+    const div = document.createElement('div');
+    div.className = "message";
+
+    // data could be an object with {user, content} or a string
+    if (typeof data === "object" && data.user && data.content) {
+        div.textContent = `${data.user}: ${data.content}`;
+    } else {
+        div.textContent = data;  // fallback for plain strings
+    }
+
+    log.appendChild(div);
+
+    log.scrollTop = log.scrollHeight;
+}
+
 function createChatSocket(room) {
     const socket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + room + '/');
 
@@ -35,7 +53,8 @@ function createChatSocket(room) {
             data.message_history.forEach(appendMessage);
             console.log("Appended history:", data.message_history);
         } else if (data.type === "chat_message") {
-            appendMessage(data.message);
+            console.log(data)
+            appendMessage({"user": data.user, "content": data.content});
             console.log("Recieved data!");
         }
     };
@@ -51,15 +70,6 @@ function reconnectChatSocket(arg) {
     chatSocket.close()
     console.log(arg)
     chatSocket = createChatSocket(currentRoom)
-}
-
-function appendMessage(message) {
-    console.log("Appending to DOM:", message);
-    const log = document.getElementById('chat-log');
-    const div = document.createElement('div');
-    div.className = "message";
-    div.textContent = message;
-    log.appendChild(div);
 }
 
 function sendMessage() {

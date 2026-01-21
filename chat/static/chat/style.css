@@ -93,11 +93,18 @@ body {
     display: flex;
     width: 95%;
     height: 35rem;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: rgb(22, 22, 22);
     margin-top: 1rem;
     border-radius: 2rem;
     flex-direction: column;
     align-items: center;
+}
+
+#chat-log::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 3px;
 }
 
 #chat-input {
@@ -143,7 +150,9 @@ body {
     display: flex;
     width: 95%;
     height: 2rem;
-    margin-top: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
     background-color: white;
     border-radius: 1rem;
     align-items: center;
