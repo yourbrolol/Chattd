@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-9m(t(xa-pp)k7s!ynod_9k=2_rgj^f7r#bah9%@1_ui04)npfl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"] # DEV ONLY!!!
 
 LOGGING = {
     'version': 1,
@@ -133,6 +133,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.app",
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

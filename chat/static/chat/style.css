@@ -34,6 +34,33 @@ body {
     font-weight: bold;
 }
 
+#user {
+    display: flex;
+    height: 2.5rem;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 0.5rem;
+    border-radius: 1rem;
+    padding-right: 0.5rem;
+    background-color: black;
+    border: 0.15rem solid white;
+    box-shadow: 0.1rem 0.1rem 0.1rem 0.1rem cyan;
+}
+
+#username-p {
+    width: 5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.15rem;
+    color: white;
+    font-size: 1.025rem;
+    font-weight: bold;
+}
+
+#user-icon {
+    height: 2rem;
+    border-radius: 25%;
+}
+
 #main {
     display: flex;
     width: 100%;

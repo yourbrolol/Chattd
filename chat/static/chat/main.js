@@ -30,7 +30,8 @@ function appendMessage(data) {
 }
 
 function createChatSocket(room) {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + room + '/');
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(protocol + '://' + window.location.host + '/ws/chat/' + room + '/');
 
     socket.onmessage = async function (e) {
         let text;

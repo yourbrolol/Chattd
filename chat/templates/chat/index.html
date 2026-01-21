@@ -4,12 +4,16 @@
 <html>
     <head>
         <title>Chat Room</title>
-        <!-- <link rel="stylesheet" href="{% static 'chat/style.css' %}" defer> -->
-        <link rel="stylesheet" href="../../static/chat/style.css" defer>
+        <link rel="stylesheet" href="{% static 'chat/style.css' %}" defer>
+        <!-- <link rel="stylesheet" href="../../static/chat/style.css" defer> -->
     </head>
     <body>
         <nav class="nav">
             <div id="title-decorator"><p class="title">Chat Room</p></div>
+            <div id="user">
+                <p id="username-p">Logged out</p>
+                <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
+            </div>
         </nav>
         <div id="main">
             <div id="chats">
