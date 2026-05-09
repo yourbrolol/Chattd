@@ -4,136 +4,122 @@ html {
 
 body {
     margin: 0;
-    background: linear-gradient(to right, #0f2027 0%, #2c5364 50%, #2c5364 50%, #0f2027 100%);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #0f172a;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #f1f5f9;
 }
 
 .nav {
     display: flex;
     width: 100%;
-    height: 9vh;
-    background: #1d2a37;
+    height: 70px;
+    background: #1e293b;
     align-items: center;
-    border-bottom: 4vh solid rgb(23, 33, 44);
-    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #334155;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
 }
 
 #title-decorator {
     display: flex;
-    width: 9vw;
-    height: 5vh;
-    background-color: black;
-    border-radius: 1rem;
-    margin-left: 0.5rem;
-    justify-content: center;
     align-items: center;
-    color: white;
-    border: 0.15rem solid white;
-    box-shadow: 0.1rem 0.1rem 0.1rem 0.1rem cyan;
+    gap: 0.75rem;
 }
 
 .title {
     margin: 0;
-    color: white;
-    font-size: 1.5rem;
-    font-weight: bold;
+    color: #f1f5f9;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
 }
 
 #user {
     display: flex;
-    height: 5vh;
     align-items: center;
     margin-left: auto;
-    margin-right: 1%;
-    border-radius: 1rem;
-    padding-right: 0.5%;
-    text-align: center;
-    background-color: black;
-    border: 0.15rem solid white;
-    box-shadow: 0.1rem 0.1rem 0.1rem 0.1rem cyan;
+    gap: 0.75rem;
+    background: #0f172a;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid #334155;
 }
 
 #username-p {
-    display: flex;
-    width: 7.5vw;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
 #user-icon {
-    height: 4vh;
-    border-radius: 25%;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 #main {
     display: flex;
+    flex: 1;
     width: 100%;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    margin: auto;
+    overflow: hidden;
 }
 
 #chats {
+    flex: 0 0 25%;
+    height: 100%;
+    background-color: #1e293b;
+    border-right: 1px solid #334155;
     display: flex;
-    width: 23vw;
-    height: 82.5vh;
-    background-color: black;
-    border-radius: 3rem;
-    margin-left: 1.5rem;
-    /* margin-top: 1vh; */
     flex-direction: column;
-    align-items: center;
+    overflow-y: auto;
 }
 
 #chats-text {
-    display: flex;
-    margin-top: 0;
-    color: black;
-    font-size: 1.5rem;
-    width: 100%;
-    height: 6vh;
-    background-color: white;
-    border-radius: 1rem;
-    justify-content: center;
-    align-items: center;
-    border: 0.15rem solid cyan;
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 1px solid #334155;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .room {
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #1e293b;
     display: flex;
-    width: 90%;
-    height: 5vh;
-    margin-top: 1rem;
-    border-radius: 1rem;
-    background-color: white;
-    justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
-    border: 0.15rem solid cyan;
+    font-size: 1rem;
+}
+
+.room:hover {
+    background: #334155;
 }
 
 #chat {
+    flex: 0 0 75%;
+    height: 100%;
     display: flex;
-    width: 75%;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    background: #0f172a;
 }
 
 #chat-log {
-    display: flex;
-    width: 95%;
-    height: 75vh;
+    flex: 1;
+    width: 100%;
     overflow-y: auto;
-    overflow-x: hidden;
-    background-color: rgb(22, 22, 22);
-    margin-top: 1rem;
-    border-radius: 2rem;
+    padding: 1.5rem;
+    display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 1rem;
+    box-sizing: border-box;
 }
 
 #chat-log::-webkit-scrollbar-thumb {
@@ -142,56 +128,73 @@ body {
 }
 
 #chat-input {
+    height: 80px;
+    padding: 1rem 1.5rem;
+    background: #1e293b;
+    border-top: 1px solid #334155;
     display: flex;
-    width: 95%;
-    height: 8vh;
-    background-color: rgb(22, 22, 22);
-    margin-top: 0.5rem;
-    padding-left: 0.5rem;
-    border-radius: 1rem;
     align-items: center;
-    justify-content: center;
+    gap: 1rem;
+    box-sizing: border-box;
 }
 
 #avatar {
-    display: flex;
-    width: 2.25vw;
-    height: 2.25vw;
-    background-color: black;
-    border: 0.15rem solid cyan;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    margin-right: 0.5rem;
+    background: #334155;
+    flex-shrink: 0;
 }
 
 #chat-message-input {
-    width: 56vw;
-    height: 4vh;
-    border-radius: 1rem;
-    border: 0.15rem solid cyan;
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+}
+
+#chat-message-input:focus {
+    border-color: #3b82f6;
 }
 
 #chat-message-submit {
-    width: 7vw;
-    height: 5vh;
-    border-radius: 1rem;
-    border: 0.15rem solid cyan;
-    background-color: black;
+    background: #3b82f6;
     color: white;
-    margin-left: 0.5rem;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#chat-message-submit:hover {
+    background: #2563eb;
 }
 
 .message {
-    display: flex;
-    width: 95%;
-    height: 5vh;
-    flex-shrink: 0;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    background-color: white;
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    background: #1e293b;
+    border: 1px solid #334155;
     border-radius: 1rem;
-    align-items: center;
-    padding-left: 1rem;
-    border: 0.15rem solid cyan;
+    border-bottom-left-radius: 0;
+    color: #f1f5f9;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    align-self: flex-start;
+}
+
+.message.own {
+    background: #3b82f6;
+    border-color: #2563eb;
+    border-radius: 1rem;
+    border-bottom-right-radius: 0;
+    align-self: flex-end;
 }
 
 @media (max-width: 768px) {
