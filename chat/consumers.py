@@ -73,12 +73,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message_type:
             logger.warning(f"Received message without type: {data}")
             return
-
-        # if message_type == 'get_history':
-        #     await self.send(text_data=json.dumps({
-        #         'type': 'init',
-        #         'message_history': message_history
-        #     }))
+        
         if message_type == 'chat_message':
             msg = data.get('message', '')
             logger.info(f"consumers.py: receive(): {msg}")
