@@ -1,0 +1,18 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spreadtalk_web
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    command: daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
+    volumes:
+      - .:/chat
+    develop:
+      watch:
+        - action: rebuild
+          path: ./requirements.txt
+    restart: unless-stopped
