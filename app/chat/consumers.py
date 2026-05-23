@@ -4,7 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
 from .models import ChatMessage, ChatRoom
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("chat")
 
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):

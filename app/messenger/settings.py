@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +29,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"] # DEV ONLY!!!
 
+LOG_LEVEL_MAIN = config("LOG_LEVEL_MAIN", "WARNING")
+LOG_LEVEL_SEC = config("LOG_LEVEL_SEC", "WARNING")
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -39,15 +43,20 @@ LOGGING = {
     'loggers': {
         'daphne': {
             'handlers': ['console'],
-            'level': 'ERROR',  # only show warnings/errors
+            'level': LOG_LEVEL_SEC,
         },
         'twisted': {
             'handlers': ['console'],
-            'level': 'WARNING',
+            'level': LOG_LEVEL_SEC,
         },
-        'chat': {                      # add this
+        'chat': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOG_LEVEL_MAIN,
+            'propagate': False,
+        },
+        'chat.*': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL_MAIN,
             'propagate': False,
         },
     },

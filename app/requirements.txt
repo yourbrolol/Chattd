@@ -14,11 +14,13 @@ idna==3.13
 Incremental==24.11.0
 msgpack==1.1.2
 packaging==26.2
+pillow==12.2.0
 py-ubjson==0.16.1
 pyasn1==0.6.3
 pyasn1_modules==0.4.2
 pycparser==3.0
 pyOpenSSL==26.2.0
+python-decouple==3.8
 service-identity==24.2.0
 sqlparse==0.5.5
 Twisted==25.5.0
