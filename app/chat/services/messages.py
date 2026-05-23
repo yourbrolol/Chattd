@@ -1,25 +1,21 @@
 import logging
 
 from channels.db import database_sync_to_async
-from chat.models import ChatMessage, ChatRoom
+from chat.models import ChatMessage
 
-from services.rooms import create_room, get_room
+from .rooms import get_room
 
 logger = logging.getLogger(__name__)
 
-async def add_message(room_name, username, content):
-    if not content or content == '': return None
+async def add_message(room_name, user, msg):
+    if not msg or msg == '': return None
 
-    msg = content.get('message', '')
-
-    if not msg: return None
-
-    user = await database_sync_to_async(lambda: username)()
-    room = get_room(room_name)
+    user_obj = await database_sync_to_async(lambda: user)()
+    room = await get_room(room_name)
     if room == None: return
     message = await database_sync_to_async(lambda: ChatMessage.objects.create(
         room=room,
-        user=user,
+        user=user_obj,
         content=msg
     ))()
 

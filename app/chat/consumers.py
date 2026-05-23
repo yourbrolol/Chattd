@@ -4,7 +4,6 @@ import logging
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-from .models import ChatMessage, ChatRoom
 from .services.messages import add_message, retrieve_messages
 from .services.rooms import get_room
 
@@ -24,10 +23,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-        room = get_room(self.room_name)
+        room = await get_room(self.room_name)
         if room == None: self.disconnect()
 
-        messages = retrieve_messages(room, "timestamp", ["user__username", "content"])
+        messages = await retrieve_messages(room, "timestamp", ["user__username", "content"])
 
         await self.accept()
         await self.send(text_data=json.dumps({

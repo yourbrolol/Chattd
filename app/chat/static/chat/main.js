@@ -17,12 +17,7 @@ function appendMessage(data) {
     const div = document.createElement('div');
     div.className = "message";
 
-    // data could be an object with {user, content} or a string
-    if (typeof data === "object" && data.user && data.content) {
-        div.textContent = `${data.user}: ${data.content}`;
-    } else {
-        div.textContent = data;  // fallback for plain strings
-    }
+    div.textContent = `${data.user}: ${data.content}`;
 
     log.appendChild(div);
 
