@@ -99,7 +99,7 @@ document.getElementById('chat-message-submit').onclick = function() {
 
 function loadRooms() {
     const roomsDiv = document.getElementById('chats')
-    fetch("/chat/rooms/")
+    fetch("/rooms/")
         .then(r => r.json())
         .then(rooms => {
             rooms.forEach(r => {
