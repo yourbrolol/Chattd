@@ -1,18 +1,23 @@
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ./app:/app
+  env_file:
+    - ./app/.env
+  restart: unless-stopped
+
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: spreadtalk_web
+  spreadtalk-dev:
+    <<: *common
     ports:
       - "8000:8000"
-    env_file:
-      - ./app/.env
-    command: daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
-    volumes:
-      - ./app:/app
-    develop:
-      watch:
-        - action: rebuild
-          path: ./app/requirements.txt
-    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+
+  # spreadtalk-prod:
+  #   <<: *common
+  #   ports:
+  #     - "8001:8000"
+  #   command: daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
+  #   profiles: ["prod"]

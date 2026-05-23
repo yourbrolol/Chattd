@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY app/requirements.txt /app/
+COPY app/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -17,4 +19,4 @@ COPY app/ /app/
 
 EXPOSE 8000
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "messenger.asgi:application"]
+ENTRYPOINT ["/entrypoint.sh"]
