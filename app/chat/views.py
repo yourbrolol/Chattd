@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from chat.models import ChatRoom, User
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 from .forms import RegistrationForm, LoginForm
 from django.urls import reverse_lazy
 
@@ -21,6 +23,10 @@ class LoginView(FormView):
     form_class = LoginForm
     template_name = "auth/login.html"
     success_url = reverse_lazy('view_chats')
+
+def logout_user(request):
+    logout(request)
+    return redirect('login')
 
 def list_rooms(request):
     rooms = list(ChatRoom.objects.values("id", "name"))

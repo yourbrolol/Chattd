@@ -6,13 +6,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>SpreadTalk</title>
         <link rel="stylesheet" href="{% static 'chat/style.css' %}" defer>
-        <!-- <link rel="stylesheet" href="../../static/chat/style.css" defer> -->
     </head>
     <body>
         <nav class="nav">
             <div id="title-decorator"><p class="title">SpreadTalk</p></div>
             <div id="user">
-                <p id="username-p">Logged out</p>
+                {% if request.user.is_authenticated %}
+                    <p id="username-p">{{ request.usr.username }}</p>
+                {% else %}
+                    <p id="username-p">Logged out</p>
+                {% endif %}
                 <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
             </div>
         </nav>
