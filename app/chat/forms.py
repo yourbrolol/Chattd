@@ -1,7 +1,11 @@
+import logging
+
 from django import forms
 from django.core.exceptions import ValidationError
+
 from .models import User
 
+logger = logging.getLogger(__name__)
 
 class RegistrationForm(forms.Form):
     username = forms.CharField(
@@ -25,7 +29,6 @@ class RegistrationForm(forms.Form):
             username=self.cleaned_data['username'],
             password=self.cleaned_data['password'],
         )
-
 
 class LoginForm(forms.Form):
     username = forms.CharField(

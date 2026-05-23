@@ -12,7 +12,7 @@
             <div id="title-decorator"><p class="title">SpreadTalk</p></div>
             <div id="user">
                 {% if request.user.is_authenticated %}
-                    <p id="username-p">{{ request.usr.username }}</p>
+                    <p id="username-p">{{ request.user.username }}</p>
                 {% else %}
                     <p id="username-p">Logged out</p>
                 {% endif %}
