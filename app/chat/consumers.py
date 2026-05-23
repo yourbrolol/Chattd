@@ -1,10 +1,14 @@
 import json
+import logging
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-import logging
-from .models import ChatMessage, ChatRoom
 
-logger = logging.getLogger("chat")
+from .models import ChatMessage, ChatRoom
+from .services.messages import add_message, retrieve_messages
+from .services.rooms import get_room
+
+logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -20,18 +24,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-        room = await database_sync_to_async(
-            lambda: ChatRoom.objects.get_or_create(name=self.room_name)[0]
-        )()
+        room = get_room(self.room_name)
+        if room == None: self.disconnect()
 
-        messages = await database_sync_to_async(
-            lambda: list(
-                ChatMessage.objects
-                .filter(room=room)
-                .order_by("timestamp")
-                .values("user__username", "content")
-            )
-        )()
+        messages = retrieve_messages(room, "timestamp", ["user__username", "content"])
 
         await self.accept()
         await self.send(text_data=json.dumps({
@@ -51,8 +47,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data=None, bytes_data=None):
-        if not text_data:
-            return  # ignore empty messages
+        if not text_data: return
 
         try:
             data = json.loads(text_data)
@@ -65,10 +60,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not user.is_authenticated:
             logger.warning("Unauthenticated user tried to send a message!")
             return
-        
-        user = await database_sync_to_async(lambda: user if user.is_authenticated else None)()
 
-        message_type = data.get('type')  # <-- safe access
+        message_type = data.get('type')
 
         if not message_type:
             logger.warning(f"Received message without type: {data}")
@@ -78,15 +71,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             msg = data.get('message', '')
             logger.info(f"consumers.py: receive(): {msg}")
 
-            room = await database_sync_to_async(
-                lambda: ChatRoom.objects.get_or_create(name=self.room_name)[0]
-            )()
-
-            message = await database_sync_to_async(lambda: ChatMessage.objects.create(
-                room = room,
-                user = user,
-                content = msg
-            ))()
+            message = await add_message(self.room_name, user, msg)
+            if message is None: return
 
             await self.channel_layer.group_send(
                 self.room_group_name,
