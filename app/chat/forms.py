@@ -40,3 +40,10 @@ class LoginForm(forms.Form):
         required=True,
         widget=forms.PasswordInput(attrs={'placeholder': 'Password'}),
     )
+
+class RoomCreationForm(forms.Form):
+    room_name = forms.CharField(
+        max_length=20,
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )

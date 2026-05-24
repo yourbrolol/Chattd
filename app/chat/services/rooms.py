@@ -7,7 +7,8 @@ from chat.models import ChatRoom
 logger = logging.getLogger(__name__)
 
 async def create_room(room_name):
-    if not room_name or room_name == '': return
+    if not room_name or room_name == '':
+        return None
     try:
         room = await database_sync_to_async(lambda: ChatRoom.objects.create(name=room_name))()
     except IntegrityError:
