@@ -86,7 +86,7 @@ class RoomCreationView(AsyncFormView):
             form.add_error('room_name', "Room name cannot be empty.")
             return await self.form_invalid(form)
 
-        await create_room(room_name)
+        await create_room(room_name, self.request.user, form.cleaned_data['room_type'])
         return await super().form_valid(form)
 
 async def logout_user(request):

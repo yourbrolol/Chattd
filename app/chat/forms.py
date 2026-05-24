@@ -3,7 +3,7 @@ import logging
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import User
+from .models import User, ChatRoom
 
 logger = logging.getLogger(__name__)
 
@@ -46,4 +46,9 @@ class RoomCreationForm(forms.Form):
         max_length=20,
         required=True,
         widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )
+    room_type = forms.ChoiceField(
+        choices=ChatRoom.RoomTypes.choices,
+        initial=ChatRoom.RoomTypes.PUBLIC,
+        widget=forms.Select(attrs={'class': 'form-control'})
     )

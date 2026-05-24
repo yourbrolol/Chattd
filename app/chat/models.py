@@ -17,7 +17,6 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(username, password, **extra_fields)
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=20, unique=True)
 
@@ -32,9 +31,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-
 class ChatRoom(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    class RoomTypes(models.TextChoices):
+        PUBLIC = 'PUBLIC'
+        UNLISTED = 'UNLISTED'
+        PRIVATE = 'PRIVATE'
+
+    name = models.CharField(max_length=20, unique=True)
+    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="owned_chatrooms")
+    room_type = models.CharField(max_length=10, choices=RoomTypes.choices, default=RoomTypes.PUBLIC)
+    whitelisted = models.ManyToManyField(User, blank=True, related_name="whitelisted_rooms")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

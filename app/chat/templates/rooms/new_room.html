@@ -1,6 +1,7 @@
 <form method="post">
   {% csrf_token %}
-  <input type="text" name="room_name" placeholder="Room name" required>
+  {{ form.room_name }}
+  {{ form.room_type }}
   <button type="submit">Create</button>
   {% if form.errors %}
     {{ form.errors }}
