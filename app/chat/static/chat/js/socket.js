@@ -35,8 +35,17 @@ export function createChatSocket(room) {
         }
     };
 
-    socket.onclose = function () {
-        console.log('Socket closed for room:', room);
+    socket.onclose = function (e) {
+        console.log('Socket closed for room:', room, 'code:', e.code);
+        if (e.code === 4003) {
+            const chatLog = document.getElementById('chat-log');
+            if (chatLog) {
+                const notice = document.createElement('div');
+                notice.className = 'message message--error';
+                notice.textContent = 'You must join this room before you can chat.';
+                chatLog.appendChild(notice);
+            }
+        }
     };
 
     return socket;

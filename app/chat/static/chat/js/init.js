@@ -1,7 +1,8 @@
 import { sendMessage } from './socket.js';
 import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab } from './tabs.js';
 import { handleGroupSubmission, cancelGroupCreation } from './group.js';
-import { loadRooms } from './rooms.js';
+import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
+import { openChatTab } from './tabs.js';
 
 function bindMessageInput() {
     const msgInput = document.getElementById('chat-message-input');
@@ -60,6 +61,36 @@ function bindTabKeyboard() {
     });
 }
 
+async function joinRoomAndOpen(roomName) {
+    const result = await joinRoom(roomName);
+    if (!result.ok) {
+        showJoinError(getJoinErrorMessage(result.error));
+        return false;
+    }
+
+    showJoinError('');
+    loadRooms((name) => { void openChatTab(name); });
+    await openChatTab(result.name);
+    return true;
+}
+
+function bindJoinRoom() {
+    const joinBtn = document.getElementById('dashboard-join-room-btn');
+    const joinInput = document.getElementById('dashboard-join-room-input');
+
+    joinBtn?.addEventListener('click', async () => {
+        if (!joinInput) return;
+        await joinRoomAndOpen(joinInput.value);
+    });
+
+    joinInput?.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            await joinRoomAndOpen(joinInput.value);
+        }
+    });
+}
+
 function bindGroupCreation() {
     document.getElementById('group-creation-form')?.addEventListener('submit', handleGroupSubmission);
     document.getElementById('cancel-group-btn')?.addEventListener('click', cancelGroupCreation);
@@ -80,6 +111,7 @@ export function initApp() {
     bindTabs();
     bindTabKeyboard();
     bindSlashFocus();
+    bindJoinRoom();
     bindGroupCreation();
-    loadRooms();
+    loadRooms((name) => { void openChatTab(name); });
 }

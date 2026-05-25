@@ -7,5 +7,6 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.logout_user, name='logout'),
     path("rooms/", views.list_rooms, name="list_rooms"),
-    path("rooms/create", views.RoomCreationView.as_view(), name="create_room")
+    path("rooms/join/", views.join_room_view, name="join_room"),
+    path("rooms/create", views.RoomCreationView.as_view(), name="create_room"),
 ]

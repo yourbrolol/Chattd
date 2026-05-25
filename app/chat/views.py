@@ -3,30 +3,42 @@ from chat.models import ChatRoom, User
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from asgiref.sync import sync_to_async
 from .forms import RegistrationForm, LoginForm, RoomCreationForm
-from .services.rooms import create_room
+from .services.rooms import (
+    JOIN_ALREADY_MEMBER,
+    JOIN_AUTH_REQUIRED,
+    JOIN_FORBIDDEN,
+    JOIN_NOT_FOUND,
+    JOIN_OK,
+    create_room,
+    join_room_sync,
+)
 from django.urls import reverse_lazy
 
 class AsyncFormView(FormView):
     async def get(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
-        return self.render_to_response(self.get_context_data(form=form))
+        context = self.get_context_data(form=form)
+        return await sync_to_async(self.render_to_response)(context)
 
     async def post(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
-        if form.is_valid():
+        if await sync_to_async(form.is_valid)():
             return await self.form_valid(form)
         return await self.form_invalid(form)
 
     async def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+        context = self.get_context_data(form=form)
+        return await sync_to_async(self.render_to_response)(context)
 
     async def form_valid(self, form):
-        return super().form_valid(form)
+        return await sync_to_async(super().form_valid)(form)
 
     async def put(self, request, *args, **kwargs):
         return await sync_to_async(self.http_method_not_allowed)(request, *args, **kwargs)
@@ -97,6 +109,32 @@ async def add_room(request):
     room = await create_room("el-room")
     return redirect(reverse_lazy('view_chats'))
 
+@login_required
 def list_rooms(request):
-    rooms = list(ChatRoom.objects.values("id", "name"))
+    rooms = list(
+        ChatRoom.objects.filter(memberships__user=request.user)
+        .values("id", "name", "room_type")
+        .distinct()
+    )
     return JsonResponse(rooms, safe=False)
+
+
+@login_required
+@require_POST
+def join_room_view(request):
+    room_name = request.POST.get('room_name', '').strip()
+    room, status = join_room_sync(room_name, request.user)
+
+    if status == JOIN_AUTH_REQUIRED:
+        return JsonResponse({'error': 'auth_required'}, status=401)
+    if status == JOIN_NOT_FOUND:
+        return JsonResponse({'error': 'not_found'}, status=404)
+    if status == JOIN_FORBIDDEN:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    return JsonResponse({
+        'name': room.name,
+        'room_type': room.room_type,
+        'joined': status in (JOIN_OK, JOIN_ALREADY_MEMBER),
+        'already_member': status == JOIN_ALREADY_MEMBER,
+    })

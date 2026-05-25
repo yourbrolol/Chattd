@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { switchView } from './views.js';
 import { createChatSocket } from './socket.js';
+import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
 
 export function activateTab(tabElement) {
     const tabsContainer = document.getElementById('tabs');
@@ -37,22 +38,33 @@ export function activateTab(tabElement) {
     }
 }
 
-export function openChatTab(roomName) {
+export async function openChatTab(roomName) {
     const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
+    if (!tabsContainer) return false;
+
+    const trimmed = (roomName || '').trim();
+    if (!trimmed) return false;
+
+    const joinResult = await joinRoom(trimmed);
+    if (!joinResult.ok) {
+        showJoinError(getJoinErrorMessage(joinResult.error));
+        return false;
+    }
+    showJoinError('');
 
     const existingTab = [...tabsContainer.querySelectorAll('.tab')]
-        .find(tab => tab.getAttribute('data-room') === roomName);
+        .find(tab => tab.getAttribute('data-room') === joinResult.name);
 
     if (existingTab) {
         activateTab(existingTab);
-        return;
+        return true;
     }
 
-    const newTab = createTabElement(roomName, 'room');
+    const newTab = createTabElement(joinResult.name, 'room');
     tabsContainer.appendChild(newTab);
     activateTab(newTab);
     newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+    return true;
 }
 
 export function openNewTab() {

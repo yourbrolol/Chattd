@@ -33,7 +33,7 @@ export async function handleGroupSubmission(e) {
                 errorsDiv.textContent = '';
             }
 
-            loadRooms();
+            loadRooms((name) => { void openChatTab(name); });
 
             const tabsContainer = document.getElementById('tabs');
             if (tabsContainer) {
@@ -44,7 +44,7 @@ export async function handleGroupSubmission(e) {
                 });
             }
 
-            setTimeout(() => openChatTab(newRoomName), 100);
+            setTimeout(() => { void openChatTab(newRoomName); }, 100);
         } else if (errorsDiv) {
             errorsDiv.textContent = 'An error occurred. Make sure the room name is unique, between 1-20 characters, and contains no special characters.';
             errorsDiv.classList.remove('hidden');
