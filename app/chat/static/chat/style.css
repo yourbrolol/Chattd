@@ -75,6 +75,7 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    min-width: 0; /* Prevent the flex item from expanding beyond its viewport space */
 }
 
 #chats {
@@ -105,15 +106,21 @@ body {
     background: #1e293b; /* same as .nav */
     padding: 0 0.75rem;
     box-sizing: border-box;
+    height: 46px; /* Standalone constant height */
+    width: 100%;
+    min-width: 0; /* Enforce flex shrink */
+    overflow: hidden;
 }
 
 #tabs {
     display: flex;
+    align-items: flex-end; /* Align tabs to sit perfectly flush with the bottom border */
     gap: 0.5rem;
-    padding: 0.5rem 0;
+    height: 100%;
     box-sizing: border-box;
     overflow-x: auto;
     flex: 1;
+    min-width: 0; /* Enforce flex shrink and allow inner overflow scrolling */
     scrollbar-width: none; /* Hide scrollbar for clean tab design in Firefox */
 }
 
@@ -167,6 +174,9 @@ body {
     transition: background .15s, color .15s, border-color .15s;
     flex: 0 0 auto;
     user-select: none;
+    margin-bottom: -1px; /* Overlap container border perfectly */
+    height: calc(100% - 6px); /* Keep slight gap at top for luxury spacing */
+    box-sizing: border-box;
 }
 .tab:hover {
     background: rgba(31, 41, 55, 0.5);
@@ -253,6 +263,87 @@ body {
     font-size: 0.95rem;
     line-height: 1.6;
     color: #94a3b8;
+}
+
+/* New Tab View Styling */
+.new-tab-view {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+.new-tab-dashboard {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.new-tab-dashboard h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    letter-spacing: -0.025em;
+}
+
+.new-tab-dashboard .subtitle {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin: 0 0 2.5rem 0;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -2px rgba(59, 130, 246, 0.05);
+}
+
+.action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.action-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.action-card p {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #94a3b8;
+    max-width: 320px;
+}
+
+.action-card .btn-primary {
+    width: 100%;
+    max-width: 200px;
 }
 
 /* Group Creation View Styling */
@@ -520,9 +611,19 @@ body {
         width: 20%;
     }
     /* make tabs scrollable and compact on small screens */
-    #tabs-container { padding: 0 0.5rem; }
-    #tabs { gap: 0.35rem; padding: 0.35rem 0; }
-    .tab { padding: 0.35rem 0.6rem; font-size: 0.95rem; }
+    #tabs-container {
+        padding: 0 0.5rem;
+        height: 38px;
+    }
+    #tabs {
+        gap: 0.35rem;
+    }
+    .tab {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.95rem;
+        margin-bottom: -1px;
+        height: calc(100% - 4px);
+    }
     #add-tab-btn {
         width: 24px;
         height: 24px;

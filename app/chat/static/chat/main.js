@@ -126,10 +126,12 @@ function switchView(viewName) {
     const chatView = document.getElementById('chat');
     const placeholderView = document.getElementById('chat-placeholder');
     const groupCreationView = document.getElementById('group-creation-view');
+    const newTabView = document.getElementById('new-tab-view');
     
     chatView.classList.add('hidden');
     placeholderView.classList.add('hidden');
     if (groupCreationView) groupCreationView.classList.add('hidden');
+    if (newTabView) newTabView.classList.add('hidden');
     
     if (viewName === 'chat') {
         chatView.classList.remove('hidden');
@@ -137,6 +139,8 @@ function switchView(viewName) {
         placeholderView.classList.remove('hidden');
     } else if (viewName === 'group-creation') {
         if (groupCreationView) groupCreationView.classList.remove('hidden');
+    } else if (viewName === 'new-tab') {
+        if (newTabView) newTabView.classList.remove('hidden');
     }
 }
 
@@ -184,46 +188,34 @@ function openChatTab(roomName) {
     }
 }
 
-function openGroupCreationTab() {
+function openNewTab() {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
     
-    let existingTab = null;
-    const tabs = tabsContainer.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-        if (tab.getAttribute('data-special') === 'group-creation') {
-            existingTab = tab;
-        }
+    const newTab = document.createElement('div');
+    newTab.className = 'tab';
+    newTab.setAttribute('role', 'tab');
+    newTab.setAttribute('aria-selected', 'false');
+    newTab.setAttribute('data-special', 'new-tab');
+    
+    const title = document.createElement('span');
+    title.className = 'tab-title';
+    title.textContent = 'New Tab';
+    
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'tab-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeTab(newTab);
     });
     
-    if (existingTab) {
-        activateTab(existingTab);
-    } else {
-        const newTab = document.createElement('div');
-        newTab.className = 'tab';
-        newTab.setAttribute('role', 'tab');
-        newTab.setAttribute('aria-selected', 'false');
-        newTab.setAttribute('data-special', 'group-creation');
-        
-        const title = document.createElement('span');
-        title.className = 'tab-title';
-        title.textContent = '+ New Group';
-        
-        const closeBtn = document.createElement('span');
-        closeBtn.className = 'tab-close';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            closeTab(newTab);
-        });
-        
-        newTab.appendChild(title);
-        newTab.appendChild(closeBtn);
-        tabsContainer.appendChild(newTab);
-        
-        activateTab(newTab);
-        newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
-    }
+    newTab.appendChild(title);
+    newTab.appendChild(closeBtn);
+    tabsContainer.appendChild(newTab);
+    
+    activateTab(newTab);
+    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
 }
 
 function activateTab(tabElement) {
@@ -241,8 +233,16 @@ function activateTab(tabElement) {
     
     const room = tabElement.getAttribute('data-room');
     const isGroupCreation = tabElement.getAttribute('data-special') === 'group-creation';
+    const isNewTab = tabElement.getAttribute('data-special') === 'new-tab';
     
-    if (isGroupCreation) {
+    if (isNewTab) {
+        currentRoom = null;
+        if (chatSocket) {
+            chatSocket.close();
+            chatSocket = null;
+        }
+        switchView('new-tab');
+    } else if (isGroupCreation) {
         currentRoom = null;
         if (chatSocket) {
             chatSocket.close();
@@ -298,11 +298,33 @@ if (submitBtn) {
     }
 }
 
-// Add tab button (Group creation)
+// Add tab button (opens an empty New Tab dashboard)
 const addTabBtn = document.getElementById('add-tab-btn');
 if (addTabBtn) {
     addTabBtn.addEventListener('click', function() {
-        openGroupCreationTab();
+        openNewTab();
+    });
+}
+
+// Dashboard "Create Group" action handler
+const dashboardCreateGroupBtn = document.getElementById('dashboard-create-group-btn');
+if (dashboardCreateGroupBtn) {
+    dashboardCreateGroupBtn.addEventListener('click', function() {
+        // Find the currently active tab
+        const activeTab = document.querySelector('#tabs .tab.active');
+        if (activeTab && activeTab.getAttribute('data-special') === 'new-tab') {
+            // Update this tab's state/special type
+            activeTab.setAttribute('data-special', 'group-creation');
+            
+            // Update the tab title to "Create Group"
+            const titleSpan = activeTab.querySelector('.tab-title');
+            if (titleSpan) {
+                titleSpan.textContent = 'Create Group';
+            }
+            
+            // Activate the updated tab to transition views
+            activateTab(activeTab);
+        }
     });
 }
 
