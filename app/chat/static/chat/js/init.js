@@ -1,5 +1,5 @@
 import { sendMessage } from './socket.js';
-import { openNewTab, activateTab } from './tabs.js';
+import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab } from './tabs.js';
 import { handleGroupSubmission, cancelGroupCreation } from './group.js';
 import { loadRooms } from './rooms.js';
 
@@ -22,6 +22,44 @@ function bindTabs() {
     });
 }
 
+function isTypingTarget(target) {
+    return target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || target.isContentEditable;
+}
+
+function bindSlashFocus() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (isTypingTarget(e.target)) return;
+
+        const chatView = document.getElementById('chat');
+        const input = document.getElementById('chat-message-input');
+        if (!input || chatView?.classList.contains('hidden')) return;
+
+        e.preventDefault();
+        input.focus();
+    }, true);
+}
+
+function bindTabKeyboard() {
+    document.addEventListener('keydown', (e) => {
+        if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+        if (e.key === '1') {
+            e.preventDefault();
+            cycleTabLeft();
+        } else if (e.key === '2') {
+            e.preventDefault();
+            cycleTabRight();
+        } else if (e.key === '4') {
+            e.preventDefault();
+            closeActiveTab();
+        }
+    });
+}
+
 function bindGroupCreation() {
     document.getElementById('group-creation-form')?.addEventListener('submit', handleGroupSubmission);
     document.getElementById('cancel-group-btn')?.addEventListener('click', cancelGroupCreation);
@@ -40,6 +78,8 @@ function bindGroupCreation() {
 export function initApp() {
     bindMessageInput();
     bindTabs();
+    bindTabKeyboard();
+    bindSlashFocus();
     bindGroupCreation();
     loadRooms();
 }

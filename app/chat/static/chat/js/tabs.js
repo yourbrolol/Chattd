@@ -94,6 +94,37 @@ function createTabElement(titleText, typeAttr) {
     return tabDiv;
 }
 
+function getTabs() {
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return [];
+    return [...tabsContainer.querySelectorAll('.tab')];
+}
+
+export function cycleTabLeft() {
+    const tabs = getTabs();
+    if (tabs.length < 2) return;
+
+    const activeIndex = tabs.findIndex(tab => tab.classList.contains('active'));
+    const currentIndex = activeIndex >= 0 ? activeIndex : 0;
+    const nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    activateTab(tabs[nextIndex]);
+}
+
+export function cycleTabRight() {
+    const tabs = getTabs();
+    if (tabs.length < 2) return;
+
+    const activeIndex = tabs.findIndex(tab => tab.classList.contains('active'));
+    const currentIndex = activeIndex >= 0 ? activeIndex : 0;
+    const nextIndex = (currentIndex + 1) % tabs.length;
+    activateTab(tabs[nextIndex]);
+}
+
+export function closeActiveTab() {
+    const activeTab = document.querySelector('#tabs .tab.active');
+    if (activeTab) closeTab(activeTab);
+}
+
 export function closeTab(tabElement) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
