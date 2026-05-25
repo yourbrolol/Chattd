@@ -34,7 +34,6 @@ def is_room_member(room, user):
     room_id = room.pk if hasattr(room, 'pk') else room
     return RoomMembership.objects.filter(room_id=room_id, user_id=user_id).exists()
 
-
 def join_room_sync(room_name, user):
     if user is None or not user.is_authenticated:
         return None, JOIN_AUTH_REQUIRED
