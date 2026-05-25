@@ -97,6 +97,40 @@ body {
     letter-spacing: 0.05em;
 }
 
+/* Tabs placeholder styles */
+#tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    box-sizing: border-box;
+    border-bottom: 1px solid #334155;
+    background: #1e293b; /* same as .nav */
+    overflow-x: auto;
+}
+.tab {
+    padding: 0.45rem 0.8rem;
+    background: transparent;
+    border-radius: 0.75rem 0.75rem 0 0;
+    color: #cbd5e1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    font-weight: 600;
+    transition: background .15s, color .15s, border-color .15s;
+    flex: 0 0 auto;
+}
+.tab:hover {
+    background: #1f2937;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+.tab.active {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+
 .room {
     padding: 1.1rem 1.75rem;
     cursor: pointer;
@@ -250,4 +284,7 @@ body {
     #chat-message-submit {
         width: 20%;
     }
+    /* make tabs scrollable and compact on small screens */
+    #tabs { gap: 0.35rem; padding: 0.35rem 0.5rem; }
+    .tab { padding: 0.35rem 0.6rem; font-size: 0.95rem; }
 }

@@ -24,8 +24,10 @@
                 <div id="chats-text">Chats</div>
             </div>
             <div id="view-main">
-                <div id="tabs">
-                    <div id="tabs-text">Tabs</div>
+                <div id="tabs" role="tablist" aria-label="Chat tabs">
+                    <button class="tab active" role="tab" aria-selected="true">All</button>
+                    <button class="tab" role="tab">Friends</button>
+                    <button class="tab" role="tab">Groups</button>
                 </div>
                 <div id="chat">
                     <div id="chat-log"></div>

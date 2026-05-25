@@ -1,27 +1,27 @@
+// Initial Check
 console.log("JS loaded!")
+
+// Rooms
 const roomName = "general";
-const input = document.getElementById('chat-message-input');
-const chatLog = document.getElementById('chat-log')
 let currentRoom = "general"
 
-let chatSocket = null
+// UI
+const input = document.getElementById('chat-message-input');
+const chatLog = document.getElementById('chat-log')
 
-function clearDOM() {
-    console.log("Clearing DOM");
-    chatLog.innerHTML = '';
-}
+// Connection
+let chatSocket = null
 
 function appendMessage(data) {
     console.log("Appending to DOM:", data);
-    const log = document.getElementById('chat-log');
     const div = document.createElement('div');
     div.className = "message";
 
     div.textContent = `${data.user}: ${data.content}`;
 
-    log.appendChild(div);
+    chatLog.appendChild(div);
 
-    log.scrollTop = log.scrollHeight;
+    chatLog.scrollTop = chatLog.scrollHeight;
 }
 
 function createChatSocket(room) {
@@ -45,7 +45,8 @@ function createChatSocket(room) {
         console.log(data.user, data.message)
 
         if (data.type === "init") {
-            clearDOM();
+            console.log("Clearing DOM");
+            chatLog.innerHTML = '';
             data.message_history.forEach(appendMessage);
             console.log("Appended history:", data.message_history);
         } else if (data.type === "chat_message") {
@@ -87,16 +88,6 @@ function sendMessage() {
     input.value = '';
 }
 
-input.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
-        sendMessage()
-    }
-});
-
-document.getElementById('chat-message-submit').onclick = function() {
-    sendMessage()
-}
-
 function loadRooms() {
     const roomsDiv = document.getElementById('chats')
     fetch("/rooms/")
@@ -114,6 +105,16 @@ function loadRooms() {
                 });
             });
         })
+}
+
+input.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        sendMessage()
+    }
+});
+
+document.getElementById('chat-message-submit').onclick = function() {
+    sendMessage()
 }
 
 chatSocket = createChatSocket(roomName);
