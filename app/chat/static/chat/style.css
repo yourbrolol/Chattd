@@ -101,32 +101,45 @@ body {
 /* Tabs placeholder styles */
 #tabs-container {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     border-bottom: 1px solid #334155;
     background: #1e293b; /* same as .nav */
     padding: 0 0.75rem;
     box-sizing: border-box;
     height: 46px; /* Standalone constant height */
     width: 100%;
-    min-width: 0; /* Enforce flex shrink */
+    min-width: 0;
     flex-shrink: 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+#tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 #tabs {
     display: flex;
-    align-items: flex-end; /* Align tabs to sit perfectly flush with the bottom border */
+    align-items: flex-end;
     gap: 0.5rem;
     height: 100%;
     box-sizing: border-box;
-    overflow-x: auto;
-    flex: 1;
-    min-width: 0; /* Enforce flex shrink and allow inner overflow scrolling */
-    scrollbar-width: none; /* Hide scrollbar for clean tab design in Firefox */
+    flex: 0 0 auto;
 }
 
-#tabs::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Chrome/Safari */
+.tabs-divider {
+    display: none;
+    flex-shrink: 0;
+    align-self: flex-end;
+    width: 1px;
+    height: 22px;
+    margin: 0 0.625rem 9px;
+    background: #64748b;
+}
+
+#tabs-container:has(#tabs .tab) .tabs-divider {
+    display: block;
 }
 
 #add-tab-btn {
@@ -142,7 +155,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 0.75rem;
+    margin-bottom: 6px;
     flex-shrink: 0;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
@@ -788,11 +801,15 @@ body {
         margin-bottom: -1px;
         height: calc(100% - 4px);
     }
+    .tabs-divider {
+        height: 18px;
+        margin: 0 0.5rem 7px;
+    }
     #add-tab-btn {
         width: 24px;
         height: 24px;
         font-size: 1rem;
-        margin-left: 0.5rem;
+        margin-bottom: 4px;
         border-radius: 4px;
     }
     .join-room-card {
