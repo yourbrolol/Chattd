@@ -4,6 +4,7 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token }}">
         <title>SpreadTalk</title>
         <link rel="stylesheet" href="{% static 'chat/style.css' %}" defer>
     </head>
@@ -24,17 +25,55 @@
                 <div id="chats-text">Chats</div>
             </div>
             <div id="view-main">
-                <div id="tabs" role="tablist" aria-label="Chat tabs">
-                    <button class="tab active" role="tab" aria-selected="true">All</button>
-                    <button class="tab" role="tab">Friends</button>
-                    <button class="tab" role="tab">Groups</button>
+                <div id="tabs-container">
+                    <div id="tabs" role="tablist" aria-label="Chat tabs">
+                        <!-- Dynamic tabs will be added here -->
+                    </div>
+                    <button id="add-tab-btn" aria-label="Create group">+</button>
                 </div>
-                <div id="chat">
+                
+                <!-- Active Chat View (hidden by default) -->
+                <div id="chat" class="hidden">
                     <div id="chat-log"></div>
                     <div id="chat-input">
                         <div id="avatar"></div>
                         <input id="chat-message-input" type="text" placeholder="Type a message..." autofocus>
                         <button id="chat-message-submit">Send</button>
+                    </div>
+                </div>
+
+                <!-- Chat Placeholder View (visible by default) -->
+                <div id="chat-placeholder" class="chat-placeholder-view">
+                    <div class="placeholder-content">
+                        <div class="placeholder-icon">💬</div>
+                        <h2>Welcome to SpreadTalk</h2>
+                        <p>Select a room from the left sidebar to start chatting, or click the "+" button above to create a new group.</p>
+                    </div>
+                </div>
+
+                <!-- Group Creation View (hidden by default) -->
+                <div id="group-creation-view" class="group-creation-view hidden">
+                    <div class="form-container">
+                        <h2>Create New Group</h2>
+                        <form id="group-creation-form" method="POST">
+                            <div class="form-group">
+                                <label for="id_room_name">Group Name</label>
+                                <input type="text" id="id_room_name" name="room_name" maxlength="20" placeholder="e.g. gamers-club" required autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="id_room_type">Group Type</label>
+                                <select id="id_room_type" name="room_type" required>
+                                    <option value="PUBLIC">Public</option>
+                                    <option value="UNLISTED">Unlisted</option>
+                                    <option value="PRIVATE">Private</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Create Group</button>
+                                <button type="button" class="btn-secondary" id="cancel-group-btn">Cancel</button>
+                            </div>
+                            <div id="group-creation-errors" class="form-errors hidden"></div>
+                        </form>
                     </div>
                 </div>
             </div>
