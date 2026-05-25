@@ -57,9 +57,25 @@
                         <h2>New Workspace Tab</h2>
                         <p class="subtitle">Select an action to get started in this tab</p>
                         <div class="actions-grid">
+                            <div class="action-bar join-room-card">
+                                <div class="join-room-card__header">
+                                    <div class="join-room-card__icon" aria-hidden="true">🔗</div>
+                                    <div class="join-room-card__titles">
+                                        <h3>Join a Room</h3>
+                                        <p class="join-room-card__hint">Enter an existing room name to jump in instantly.</p>
+                                    </div>
+                                </div>
+                                <div class="join-room-card__form">
+                                    <label class="join-room-card__label" for="dashboard-join-room-input">Room name</label>
+                                    <div class="join-room-card__input-row">
+                                        <input type="text" id="dashboard-join-room-input" name="room_name" maxlength="20" placeholder="e.g. gamers-club" required autocomplete="off">
+                                        <button type="button" class="btn-primary join-room-card__btn" id="dashboard-join-room-btn">Join</button>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="action-card">
                                 <div class="action-icon">👥</div>
-                                <h3>Create Group</h3>
+                                <h3>Create Room</h3>
                                 <p>Start a new public, private, or unlisted chat room with friends.</p>
                                 <button type="button" class="btn-primary" id="dashboard-create-group-btn">Create Group</button>
                             </div>
