@@ -3,7 +3,9 @@ export function switchView(viewName) {
         chat: document.getElementById('chat'),
         placeholder: document.getElementById('chat-placeholder'),
         'group-creation': document.getElementById('group-creation-view'),
-        'new-tab': document.getElementById('new-tab-view')
+        'new-tab': document.getElementById('new-tab-view'),
+        'apply-room': document.getElementById('apply-room-view'),
+        'review-applications': document.getElementById('review-applications-view'),
     };
 
     Object.values(views).forEach(v => v?.classList.add('hidden'));

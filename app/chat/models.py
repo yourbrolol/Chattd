@@ -73,7 +73,6 @@ class RoomMembership(models.Model):
         username = self.user.username if self.user else '(deleted user)'
         return f"{username} in {self.room.name} ({self.role})"
 
-
 class ChatRoom(models.Model):
     class RoomTypes(models.TextChoices):
         PUBLIC = 'PUBLIC'
@@ -93,6 +92,17 @@ class ChatRoom(models.Model):
 
     def __str__(self):
         return self.name
+
+class RoomApplication(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING'
+        APPROVED = 'APPROVED'
+        REJECTED = 'REJECTED'
+
+    applicant = models.ForeignKey(User, null=True, blank=False, on_delete=models.SET_NULL)
+    room = models.ForeignKey(ChatRoom, null=True, blank=False, on_delete=models.SET_NULL, related_name='applications')
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class ChatMessage(models.Model):
     room = models.ForeignKey(

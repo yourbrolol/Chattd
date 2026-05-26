@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from chat.models import ChatRoom, User
+from chat.models import ChatRoom, User, RoomApplication
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import authenticate, login, logout
@@ -14,8 +14,20 @@ from .services.rooms import (
     JOIN_FORBIDDEN,
     JOIN_NOT_FOUND,
     JOIN_OK,
+    APPLICATION_REQUIRED,
+    APPLICATION_PENDING,
     create_room,
     join_room_sync,
+)
+from .services.applications import (
+    APP_ALREADY_MEMBER,
+    APP_ALREADY_PENDING,
+    APP_ALREADY_APPROVED,
+    APP_AUTH_REQUIRED,
+    APP_NOT_FOUND,
+    APP_OK,
+    apply_to_room_sync,
+    review_application_sync,
 )
 from django.urls import reverse_lazy
 
@@ -118,7 +130,6 @@ def list_rooms(request):
     )
     return JsonResponse(rooms, safe=False)
 
-
 @login_required
 @require_POST
 def join_room_view(request):
@@ -131,6 +142,10 @@ def join_room_view(request):
         return JsonResponse({'error': 'not_found'}, status=404)
     if status == JOIN_FORBIDDEN:
         return JsonResponse({'error': 'forbidden'}, status=403)
+    if status == APPLICATION_REQUIRED:
+        return JsonResponse({'warning': 'app_required'}, status=403)
+    if status == APPLICATION_PENDING:
+        return JsonResponse({'warning': 'app_pending'}, status=403)
 
     return JsonResponse({
         'name': room.name,
@@ -138,3 +153,79 @@ def join_room_view(request):
         'joined': status in (JOIN_OK, JOIN_ALREADY_MEMBER),
         'already_member': status == JOIN_ALREADY_MEMBER,
     })
+
+
+@login_required
+@require_POST
+def apply_to_room_view(request):
+    room_name = request.POST.get("room_name", "").strip()
+    app, status = apply_to_room_sync(room_name, request.user)
+
+    if status == APP_AUTH_REQUIRED:
+        return JsonResponse({"error": "auth_required"}, status=401)
+    if status == APP_NOT_FOUND:
+        return JsonResponse({"error": "not_found"}, status=404)
+    if status == APP_ALREADY_MEMBER:
+        return JsonResponse({"error": "already_member"}, status=400)
+    if status == APP_ALREADY_APPROVED:
+        return JsonResponse({"warning": "already_approved"}, status=200)
+    if status == APP_ALREADY_PENDING:
+        return JsonResponse({"warning": "already_pending"}, status=200)
+    if status != APP_OK:
+        return JsonResponse({"error": "unknown_error"}, status=400)
+
+    return JsonResponse(
+        {
+            "id": app.id,
+            "room": app.room.name,
+            "status": app.status,
+        },
+        status=201,
+    )
+
+
+@login_required
+@require_POST
+def review_application_view(request, application_id: int):
+    action = request.POST.get("action", "").strip().lower()
+    if action not in ("approve", "reject"):
+        return JsonResponse({"error": "invalid_action"}, status=400)
+
+    approve = action == "approve"
+    app, error = review_application_sync(application_id, request.user, approve)
+
+    if error == APP_NOT_FOUND or app is None:
+        return JsonResponse({"error": "not_found"}, status=404)
+    if error == "forbidden":
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    return JsonResponse(
+        {
+            "id": app.id,
+            "room": app.room.name,
+            "status": app.status,
+        }
+    )
+
+
+@login_required
+def pending_applications_view(request):
+    """Return pending applications for rooms owned by the current user."""
+    apps = (
+        RoomApplication.objects.filter(
+            room__owner=request.user,
+            status=RoomApplication.Status.PENDING,
+        )
+        .select_related("applicant", "room")
+        .order_by("created_at")
+    )
+    data = [
+        {
+            "id": a.id,
+            "room": a.room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ]
+    return JsonResponse(data, safe=False)

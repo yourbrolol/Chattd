@@ -22,7 +22,13 @@
         </nav>
         <div id="main">
             <div id="chats">
-                <div id="chats-text">Chats</div>
+                <div id="chats-header">
+                    <div id="chats-text">Chats</div>
+                    <button id="review-apps-btn" class="review-apps-btn" title="Pending applications" aria-label="Review applications">
+                        <span id="review-apps-badge" class="review-apps-badge hidden"></span>
+                        📋
+                    </button>
+                </div>
             </div>
             <div id="view-main">
                 <div id="tabs-container">
@@ -81,6 +87,39 @@
                                 <p>Start a new public, private, or unlisted chat room with friends.</p>
                                 <button type="button" class="btn-primary" id="dashboard-create-group-btn">Create Group</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Apply to Room View (hidden by default) -->
+                <div id="apply-room-view" class="apply-room-view hidden">
+                    <div class="form-container">
+                        <div class="apply-room-icon">🔒</div>
+                        <h2>Private Room</h2>
+                        <p class="apply-room-desc">This room requires approval to join. Send a membership request to the room owner.</p>
+                        <p class="apply-room-name-label">Room: <strong id="apply-room-name"></strong></p>
+                        <div class="form-actions">
+                            <button type="button" class="btn-primary" id="apply-room-submit-btn">Send Request</button>
+                            <button type="button" class="btn-secondary" id="apply-room-cancel-btn">Cancel</button>
+                        </div>
+                        <div id="apply-room-errors" class="form-errors hidden"></div>
+                        <div id="apply-room-success" class="form-success hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Pending Applications Review View (hidden by default) -->
+                <div id="review-applications-view" class="review-applications-view hidden">
+                    <div class="review-applications-container">
+                        <div class="review-header">
+                            <h2>Pending Applications</h2>
+                            <p class="subtitle">People waiting to join your rooms</p>
+                        </div>
+                        <div id="applications-list" class="applications-list">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div id="applications-empty" class="applications-empty hidden">
+                            <div class="applications-empty-icon">✅</div>
+                            <p>No pending applications.</p>
                         </div>
                     </div>
                 </div>

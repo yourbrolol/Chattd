@@ -1,0 +1,80 @@
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+/**
+ * Submit a room application.
+ * Returns { ok, status, app } on success or { ok: false, error } on failure.
+ *   status: 'ok' | 'already_pending' | 'already_approved' | 'already_member'
+ */
+export async function applyToRoom(roomName) {
+    const trimmed = (roomName || '').trim();
+    if (!trimmed) return { ok: false, error: 'empty' };
+
+    const body = new URLSearchParams();
+    body.append('csrfmiddlewaretoken', getCsrfToken());
+    body.append('room_name', trimmed);
+
+    try {
+        const response = await fetch('/rooms/apply/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) return { ok: false, error: 'auth_required' };
+        if (response.status === 404) return { ok: false, error: 'not_found' };
+        if (response.status === 400) return { ok: false, error: data.error || 'unknown' };
+        if (!response.ok && response.status !== 200) return { ok: false, error: 'network' };
+
+        // 201 = new application, 200 = already_pending / already_approved
+        return { ok: true, status: data.warning || 'ok', app: data };
+    } catch {
+        return { ok: false, error: 'network' };
+    }
+}
+
+/**
+ * Approve or reject a room application (owner only).
+ * action: 'approve' | 'reject'
+ * Returns { ok, app } or { ok: false, error }.
+ */
+export async function reviewApplication(applicationId, action) {
+    const body = new URLSearchParams();
+    body.append('csrfmiddlewaretoken', getCsrfToken());
+    body.append('action', action);
+
+    try {
+        const response = await fetch(`/rooms/applications/${applicationId}/review/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 403) return { ok: false, error: 'forbidden' };
+        if (response.status === 404) return { ok: false, error: 'not_found' };
+        if (!response.ok) return { ok: false, error: 'network' };
+
+        return { ok: true, app: data };
+    } catch {
+        return { ok: false, error: 'network' };
+    }
+}
+
+/**
+ * Fetch pending applications for rooms the current user owns.
+ * Returns an array of { id, room, applicant, status } objects, or [].
+ */
+export async function loadPendingApplications() {
+    try {
+        const response = await fetch('/rooms/applications/pending/');
+        if (!response.ok) return [];
+        return await response.json();
+    } catch {
+        return [];
+    }
+}

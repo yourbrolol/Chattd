@@ -4,6 +4,8 @@ const JOIN_ERROR_MESSAGES = {
     auth_required: 'You must be logged in to join a room.',
     network: 'Network error. Please try again.',
     empty: 'Enter a room name.',
+    app_required: 'This is a private room. You need to apply for membership.',
+    app_pending: 'Your application is pending. Please wait for the owner to review it.',
 };
 
 function getCsrfToken() {
@@ -46,6 +48,11 @@ export async function joinRoom(roomName) {
             return { ok: false, error: 'not_found' };
         }
         if (response.status === 403) {
+            const data403 = await response.json().catch(() => ({}));
+            // app_required / app_pending arrive as { warning: '...' }
+            const warning = data403?.warning;
+            if (warning === 'app_required') return { ok: false, error: 'app_required', roomName: trimmed };
+            if (warning === 'app_pending') return { ok: false, error: 'app_pending' };
             return { ok: false, error: 'forbidden' };
         }
         if (!response.ok) {

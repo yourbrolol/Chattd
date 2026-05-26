@@ -2,7 +2,7 @@ import logging
 
 from django.db import IntegrityError
 from channels.db import database_sync_to_async
-from chat.models import ChatRoom, RoomMembership
+from chat.models import ChatRoom, RoomMembership, RoomApplication
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +11,44 @@ JOIN_ALREADY_MEMBER = 'already_member'
 JOIN_NOT_FOUND = 'not_found'
 JOIN_FORBIDDEN = 'forbidden'
 JOIN_AUTH_REQUIRED = 'auth_required'
+APPLICATION_REQUIRED = 'app_required'
+APPLICATION_PENDING = 'app_pending'
 
 WS_CLOSE_AUTH_REQUIRED = 4001
 WS_CLOSE_FORBIDDEN = 4003
 WS_CLOSE_NOT_FOUND = 4004
 
 
-def can_join_room(room):
-    """Whether new users may self-join (public/unlisted only for now)."""
-    return room.room_type in (
+def get_app_status(room, user):
+    """Return latest application status for a user in a room, or None."""
+    if user is None or not getattr(user, "is_authenticated", False):
+        return None
+
+    app = (
+        room.applications.filter(applicant=user)
+        .order_by("-created_at")
+        .first()
+    )
+    return app.status if app is not None else None
+
+
+def can_join_room(room, user):
+    """
+    Whether a user is allowed to join the room right now.
+
+    - PUBLIC / UNLISTED: anyone can join.
+    - PRIVATE: user must have an APPROVED application.
+    """
+    if room.room_type in (
         ChatRoom.RoomTypes.PUBLIC,
         ChatRoom.RoomTypes.UNLISTED,
-    )
+    ):
+        return True
+
+    if room.room_type == ChatRoom.RoomTypes.PRIVATE:
+        return get_app_status(room, user) == RoomApplication.Status.APPROVED
+
+    return False
 
 
 def is_room_member(room, user):
@@ -33,6 +59,15 @@ def is_room_member(room, user):
         return False
     room_id = room.pk if hasattr(room, 'pk') else room
     return RoomMembership.objects.filter(room_id=room_id, user_id=user_id).exists()
+
+
+def create_app(room, user):
+    """Create a new application for a room."""
+    return RoomApplication.objects.create(
+        applicant=user,
+        room=room
+    )
+
 
 def join_room_sync(room_name, user):
     if user is None or not user.is_authenticated:
@@ -50,7 +85,16 @@ def join_room_sync(room_name, user):
     if is_room_member(room, user):
         return room, JOIN_ALREADY_MEMBER
 
-    if not can_join_room(room):
+    app_status = get_app_status(room, user)
+
+    if not can_join_room(room, user):
+        if room.room_type == ChatRoom.RoomTypes.PRIVATE:
+            if app_status is None:
+                return None, APPLICATION_REQUIRED
+            if app_status == RoomApplication.Status.REJECTED:
+                return None, JOIN_FORBIDDEN
+            if app_status == RoomApplication.Status.PENDING:
+                return None, APPLICATION_PENDING
         return None, JOIN_FORBIDDEN
 
     RoomMembership.objects.create(
@@ -59,7 +103,6 @@ def join_room_sync(room_name, user):
         role=RoomMembership.Role.MEMBER,
     )
     return room, JOIN_OK
-
 
 def _create_room_sync(room_name, owner, room_type):
     room = ChatRoom.objects.create(name=room_name, owner=owner, room_type=room_type)
