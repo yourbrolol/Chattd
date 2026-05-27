@@ -316,6 +316,76 @@ body {
     letter-spacing: -0.025em;
 }
 
+/* ---- Room Overview Styles ---- */
+.room-overview-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #0f172a;
+    box-sizing: border-box;
+}
+
+.overview-container {
+    max-width: 820px;
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+}
+
+.overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.overview-header__titles h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #f1f5f9;
+}
+
+.overview-meta {
+    margin-top: 0.25rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.overview-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.overview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.overview-room-card {
+    padding: 1rem;
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    border: 1px solid #334155;
+    border-radius: 0.75rem;
+    color: #e6eef8;
+}
+
+.overview-room-card__name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.overview-room-card__meta {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
 .new-tab-dashboard .subtitle {
     font-size: 1rem;
     color: #94a3b8;

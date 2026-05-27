@@ -94,10 +94,22 @@
 
                 <div id="room-overview-view" class="room-overview-view hidden">
                     <div class="overview-container">
-                        <p id="room-name">Room_name</p>
-                        <p id="room-type">Room_type</p>
-                        <button id="room-overview-join-btn" class="btn-primary">View Room</button>
-                        <p id="error-message" class="error-message hidden">Error: </p>
+                            <div class="overview-header">
+                                <div class="overview-header__titles">
+                                    <h2 id="room-name">Room_name</h2>
+                                    <div id="room-type" class="overview-meta">Type: Public</div>
+                                </div>
+                                <div class="overview-actions">
+                                    <button id="room-overview-join-btn" class="btn-primary">Open Room</button>
+                                </div>
+                            </div>
+
+                            <div id="error-message" class="form-errors hidden"></div>
+
+                            <div id="overview-list" class="overview-list">
+                                <!-- Room details and member list will be rendered here -->
+                                <div class="overview-room-card">In progress...</div>
+                            </div>
                     </div>
                 </div>
 
