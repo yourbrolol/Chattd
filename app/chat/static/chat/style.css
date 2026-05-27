@@ -1,3 +1,4 @@
+/*!!core.css*/
 html {
     font-size: 1rem;
 }
@@ -12,6 +13,7 @@ body {
     color: #f1f5f9;
 }
 
+/*!!nav.css*/
 .nav {
     display: flex;
     width: 100%;
@@ -62,6 +64,7 @@ body {
     object-fit: cover;
 }
 
+/*!!layout.css*/
 #main {
     display: flex;
     flex: 1;
@@ -88,17 +91,7 @@ body {
     overflow-y: auto;
 }
 
-#chats-text {
-    padding: 1rem 1.5rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-    border-bottom: 1px solid #334155;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-/* Tabs placeholder styles */
+/*!!tabs.css*/
 #tabs-container {
     display: flex;
     align-items: flex-end;
@@ -233,7 +226,7 @@ body {
     display: none !important;
 }
 
-/* Shared pane layout: fills space below tabs, scrolls when content overflows */
+/*!!views.css*/
 .chat-placeholder-view,
 .new-tab-view,
 .group-creation-view {
@@ -294,7 +287,7 @@ body {
     color: #94a3b8;
 }
 
-/* New Tab View Styling */
+/*!!new_tab.css*/
 .new-tab-dashboard {
     width: 100%;
     max-width: 600px;
@@ -316,7 +309,13 @@ body {
     letter-spacing: -0.025em;
 }
 
-/* ---- Room Overview Styles ---- */
+.new-tab-dashboard .subtitle {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin: 0 0 2.5rem 0;
+}
+
+/*!!room_overview.css*/
 .room-overview-view {
     flex: 1;
     min-height: 0;
@@ -476,12 +475,6 @@ body {
     font-size: 0.9rem;
 }
 
-.new-tab-dashboard .subtitle {
-    font-size: 1rem;
-    color: #94a3b8;
-    margin: 0 0 2.5rem 0;
-}
-
 .actions-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -501,7 +494,7 @@ body {
     align-items: center;
 }
 
-/* Join Room Card */
+/*!!join_room.css*/
 .join-room-card {
     flex-direction: column;
     align-items: stretch;
@@ -682,7 +675,7 @@ body {
     max-width: 200px;
 }
 
-/* Group Creation View Styling */
+/*!!group_creation.css*/
 .group-creation-view {
     padding: 2rem;
     display: flex;
@@ -792,7 +785,7 @@ body {
     text-align: left;
 }
 
-/* ---- Sidebar chats header ---- */
+/*!!sidebar.css*/
 #chats-header {
     display: flex;
     align-items: center;
@@ -800,6 +793,16 @@ body {
     padding: 0 1rem 0 1.5rem;
     border-bottom: 1px solid #334155;
     min-height: 52px;
+}
+
+#chats-text {
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 1px solid #334155;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 #chats-header #chats-text {
@@ -849,7 +852,7 @@ body {
     line-height: 1;
 }
 
-/* ---- Apply-to-room view ---- */
+/*!!apply_room.css*/
 .apply-room-view {
     flex: 1;
     min-height: 0;
@@ -900,7 +903,7 @@ body {
     text-align: left;
 }
 
-/* ---- Review applications view ---- */
+/*!!review_applications.css*/
 .review-applications-view {
     flex: 1;
     min-height: 0;
@@ -1044,6 +1047,7 @@ body {
     font-size: 1rem;
 }
 
+/*!!chat_room.css*/
 .room {
     padding: 1.1rem 1.75rem;
     cursor: pointer;
@@ -1184,6 +1188,7 @@ body {
     align-self: flex-end;
 }
 
+/*!!responsive.css*/
 @media (max-width: 768px) {
     html {
         font-size: 0.55rem;
