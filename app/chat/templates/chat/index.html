@@ -104,12 +104,33 @@
                                 </div>
                             </div>
 
-                            <div id="error-message" class="form-errors hidden"></div>
-
-                            <div id="overview-list" class="overview-list">
+                            <div id="overview-members" class="overview-members">
                                 <!-- Room details and member list will be rendered here -->
-                                <div class="overview-room-card">In progress...</div>
+                                <p id="overview-members-p">Members:</p>
+                                <div class="overview-members-list">
+                                    <template id="member-card-template">
+                                        <article class="member-card">
+                                            <div class="member-card__avatar" aria-hidden="true">JD</div>
+                                            <div class="member-card__content">
+                                                <p class="member-card__name">Jane Doe</p>
+                                                <p class="member-card__meta">Owner · Active</p>
+                                            </div>
+                                            <button type="button" class="member-card__kick-btn hidden">Kick</button>
+                                        </article>
+                                    </template>
+
+                                    <article class="member-card">
+                                        <div class="member-card__avatar">JD</div>
+                                        <div class="member-card__content">
+                                            <p class="member-card__name">Jane Doe</p>
+                                            <p class="member-card__meta">Owner · Active</p>
+                                        </div>
+                                        <button type="button" class="member-card__kick-btn hidden">Kick</button>
+                                    </article>
+                                </div>
                             </div>
+
+                            <div id="error-message" class="form-errors hidden"></div>
                     </div>
                 </div>
 

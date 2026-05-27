@@ -149,6 +149,7 @@ def room_details(request, room_name):
         "name": room.name,
         "room_type": room.room_type,
         "owner": room.owner.username if room.owner else None,
+        "members": list(room.members.values("username")),
     }
     return JsonResponse(data)
 
