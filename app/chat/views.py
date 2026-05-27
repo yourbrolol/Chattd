@@ -132,19 +132,15 @@ def list_rooms(request):
 
 @login_required
 def room_details(request, room_name):
-    # Look up the room by name first.
     room = ChatRoom.objects.filter(name=room_name).first()
     if not room:
         return JsonResponse({"error": "not_found"}, status=404)
 
-    # Check membership status for the requesting user.
     is_member = room.members.filter(pk=request.user.pk).exists()
 
-    # Private rooms should explicitly return 403 for non-members.
     if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member:
         return JsonResponse({"error": "forbidden"}, status=403)
 
-    # Preserve previous behavior for public/unlisted rooms: hide details from non-members.
     if not is_member:
         return JsonResponse({"error": "not_found"}, status=404)
 
