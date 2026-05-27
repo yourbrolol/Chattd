@@ -12,4 +12,5 @@ urlpatterns = [
     path("rooms/apply/", views.apply_to_room_view, name="apply_to_room"),
     path("rooms/applications/<int:application_id>/review/", views.review_application_view, name="review_application"),
     path("rooms/applications/pending/", views.pending_applications_view, name="pending_applications"),
+    path("rooms/<str:room_name>/", views.room_details, name="room_detail"),
 ]

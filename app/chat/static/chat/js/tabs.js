@@ -19,6 +19,7 @@ export function activateTab(tabElement) {
     const room = tabElement.getAttribute('data-room');
     const isGroupCreation = tabElement.getAttribute('data-special') === 'group-creation';
     const isNewTab = tabElement.getAttribute('data-special') === 'new-tab';
+    const isRoomOverview = tabElement.getAttribute('data-special') === 'room-overview'
 
     if (state.chatSocket) {
         state.chatSocket.close();
@@ -31,6 +32,10 @@ export function activateTab(tabElement) {
     } else if (isGroupCreation) {
         state.currentRoom = null;
         switchView('group-creation');
+    } else if (isRoomOverview) {
+        const related = tabElement.getAttribute('data-related-room');
+        state.currentRoom = related ? related : null;
+        switchView('room-overview');
     } else if (room) {
         state.currentRoom = room;
         switchView('chat');
@@ -77,7 +82,7 @@ export function openNewTab() {
     newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
 }
 
-function createTabElement(titleText, typeAttr) {
+function createTabElement(titleText, typeAttr, metadata = {}) {
     const tabDiv = document.createElement('div');
     tabDiv.className = 'tab';
     tabDiv.setAttribute('role', 'tab');
@@ -88,6 +93,14 @@ function createTabElement(titleText, typeAttr) {
     } else {
         tabDiv.setAttribute('data-special', typeAttr);
     }
+
+    Object.keys(metadata || {}).forEach(k => {
+        const attrName = 'data-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
+        const value = metadata[k];
+        if (value === undefined || value === null) return;
+        // store primitives directly; objects/arrays JSON-stringified
+        tabDiv.setAttribute(attrName, (typeof value === 'object') ? JSON.stringify(value) : String(value));
+    });
 
     const span = document.createElement('span');
     span.className = 'tab-title';
@@ -157,4 +170,32 @@ export function closeTab(tabElement) {
             switchView('placeholder');
         }
     }
+}
+
+export function openOverviewTab(roomName = null) {
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return;
+
+    let existing = null;
+    if (roomName) {
+        existing = [...tabsContainer.querySelectorAll('.tab')]
+            .find(tab => tab.getAttribute('data-special') === 'room-overview'
+                && tab.getAttribute('data-related-room') === roomName);
+    }
+    if (!existing) {
+        existing = [...tabsContainer.querySelectorAll('.tab')]
+            .find(tab => tab.getAttribute('data-special') === 'room-overview');
+    }
+    
+    if (existing) {
+        activateTab(existing);
+        return;
+    }
+
+    const title = roomName ? `Overview - ${roomName}` : 'Rooms';
+    const metadata = roomName ? { relatedRoom: roomName } : {};
+    const newTab = createTabElement(title, 'room-overview', metadata);
+    tabsContainer.appendChild(newTab);
+    activateTab(newTab);
+    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
 }

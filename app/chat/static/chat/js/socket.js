@@ -28,7 +28,7 @@ export function createChatSocket(room) {
 
         if (data.type === 'init') {
             const chatLog = document.getElementById('chat-log');
-            if (chatLog) chatLog.innerHTML = '';
+            document.querySelectorAll("#chat-log .message").forEach(el => el.remove());
             data.message_history.forEach(appendMessage);
         } else if (data.type === 'chat_message') {
             appendMessage({ user: data.user, content: data.content });

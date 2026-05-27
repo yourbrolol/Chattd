@@ -900,12 +900,36 @@ body {
 }
 
 #chat {
+    position: relative;
     flex: 1;
     min-height: 0;
     display: grid;
     grid-template-rows: 1fr auto;
     background: #0f172a;
     overflow: hidden;
+}
+
+#hamburger-btn {
+    position: absolute;
+    top: 2%;
+    right: 1%;
+    z-index: 9999;
+
+    /* width: 44px;
+    height: 44px; */
+    padding: 0.5% 1%;
+    border-radius: 10px;
+
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+
+    font-size: 1.4rem;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #chat-log {

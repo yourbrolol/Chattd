@@ -2,8 +2,9 @@ import { sendMessage } from './socket.js';
 import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab } from './tabs.js';
 import { handleGroupSubmission, cancelGroupCreation } from './group.js';
 import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
-import { openChatTab } from './tabs.js';
+import { openChatTab, openOverviewTab } from './tabs.js';
 import { applyToRoom, reviewApplication, loadPendingApplications } from './applications.js';
+import { renderRoomOverview } from './overview.js';
 import { switchView } from './views.js';
 
 function bindMessageInput() {
@@ -269,6 +270,15 @@ function bindGroupCreation() {
     });
 }
 
+// Room overview flow
+
+function openRoomOverview() {
+    const btn = document.getElementById('hamburger-btn');
+    btn?.addEventListener('click', () => {
+        renderRoomOverview();
+    });
+}
+
 export function initApp() {
     bindMessageInput();
     bindTabs();
@@ -278,6 +288,7 @@ export function initApp() {
     bindGroupCreation();
     bindApplyRoomView();
     bindReviewApplicationsView();
+    openRoomOverview();
     loadRooms((name) => { void openChatTab(name); });
     updateReviewBadge();
 }
