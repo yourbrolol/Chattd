@@ -1,0 +1,73 @@
+@media (max-width: 768px) {
+    html {
+        font-size: 0.55rem;
+    }
+    #title-decorator {
+        width: 20%;
+    }
+    .title {
+        font-size: 1.4rem;
+    }
+    #user {
+        padding-right: 1%;
+    }
+    #username-p {
+        font-size: 1.4rem;
+        width: 18.5vw;
+    }
+    #chats {
+        margin-top: 2vh;
+        border-radius: 1.5rem;
+    }
+    #chats-text {
+        height: 5vh;
+    }
+    .message {
+        width: 90%;
+        font-size: 1.5rem;
+    }
+    #avatar {
+        width: 8vw;
+        height: 8vw;
+    }
+    #chat-message-input {
+        width: 60%;
+    }
+    #chat-message-submit {
+        width: 20%;
+    }
+    /* make tabs scrollable and compact on small screens */
+    #tabs-container {
+        padding: 0 0.5rem;
+        height: 38px;
+    }
+    #tabs {
+        gap: 0.35rem;
+    }
+    .tab {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.95rem;
+        margin-bottom: -1px;
+        height: calc(100% - 4px);
+    }
+    .tabs-divider {
+        height: 18px;
+        margin: 0 0.5rem 7px;
+    }
+    #add-tab-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+        margin-bottom: 4px;
+        border-radius: 4px;
+    }
+    .join-room-card {
+        padding: 1.25rem 1.5rem;
+    }
+    .join-room-card__input-row {
+        flex-direction: column;
+    }
+    .join-room-card__btn {
+        width: 100%;
+    }
+}

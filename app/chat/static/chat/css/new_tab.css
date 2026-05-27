@@ -1,0 +1,27 @@
+.new-tab-dashboard {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.new-tab-dashboard h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    letter-spacing: -0.025em;
+}
+
+.new-tab-dashboard .subtitle {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin: 0 0 2.5rem 0;
+}
+

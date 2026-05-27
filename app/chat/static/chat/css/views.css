@@ -1,0 +1,60 @@
+.chat-placeholder-view,
+.new-tab-view,
+.group-creation-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #0f172a;
+    color: #f1f5f9;
+    box-sizing: border-box;
+}
+
+/* Chat Placeholder View Styling */
+.chat-placeholder-view {
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.placeholder-content {
+    max-width: 520px;
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: auto;
+    box-sizing: border-box;
+    padding: 3.25rem 3.5rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.placeholder-icon {
+    font-size: 4.5rem;
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+.placeholder-content h2 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.025em;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.65;
+    color: #94a3b8;
+}
+

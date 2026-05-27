@@ -1,0 +1,50 @@
+.apply-room-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #0f172a;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.apply-room-view .form-container {
+    text-align: center;
+}
+
+.apply-room-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.apply-room-desc {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0 0 1.25rem 0;
+}
+
+.apply-room-name-label {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    margin: 0 0 1.75rem 0;
+}
+
+.apply-room-name-label strong {
+    color: #f1f5f9;
+}
+
+.form-success {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 0.5rem;
+    color: #6ee7b7;
+    font-size: 0.875rem;
+    text-align: left;
+}
+

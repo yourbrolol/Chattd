@@ -1,0 +1,143 @@
+.review-applications-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #0f172a;
+    box-sizing: border-box;
+}
+
+.review-applications-container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.review-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.review-header h2 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin: 0 0 0.4rem 0;
+}
+
+.review-header .subtitle {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.applications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.application-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.875rem;
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: border-color 0.15s;
+}
+
+.application-card--loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.application-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.application-card__user {
+    font-weight: 700;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.application-card__room {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.application-card__room strong {
+    color: #cbd5e1;
+}
+
+.application-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.btn-approve:hover {
+    filter: brightness(1.15);
+}
+
+.btn-approve:disabled,
+.btn-reject:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-reject {
+    background: transparent;
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-reject:hover {
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.applications-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+    gap: 0.75rem;
+}
+
+.applications-empty-icon {
+    font-size: 3rem;
+}
+
+.applications-empty p {
+    margin: 0;
+    font-size: 1rem;
+}
+
