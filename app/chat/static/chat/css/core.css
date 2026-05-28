@@ -15,3 +15,35 @@ body {
 .hidden {
     display: none;
 }
+
+.btn-primary {
+    flex: 1;
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #334155;
+    color: #ffffff;
+}

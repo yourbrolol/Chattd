@@ -13,4 +13,6 @@ urlpatterns = [
     path("rooms/applications/<int:application_id>/review/", views.review_application_view, name="review_application"),
     path("rooms/applications/pending/", views.pending_applications_view, name="pending_applications"),
     path("rooms/<str:room_name>/", views.room_details, name="room_detail"),
+    path("rooms/<str:room_name>/leave/", views.leave_room_view, name="leave_room"),
+    path("rooms/<str:room_name>/delete/", views.delete_room_view, name="delete_room"),
 ]

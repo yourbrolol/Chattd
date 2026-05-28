@@ -1,6 +1,6 @@
 import { openChatTab } from './tabs.js';
 import { state } from './state.js';
-import { openOverviewTab, openApplicationsTab } from './tabs.js';
+import { openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
 
 function escapeHtml(str) {
     return String(str || '')
@@ -49,6 +49,31 @@ export async function renderRoomOverview(roomName = null) {
         const appsBtn = view.querySelector('#overview-apps-btn');
         appsBtn?.addEventListener('click', () => {
             openApplicationsTab();
+        });
+
+        const deleteBtn = view.querySelector('#room-overview-delete-btn');
+        deleteBtn?.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+                return;
+            }
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const delRes = await fetch(`/rooms/${encodeURIComponent(room.name)}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                });
+                if (!delRes.ok) {
+                    alert('Failed to delete room. You might not have permission to do this.');
+                    return;
+                }
+                alert('Room deleted successfully.');
+                closeActiveTab();
+            } catch (err) {
+                alert('An error occurred while trying to delete the room.');
+                console.error('Delete room error:', err);
+            }
         });
 
         const memberTemplate = view.querySelector('.member-card');

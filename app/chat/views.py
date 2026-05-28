@@ -155,6 +155,28 @@ def room_details(request, room_name):
 
 @login_required
 @require_POST
+def leave_room_view(request, room_name):
+    room = ChatRoom.objects.filter(name=room_name).first()
+    if not room: return JsonResponse({"error": "not_found"}, status=404)
+
+    if not room.members.filter(pk=request.user.pk).exists(): return JsonResponse({"error": "not_member"}, status=403)
+
+    room.members.remove(request.user)
+    return JsonResponse({"message": "left_room"})
+
+@login_required
+@require_POST
+def delete_room_view(request, room_name):
+    room = ChatRoom.objects.filter(name=room_name).first()
+    if not room: return JsonResponse({"error": "not_found"}, status=404)
+
+    if room.owner_id != request.user.pk: return JsonResponse({"error": "forbidden"}, status=403)
+
+    room.delete()
+    return JsonResponse({"message": "room_deleted"})
+
+@login_required
+@require_POST
 def join_room_view(request):
     room_name = request.POST.get('room_name', '').strip()
     room, status = join_room_sync(room_name, request.user)

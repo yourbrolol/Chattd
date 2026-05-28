@@ -215,6 +215,9 @@
     transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
+#room-overview-delete-btn {
+    background: #ff0000;
+}
 .overview-box-btn:hover {
     background: #2563eb;
     transform: translateY(-1px);
