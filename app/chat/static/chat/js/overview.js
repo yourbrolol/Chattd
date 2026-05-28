@@ -52,6 +52,12 @@ export async function renderRoomOverview(roomName = null) {
         });
 
         const memberTemplate = view.querySelector('.member-card');
+        const membersList = view.querySelector('#overview-members-list');
+
+        // Clear existing members (but keep the template)
+        if (membersList) {
+            membersList.querySelectorAll('.member-card:not(.hidden)').forEach(el => el.remove());
+        }
 
         let total = 0;
 
@@ -61,7 +67,7 @@ export async function renderRoomOverview(roomName = null) {
             console.log(member)
             memberEl.querySelector('.member-card__name').textContent = member.user__username;
             memberEl.querySelector('.member-card__meta').textContent = member.role;
-            view.querySelector('#overview-members-list')?.appendChild(memberEl);
+            membersList?.appendChild(memberEl);
             total++;
         });
 

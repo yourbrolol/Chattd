@@ -186,10 +186,6 @@ export function openOverviewTab(roomName = null) {
             .find(tab => tab.getAttribute('data-special') === 'room-overview'
                 && tab.getAttribute('data-related-room') === roomName);
     }
-    if (!existing) {
-        existing = [...tabsContainer.querySelectorAll('.tab')]
-            .find(tab => tab.getAttribute('data-special') === 'room-overview');
-    }
     
     if (existing) {
         activateTab(existing);
