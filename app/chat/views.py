@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from asgiref.sync import sync_to_async
@@ -70,7 +71,7 @@ class AsyncFormView(FormView):
     async def trace(self, request, *args, **kwargs):
         return await sync_to_async(self.http_method_not_allowed)(request, *args, **kwargs)
 
-class ChatView(TemplateView):
+class ChatView(LoginRequiredMixin, TemplateView):
     template_name = "chat/index.html"
 
 class RegisterView(AsyncFormView):
