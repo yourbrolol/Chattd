@@ -31,6 +31,7 @@
                     <p id="username-p">Logged out</p>
                 {% endif %}
                 <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
+                <a href="{% url 'logout' %}" id="logout-link" class="btn-primary">Logout</a>
             </div>
         </nav>
         <div id="main">

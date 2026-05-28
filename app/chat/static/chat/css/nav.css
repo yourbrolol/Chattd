@@ -48,3 +48,12 @@
     object-fit: cover;
 }
 
+#logout-link {
+    padding: 0.25rem 0.75rem;
+    background: #ef4444;
+    color: #f1f5f9;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+}
