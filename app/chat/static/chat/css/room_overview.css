@@ -51,6 +51,13 @@
     border-radius: 0.75rem;
 }
 
+.overview-box-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 0.5rem;
+}
+
 .overview-box-p {
     margin: 0;
     padding: 0.65rem 0.5rem 0;
@@ -59,6 +66,18 @@
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+#overview-apps {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+#overview-apps .overview-box-p {
+    padding: 0;
 }
 
 .overview-box-list {
@@ -176,3 +195,24 @@
     align-items: center;
 }
 
+.overview-box-btn {
+    padding: 0.5rem 1rem;
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.overview-box-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.overview-box-btn:active {
+    transform: translateY(0);
+}

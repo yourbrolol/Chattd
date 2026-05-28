@@ -1,6 +1,6 @@
 import { openChatTab } from './tabs.js';
 import { state } from './state.js';
-import { openOverviewTab } from './tabs.js';
+import { openOverviewTab, openApplicationsTab } from './tabs.js';
 
 function escapeHtml(str) {
     return String(str || '')
@@ -44,6 +44,11 @@ export async function renderRoomOverview(roomName = null) {
 
         joinBtn?.addEventListener('click', async () => {
             await openChatTab(room.name);
+        });
+
+        const appsBtn = view.querySelector('#overview-apps-btn');
+        appsBtn?.addEventListener('click', () => {
+            openApplicationsTab();
         });
 
         const memberTemplate = view.querySelector('.member-card');

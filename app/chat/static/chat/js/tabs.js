@@ -19,7 +19,8 @@ export function activateTab(tabElement) {
     const room = tabElement.getAttribute('data-room');
     const isGroupCreation = tabElement.getAttribute('data-special') === 'group-creation';
     const isNewTab = tabElement.getAttribute('data-special') === 'new-tab';
-    const isRoomOverview = tabElement.getAttribute('data-special') === 'room-overview'
+    const isRoomOverview = tabElement.getAttribute('data-special') === 'room-overview';
+    const isApplications = tabElement.getAttribute('data-special') === 'review-applications';
 
     if (state.chatSocket) {
         state.chatSocket.close();
@@ -36,6 +37,9 @@ export function activateTab(tabElement) {
         const related = tabElement.getAttribute('data-related-room');
         state.currentRoom = related ? related : null;
         switchView('room-overview');
+    } else if (isApplications) {
+        state.currentRoom = null;
+        switchView('review-applications');
     } else if (room) {
         state.currentRoom = room;
         switchView('chat');
@@ -195,6 +199,24 @@ export function openOverviewTab(roomName = null) {
     const title = roomName ? `Overview - ${roomName}` : 'Rooms';
     const metadata = roomName ? { relatedRoom: roomName } : {};
     const newTab = createTabElement(title, 'room-overview', metadata);
+    tabsContainer.appendChild(newTab);
+    activateTab(newTab);
+    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+}
+
+export function openApplicationsTab() {
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return;
+
+    let existing = [...tabsContainer.querySelectorAll('.tab')]
+        .find(tab => tab.getAttribute('data-special') === 'review-applications');
+    
+    if (existing) {
+        activateTab(existing);
+        return;
+    }
+
+    const newTab = createTabElement('Applications', 'review-applications', {});
     tabsContainer.appendChild(newTab);
     activateTab(newTab);
     newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
