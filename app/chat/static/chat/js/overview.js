@@ -10,6 +10,50 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
+async function deleteRoom(roomName) {
+    if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const delRes = await fetch(`/rooms/${encodeURIComponent(roomName)}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+        });
+        if (!delRes.ok) {
+            alert('Failed to delete room. You might not have permission to do this.');
+            return;
+        }
+        alert('Room deleted successfully.');
+        closeActiveTab();
+    } catch (err) {
+        alert('An error occurred while trying to delete the room.');
+        console.error('Delete room error:', err);
+    }
+}
+
+async function leaveRoom(roomName) {
+    if (!confirm('Are you sure you want to leave this room?')) return;
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const leaveRes = await fetch(`/rooms/${encodeURIComponent(roomName)}/leave/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+        });
+        if (!leaveRes.ok) {
+            alert('Failed to leave room. You might not have permission to do this.');
+            return;
+        }
+        alert('You have left the room.');
+        closeActiveTab();
+    } catch (err) {
+        alert('An error occurred while trying to leave the room.');
+        console.error('Leave room error:', err);
+    }
+}
+
 // renderRoomOverview: render details only for a specific room.
 // If no roomName is provided, it falls back to state.currentRoom.
 export async function renderRoomOverview(roomName = null) {
@@ -43,62 +87,36 @@ export async function renderRoomOverview(roomName = null) {
         const isOwner = room.owner.username === state.username;
 
         const joinBtn = view.querySelector('#room-overview-join-btn');
-        joinBtn?.addEventListener('click', async () => {
-            await openChatTab(room.name);
-        });
+        if (joinBtn) {
+            joinBtn.onclick = async () => {
+                await openChatTab(room.name);
+            };
+        }
 
         const appsBtn = view.querySelector('#overview-apps-btn');
-        appsBtn?.addEventListener('click', () => {
-            openApplicationsTab();
-        });
+        if (appsBtn) {
+            appsBtn.onclick = () => {
+                openApplicationsTab();
+            };
+        }
 
         const deleteBtn = view.querySelector('#room-overview-delete-btn');
-        if (isOwner) deleteBtn?.classList.remove('hidden');
-        deleteBtn?.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
-            try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const delRes = await fetch(`/rooms/${encodeURIComponent(room.name)}/delete/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                    },
-                });
-                if (!delRes.ok) {
-                    alert('Failed to delete room. You might not have permission to do this.');
-                    return;
-                }
-                alert('Room deleted successfully.');
-                closeActiveTab();
-            } catch (err) {
-                alert('An error occurred while trying to delete the room.');
-                console.error('Delete room error:', err);
-            }
-        });
+        if (deleteBtn) {
+            if (isOwner) deleteBtn.classList.remove('hidden');
+            else deleteBtn.classList.add('hidden');
+            deleteBtn.onclick = async () => {
+                await deleteRoom(room.name);
+            };
+        }
 
         const leaveBtn = view.querySelector('#room-overview-leave-btn');
-        if (!isOwner) leaveBtn?.classList.remove('hidden');
-        leaveBtn?.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to leave this room?')) return;
-            try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const leaveRes = await fetch(`/rooms/${encodeURIComponent(room.name)}/leave/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                    },
-                });
-                if (!leaveRes.ok) {
-                    alert('Failed to leave room. You might not have permission to do this.');
-                    return;
-                }
-                alert('You have left the room.');
-                closeActiveTab();
-            } catch (err) {
-                alert('An error occurred while trying to leave the room.');
-                console.error('Leave room error:', err);
-            }
-        });
+        if (leaveBtn) {
+            if (!isOwner) leaveBtn.classList.remove('hidden');
+            else leaveBtn.classList.add('hidden');
+            leaveBtn.onclick = async () => {
+                await leaveRoom(room.name);
+            };
+        }
 
         const memberTemplate = view.querySelector('.member-card');
         const membersList = view.querySelector('#overview-members-list');
