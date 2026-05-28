@@ -1,14 +1,15 @@
 **Critical:**
 
--
+- Isolate tabs more aggresively
 
 **Importaant:**
 
-- Change template rendering completely. The primary template should be rendered by views.py, then it connects to the websocker and consumers.py renders everything else.
+- Change data-related-room to data-related-tab
 
 **Minor:**
 
--
+- Add a logout button
+- Update chats pane more often / connect it to a script
 
 **Probing**
 

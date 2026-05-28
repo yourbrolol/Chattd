@@ -1,4 +1,4 @@
-import { openChatTab } from './tabs.js';
+import { openChatTab, closeTab } from './tabs.js';
 import { state } from './state.js';
 import { openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
 
@@ -8,6 +8,15 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+function closeRoomTabs(roomName) {
+    const overviewTab = document.querySelector(`#tabs .tab[data-special="room-overview"][data-related-room="${roomName}"]`);
+    const chatTab = document.querySelector(`#tabs .tab[data-room="${roomName}"]`);
+
+    if (overviewTab) closeTab(overviewTab);
+    if (chatTab) closeTab(chatTab);
+    if (!overviewTab && !chatTab) closeActiveTab();
 }
 
 async function deleteRoom(roomName) {
@@ -25,7 +34,7 @@ async function deleteRoom(roomName) {
             return;
         }
         alert('Room deleted successfully.');
-        closeActiveTab();
+        closeRoomTabs(roomName);
     } catch (err) {
         alert('An error occurred while trying to delete the room.');
         console.error('Delete room error:', err);
@@ -47,7 +56,7 @@ async function leaveRoom(roomName) {
             return;
         }
         alert('You have left the room.');
-        closeActiveTab();
+        closeRoomTabs(roomName);
     } catch (err) {
         alert('An error occurred while trying to leave the room.');
         console.error('Leave room error:', err);
@@ -84,7 +93,8 @@ export async function renderRoomOverview(roomName = null) {
         const room = await res.json();
         view.querySelector('#room-type').textContent = `Type: ${escapeHtml(room.room_type)}`;
 
-        const isOwner = room.owner.username === state.username;
+        const isOwner = room.owner === state.username;
+        console.log('Room details:', room, 'Is owner:', isOwner);
 
         const joinBtn = view.querySelector('#room-overview-join-btn');
         if (joinBtn) {
