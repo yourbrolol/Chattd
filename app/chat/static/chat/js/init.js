@@ -60,6 +60,9 @@ function bindTabKeyboard() {
         } else if (e.key === '4') {
             e.preventDefault();
             closeActiveTab();
+        } else if (e.key === '5') {
+            e.preventDefault();
+            renderRoomOverview();
         }
     });
 }
