@@ -1,6 +1,6 @@
 .chat-placeholder-view,
 .new-tab-view,
-.group-creation-view {
+.room-creation-view {
     flex: 1;
     min-height: 0;
     overflow-y: auto;

@@ -6,7 +6,7 @@ export async function handleGroupSubmission(e) {
 
     const roomNameInput = document.getElementById('id_room_name');
     const roomTypeSelect = document.getElementById('id_room_type');
-    const errorsDiv = document.getElementById('group-creation-errors');
+    const errorsDiv = document.getElementById('room-creation-errors');
 
     if (!roomNameInput || !roomTypeSelect) return;
 
@@ -38,7 +38,7 @@ export async function handleGroupSubmission(e) {
             const tabsContainer = document.getElementById('tabs');
             if (tabsContainer) {
                 tabsContainer.querySelectorAll('.tab').forEach(tab => {
-                    if (tab.getAttribute('data-special') === 'group-creation') {
+                    if (tab.getAttribute('data-special') === 'room-creation') {
                         tab.remove();
                     }
                 });
@@ -63,7 +63,7 @@ export function cancelGroupCreation() {
     if (!tabsContainer) return;
 
     tabsContainer.querySelectorAll('.tab').forEach(tab => {
-        if (tab.getAttribute('data-special') === 'group-creation') {
+        if (tab.getAttribute('data-special') === 'room-creation') {
             closeTab(tab);
         }
     });

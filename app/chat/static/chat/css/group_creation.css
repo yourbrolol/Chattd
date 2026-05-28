@@ -1,4 +1,4 @@
-.group-creation-view {
+.room-creation-view {
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -26,7 +26,7 @@
     text-align: center;
 }
 
-.form-group {
+.form-room {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -34,14 +34,14 @@
     text-align: left;
 }
 
-.form-group label {
+.form-room label {
     font-size: 0.875rem;
     font-weight: 600;
     color: #cbd5e1;
 }
 
-.form-group input,
-.form-group select {
+.form-room input,
+.form-room select {
     background: #0f172a;
     border: 1px solid #334155;
     border-radius: 0.5rem;
@@ -52,8 +52,8 @@
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-room input:focus,
+.form-room select:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }

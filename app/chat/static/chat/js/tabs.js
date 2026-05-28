@@ -17,7 +17,7 @@ export function activateTab(tabElement) {
     tabElement.setAttribute('aria-selected', 'true');
 
     const room = tabElement.getAttribute('data-room');
-    const isGroupCreation = tabElement.getAttribute('data-special') === 'group-creation';
+    const isGroupCreation = tabElement.getAttribute('data-special') === 'room-creation';
     const isNewTab = tabElement.getAttribute('data-special') === 'new-tab';
     const isRoomOverview = tabElement.getAttribute('data-special') === 'room-overview';
     const isApplications = tabElement.getAttribute('data-special') === 'review-applications';
@@ -32,7 +32,7 @@ export function activateTab(tabElement) {
         switchView('new-tab');
     } else if (isGroupCreation) {
         state.currentRoom = null;
-        switchView('group-creation');
+        switchView('room-creation');
     } else if (isRoomOverview) {
         const related = tabElement.getAttribute('data-related-room');
         state.currentRoom = related ? related : null;

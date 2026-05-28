@@ -49,7 +49,7 @@
                         <!-- Dynamic tabs will be added here -->
                     </div>
                     <div class="tabs-divider" aria-hidden="true"></div>
-                    <button id="add-tab-btn" aria-label="Create group">+</button>
+                    <button id="add-tab-btn" aria-label="Create room">+</button>
                 </div>
                 
                 <!-- Active Chat View (hidden by default) -->
@@ -68,7 +68,7 @@
                     <div class="placeholder-content">
                         <div class="placeholder-icon">💬</div>
                         <h2>Welcome to SpreadTalk</h2>
-                        <p>Select a room from the left sidebar to start chatting, or click the "+" button above to create a new group.</p>
+                        <p>Select a room from the left sidebar to start chatting, or click the "+" button above to create a new room.</p>
                     </div>
                 </div>
 
@@ -99,7 +99,7 @@
                                 <div class="action-icon">👥</div>
                                 <h3>Create Room</h3>
                                 <p>Start a new public, private, or unlisted chat room with friends.</p>
-                                <button type="button" class="btn-primary" id="dashboard-create-group-btn">Create Group</button>
+                                <button type="button" class="btn-primary" id="dashboard-create-room-btn">Create Room</button>
                             </div>
                         </div>
                     </div>
@@ -175,17 +175,17 @@
                     </div>
                 </div>
 
-                <!-- Group Creation View (hidden by default) -->
-                <div id="group-creation-view" class="group-creation-view hidden">
+                <!-- Room Creation View (hidden by default) -->
+                <div id="room-creation-view" class="room-creation-view hidden">
                     <div class="form-container">
-                        <h2>Create New Group</h2>
-                        <form id="group-creation-form" method="POST">
-                            <div class="form-group">
-                                <label for="id_room_name">Group Name</label>
+                        <h2>Create New Room</h2>
+                        <form id="room-creation-form" method="POST">
+                            <div class="form-room">
+                                <label for="id_room_name">Room Name</label>
                                 <input type="text" id="id_room_name" name="room_name" maxlength="20" placeholder="e.g. gamers-club" required autocomplete="off">
                             </div>
-                            <div class="form-group">
-                                <label for="id_room_type">Group Type</label>
+                            <div class="form-room">
+                                <label for="id_room_type">Room Type</label>
                                 <select id="id_room_type" name="room_type" required>
                                     <option value="PUBLIC">Public</option>
                                     <option value="UNLISTED">Unlisted</option>
@@ -193,10 +193,10 @@
                                 </select>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn-primary">Create Group</button>
-                                <button type="button" class="btn-secondary" id="cancel-group-btn">Cancel</button>
+                                <button type="submit" class="btn-primary">Create Room</button>
+                                <button type="button" class="btn-secondary" id="cancel-room-btn">Cancel</button>
                             </div>
-                            <div id="group-creation-errors" class="form-errors hidden"></div>
+                            <div id="room-creation-errors" class="form-errors hidden"></div>
                         </form>
                     </div>
                 </div>
