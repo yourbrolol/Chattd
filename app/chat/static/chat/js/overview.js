@@ -40,8 +40,9 @@ export async function renderRoomOverview(roomName = null) {
         const room = await res.json();
         view.querySelector('#room-type').textContent = `Type: ${escapeHtml(room.room_type)}`;
 
-        const joinBtn = view.querySelector('#room-overview-join-btn');
+        const isOwner = room.owner.username === state.username;
 
+        const joinBtn = view.querySelector('#room-overview-join-btn');
         joinBtn?.addEventListener('click', async () => {
             await openChatTab(room.name);
         });
@@ -52,10 +53,9 @@ export async function renderRoomOverview(roomName = null) {
         });
 
         const deleteBtn = view.querySelector('#room-overview-delete-btn');
+        if (isOwner) deleteBtn?.classList.remove('hidden');
         deleteBtn?.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                return;
-            }
+            if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const delRes = await fetch(`/rooms/${encodeURIComponent(room.name)}/delete/`, {
@@ -76,10 +76,33 @@ export async function renderRoomOverview(roomName = null) {
             }
         });
 
+        const leaveBtn = view.querySelector('#room-overview-leave-btn');
+        if (!isOwner) leaveBtn?.classList.remove('hidden');
+        leaveBtn?.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to leave this room?')) return;
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const leaveRes = await fetch(`/rooms/${encodeURIComponent(room.name)}/leave/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                });
+                if (!leaveRes.ok) {
+                    alert('Failed to leave room. You might not have permission to do this.');
+                    return;
+                }
+                alert('You have left the room.');
+                closeActiveTab();
+            } catch (err) {
+                alert('An error occurred while trying to leave the room.');
+                console.error('Leave room error:', err);
+            }
+        });
+
         const memberTemplate = view.querySelector('.member-card');
         const membersList = view.querySelector('#overview-members-list');
 
-        // Clear existing members (but keep the template)
         if (membersList) {
             membersList.querySelectorAll('.member-card:not(.hidden)').forEach(el => el.remove());
         }

@@ -47,3 +47,8 @@ body {
     background: #334155;
     color: #ffffff;
 }
+
+.btn-danger {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
