@@ -45,9 +45,20 @@ export async function renderRoomOverview(roomName = null) {
         joinBtn?.addEventListener('click', async () => {
             await openChatTab(room.name);
         });
+
+        const memberTemplate = view.querySelector('.member-card');
+
+        room.members_data.forEach(member => {
+            const memberEl = memberTemplate.cloneNode(true);
+            memberEl.classList.remove('hidden');
+            console.log(member)
+            memberEl.querySelector('.member-card__name').textContent = member.user__username;
+            memberEl.querySelector('.member-card__meta').textContent = member.role;
+            view.getElementsByClassName('overview-members-list')?.[0]?.appendChild(memberEl);
+        });
     } catch (err) {
-        const list = view.querySelector('#overview-list');
-        if (list) list.textContent = 'Failed to load room details.';
+        const list = view.getElementsByClassName('overview-members-list');
+        if (list) list[0].textContent = 'Failed to load room details.';
         console.error('renderRoomOverview error:', err);
     }
 }

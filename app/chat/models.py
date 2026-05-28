@@ -37,7 +37,6 @@ class RoomMembership(models.Model):
     class Role(models.TextChoices):
         OWNER = 'owner', 'Owner'
         MEMBER = 'member', 'Member'
-        # Reserved for future permission tiers (not assigned yet).
         MODERATOR = 'moderator', 'Moderator'
         ADMIN = 'admin', 'Admin'
 
