@@ -48,17 +48,22 @@ export async function renderRoomOverview(roomName = null) {
 
         const memberTemplate = view.querySelector('.member-card');
 
+        let total = 0;
+
         room.members_data.forEach(member => {
             const memberEl = memberTemplate.cloneNode(true);
             memberEl.classList.remove('hidden');
             console.log(member)
             memberEl.querySelector('.member-card__name').textContent = member.user__username;
             memberEl.querySelector('.member-card__meta').textContent = member.role;
-            view.getElementsByClassName('overview-members-list')?.[0]?.appendChild(memberEl);
+            view.querySelector('#overview-members-list')?.appendChild(memberEl);
+            total++;
         });
+
+        view.querySelector('#overview-members-total').textContent = `Total members: ${total}`;
     } catch (err) {
-        const list = view.getElementsByClassName('overview-members-list');
-        if (list) list[0].textContent = 'Failed to load room details.';
+        const list = view.querySelector('#overview-members-list');
+        if (list) list.textContent = 'Failed to load room details.';
         console.error('renderRoomOverview error:', err);
     }
 }

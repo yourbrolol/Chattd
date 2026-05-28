@@ -105,6 +105,7 @@
                     </div>
                 </div>
 
+                <!-- Room Overview View (hidden by default) -->
                 <div id="room-overview-view" class="room-overview-view hidden">
                     <div class="overview-container">
                             <div class="overview-header">
@@ -117,17 +118,32 @@
                                 </div>
                             </div>
 
-                            <div id="overview-members" class="overview-members">
-                                <p id="overview-members-p">Members:</p>
-                                <div class="overview-members-list">
+                            <div id="overview-members" class="overview-box">
+                                <p id="overview-members-p" class="overview-box-p">Members:</p>
+                                <div id="overview-members-list" class="overview-box-list">
                                     <article class="member-card hidden">
                                         <div class="member-card__avatar">P</div>
                                         <div class="member-card__content">
                                             <p class="member-card__name">Jane Doe</p>
-                                            <p class="member-card__meta">Member · Active</p>
+                                            <p class="member-card__meta">Member</p>
                                         </div>
                                         <button type="button" class="member-card__kick-btn hidden">Kick</button>
                                     </article>
+                                </div>
+                                <p id="overview-members-total" class="overview-box-p">No members yet.</p>
+                            </div>
+
+                            <div id="overview-apps" class="overview-box">
+                                <p id="overview-apps-p" class="overview-box-p">Applications:</p>
+                                <div id="overview-apps-list" class="overview-box-list">
+                                    <!-- <article class="member-card hidden">
+                                        <div class="member-card__avatar">P</div>
+                                        <div class="member-card__content">
+                                            <p class="member-card__name">Jane Doe</p>
+                                            <p class="member-card__meta">Member</p>
+                                        </div>
+                                        <button type="button" class="member-card__kick-btn hidden">Kick</button>
+                                    </article> -->
                                 </div>
                             </div>
 
