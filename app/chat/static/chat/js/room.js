@@ -1,5 +1,6 @@
-import { openChatTab, closeTab } from './tabs.js';
+import { openChatTab, closeTab, getTabElementById } from './tabs.js';
 import { loadRooms } from './rooms.js';
+import { state } from './state.js';
 
 export async function handleGroupSubmission(e) {
     e.preventDefault();
@@ -36,13 +37,15 @@ export async function handleGroupSubmission(e) {
             loadRooms((name) => { void openChatTab(name); });
 
             const tabsContainer = document.getElementById('tabs');
-            if (tabsContainer) {
-                tabsContainer.querySelectorAll('.tab').forEach(tab => {
-                    if (tab.getAttribute('data-special') === 'room-creation') {
-                        tab.remove();
-                    }
-                });
-            }
+            // remove any temporary "room-creation" tabs via central registry
+            Object.keys(state.tabsById).forEach(id => {
+                const t = state.tabsById[id];
+                if (t && t.type === 'room-creation') {
+                    const el = getTabElementById(id);
+                    if (el) el.remove();
+                    delete state.tabsById[id];
+                }
+            });
 
             setTimeout(() => { void openChatTab(newRoomName); }, 100);
         } else if (errorsDiv) {
@@ -59,12 +62,12 @@ export async function handleGroupSubmission(e) {
 }
 
 export function cancelGroupCreation() {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
-
-    tabsContainer.querySelectorAll('.tab').forEach(tab => {
-        if (tab.getAttribute('data-special') === 'room-creation') {
-            closeTab(tab);
+    // close any room-creation tabs using the registry to ensure consistent cleanup
+    Object.keys(state.tabsById).forEach(id => {
+        const t = state.tabsById[id];
+        if (t && t.type === 'room-creation') {
+            const el = getTabElementById(id);
+            if (el) closeTab(el);
         }
     });
 }

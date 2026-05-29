@@ -16,11 +16,13 @@ export function activateTab(tabElement) {
     tabElement.classList.add('active');
     tabElement.setAttribute('aria-selected', 'true');
 
-    const room = tabElement.getAttribute('data-room');
-    const isGroupCreation = tabElement.getAttribute('data-special') === 'room-creation';
-    const isNewTab = tabElement.getAttribute('data-special') === 'new-tab';
-    const isRoomOverview = tabElement.getAttribute('data-special') === 'room-overview';
-    const isApplications = tabElement.getAttribute('data-special') === 'review-applications';
+    const tabId = tabElement.getAttribute('data-tab-id');
+    const tabInfo = tabId ? state.tabsById[tabId] : null;
+    const room = tabInfo && tabInfo.type === 'room' ? (tabInfo.metadata?.room || tabInfo.title) : null;
+    const isGroupCreation = tabInfo?.type === 'room-creation';
+    const isNewTab = tabInfo?.type === 'new-tab';
+    const isRoomOverview = tabInfo?.type === 'room-overview';
+    const isApplications = tabInfo?.type === 'review-applications';
 
     if (state.chatSocket) {
         state.chatSocket.close();
@@ -34,7 +36,7 @@ export function activateTab(tabElement) {
         state.currentRoom = null;
         switchView('room-creation');
     } else if (isRoomOverview) {
-        const related = tabElement.getAttribute('data-related-room');
+        const related = tabInfo?.metadata?.relatedRoom || null;
         state.currentRoom = related ? related : null;
         switchView('room-overview');
     } else if (isApplications) {
@@ -61,12 +63,17 @@ export async function openChatTab(roomName) {
     }
     showJoinError('');
 
-    const existingTab = [...tabsContainer.querySelectorAll('.tab')]
-        .find(tab => tab.getAttribute('data-room') === joinResult.name);
-
-    if (existingTab) {
-        activateTab(existingTab);
-        return true;
+    // prefer registry lookup to find existing room tab
+    const existingId = Object.keys(state.tabsById).find(id => {
+        const t = state.tabsById[id];
+        return t && t.type === 'room' && ((t.metadata && t.metadata.room === joinResult.name) || t.title === joinResult.name);
+    });
+    if (existingId) {
+        const existingTab = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
+        if (existingTab) {
+            activateTab(existingTab);
+            return true;
+        }
     }
 
     const newTab = createTabElement(joinResult.name, 'room');
@@ -92,17 +99,24 @@ function createTabElement(titleText, typeAttr, metadata = {}) {
     tabDiv.setAttribute('role', 'tab');
     tabDiv.setAttribute('aria-selected', 'false');
 
+    // generate a simple unique id for the tab and register metadata centrally
+    const tabId = `t-${Date.now().toString(36)}-${Math.floor(Math.random()*10000).toString(36)}`;
+    tabDiv.setAttribute('data-tab-id', tabId);
+
+    // make a shallow copy of metadata we can augment
+    const metaCopy = Object.assign({}, metadata || {});
     if (typeAttr === 'room') {
         tabDiv.setAttribute('data-room', titleText);
+        // store canonical room identifier in metadata for registry lookups
+        metaCopy.room = titleText;
     } else {
         tabDiv.setAttribute('data-special', typeAttr);
     }
 
-    Object.keys(metadata || {}).forEach(k => {
+    Object.keys(metaCopy).forEach(k => {
         const attrName = 'data-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
-        const value = metadata[k];
+        const value = metaCopy[k];
         if (value === undefined || value === null) return;
-        // store primitives directly; objects/arrays JSON-stringified
         tabDiv.setAttribute(attrName, (typeof value === 'object') ? JSON.stringify(value) : String(value));
     });
 
@@ -120,6 +134,14 @@ function createTabElement(titleText, typeAttr, metadata = {}) {
 
     tabDiv.appendChild(span);
     tabDiv.appendChild(closeBtn);
+
+    // store a structured representation in the central registry
+    state.tabsById[tabId] = {
+        id: tabId,
+        title: String(titleText),
+        type: typeAttr,
+        metadata: metaCopy
+    };
     return tabDiv;
 }
 
@@ -159,7 +181,11 @@ export function closeTab(tabElement) {
     if (!tabsContainer) return;
 
     const isActive = tabElement.classList.contains('active');
+    const tabId = tabElement.getAttribute('data-tab-id');
     tabElement.remove();
+
+    // clean up central registry
+    if (tabId && state.tabsById[tabId]) delete state.tabsById[tabId];
 
     if (isActive) {
         const remainingTabs = tabsContainer.querySelectorAll('.tab');
@@ -176,20 +202,67 @@ export function closeTab(tabElement) {
     }
 }
 
+// Helper utilities for safer tab edits and metadata handling
+export function getTabElementById(tabId) {
+    if (!tabId) return null;
+    return document.querySelector(`#tabs .tab[data-tab-id="${tabId}"]`);
+}
+
+export function updateTabTitle(tabId, newTitle) {
+    const el = getTabElementById(tabId);
+    if (!el) return false;
+    const span = el.querySelector('.tab-title');
+    if (span) span.textContent = String(newTitle);
+    if (state.tabsById[tabId]) state.tabsById[tabId].title = String(newTitle);
+    return true;
+}
+
+export function setTabMetadata(tabId, metadata) {
+    const el = getTabElementById(tabId);
+    if (!el) return false;
+    const meta = metadata || {};
+    Object.keys(meta).forEach(k => {
+        const attrName = 'data-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
+        const value = meta[k];
+        if (value === undefined || value === null) {
+            el.removeAttribute(attrName);
+        } else {
+            el.setAttribute(attrName, (typeof value === 'object') ? JSON.stringify(value) : String(value));
+        }
+    });
+    if (state.tabsById[tabId]) {
+        state.tabsById[tabId].metadata = Object.assign({}, state.tabsById[tabId].metadata, meta);
+        // if special/type changed, keep the typed field in sync
+        if (meta.special) state.tabsById[tabId].type = String(meta.special);
+        if (meta.type) state.tabsById[tabId].type = String(meta.type);
+    }
+    return true;
+}
+
+export function getTabMetadata(tabId) {
+    return state.tabsById[tabId] ? state.tabsById[tabId].metadata : null;
+}
+
 export function openOverviewTab(roomName = null) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
-
-    let existing = null;
+    // try registry-first lookup for overview tab
+    let existingId = null;
     if (roomName) {
-        existing = [...tabsContainer.querySelectorAll('.tab')]
-            .find(tab => tab.getAttribute('data-special') === 'room-overview'
-                && tab.getAttribute('data-related-room') === roomName);
+        existingId = Object.keys(state.tabsById).find(id => {
+            const t = state.tabsById[id];
+            return t && t.type === 'room-overview' && t.metadata && t.metadata.relatedRoom === roomName;
+        });
+    } else {
+        existingId = Object.keys(state.tabsById).find(id => {
+            const t = state.tabsById[id];
+            return t && t.type === 'room-overview' && !(t.metadata && t.metadata.relatedRoom);
+        });
     }
-    
-    if (existing) {
-        activateTab(existing);
-        return;
+
+    if (existingId) {
+        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
+        if (existing) { activateTab(existing); return; }
     }
 
     const title = roomName ? `Overview - ${roomName}` : 'Rooms';
@@ -203,13 +276,13 @@ export function openOverviewTab(roomName = null) {
 export function openApplicationsTab() {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
-
-    let existing = [...tabsContainer.querySelectorAll('.tab')]
-        .find(tab => tab.getAttribute('data-special') === 'review-applications');
-    
-    if (existing) {
-        activateTab(existing);
-        return;
+    const existingId = Object.keys(state.tabsById).find(id => {
+        const t = state.tabsById[id];
+        return t && t.type === 'review-applications';
+    });
+    if (existingId) {
+        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
+        if (existing) { activateTab(existing); return; }
     }
 
     const newTab = createTabElement('Applications', 'review-applications', {});

@@ -1,8 +1,8 @@
 import { sendMessage } from './socket.js';
-import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab } from './tabs.js';
+import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab, updateTabTitle, setTabMetadata, getTabElementById, openChatTab, openOverviewTab } from './tabs.js';
+import { state } from './state.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
-import { openChatTab, openOverviewTab } from './tabs.js';
 import { applyToRoom, reviewApplication, loadPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
 import { switchView } from './views.js';
@@ -264,11 +264,15 @@ function bindGroupCreation() {
 
     document.getElementById('dashboard-create-room-btn')?.addEventListener('click', () => {
         const activeTab = document.querySelector('#tabs .tab.active');
-        if (activeTab && activeTab.getAttribute('data-special') === 'new-tab') {
-            activeTab.setAttribute('data-special', 'room-creation');
-            const titleSpan = activeTab.querySelector('.tab-title');
-            if (titleSpan) titleSpan.textContent = 'Create Room';
-            activateTab(activeTab);
+        const tabId = activeTab?.getAttribute('data-tab-id');
+        if (tabId) {
+            const t = tabId ? state.tabsById[tabId] : null;
+            if (t && t.type === 'new-tab') {
+                setTabMetadata(tabId, { special: 'room-creation' });
+                updateTabTitle(tabId, 'Create Room');
+                const el = getTabElementById(tabId);
+                if (el) activateTab(el);
+            }
         }
     });
 }
