@@ -1,0 +1,31 @@
+<div class="new-tab-view">
+    <div class="new-tab-dashboard">
+        <h2>New Workspace Tab</h2>
+        <p class="subtitle">Select an action to get started in this tab</p>
+        <div class="actions-grid">
+            <div class="action-bar join-room-card">
+                <div class="join-room-card__header">
+                    <div class="join-room-card__icon" aria-hidden="true">🔗</div>
+                    <div class="join-room-card__titles">
+                        <h3>Join a Room</h3>
+                        <p class="join-room-card__hint">Enter an existing room name to jump in instantly.</p>
+                    </div>
+                </div>
+                <div class="join-room-card__form">
+                    <label class="join-room-card__label">Room name</label>
+                    <div class="join-room-card__input-row">
+                        <input type="text" data-role="join-room-input" class="dashboard-join-room-input" name="room_name" maxlength="20" placeholder="e.g. gamers-club" required autocomplete="off">
+                        <button type="button" class="btn-primary join-room-card__btn" data-role="join-room-btn">Join</button>
+                    </div>
+                    <div data-role="join-room-errors" class="form-errors hidden"></div>
+                </div>
+            </div>
+            <div class="action-card">
+                <div class="action-icon">👥</div>
+                <h3>Create Room</h3>
+                <p>Start a new public, private, or unlisted chat room with friends.</p>
+                <button type="button" class="btn-primary" data-role="create-room-btn">Create Room</button>
+            </div>
+        </div>
+    </div>
+</div>

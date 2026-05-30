@@ -1,0 +1,24 @@
+<div class="room-creation-view">
+    <div class="form-container">
+        <h2>Create New Room</h2>
+        <form data-role="room-creation-form" method="POST">
+            <div class="form-room">
+                <label>Room Name</label>
+                <input type="text" data-role="room-name-input" name="room_name" maxlength="20" placeholder="e.g. gamers-club" required autocomplete="off">
+            </div>
+            <div class="form-room">
+                <label>Room Type</label>
+                <select data-role="room-type-select" name="room_type" required>
+                    <option value="PUBLIC">Public</option>
+                    <option value="UNLISTED">Unlisted</option>
+                    <option value="PRIVATE">Private</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Create Room</button>
+                <button type="button" class="btn-secondary" data-role="cancel-room-btn">Cancel</button>
+            </div>
+            <div data-role="room-creation-errors" class="form-errors hidden"></div>
+        </form>
+    </div>
+</div>

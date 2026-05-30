@@ -1,0 +1,37 @@
+<div class="room-overview-view">
+    <div class="overview-container">
+        <div class="overview-header">
+            <div class="overview-header__titles">
+                <h2 data-role="room-name">Room_name</h2>
+                <div data-role="room-type" class="overview-meta">Type: Public</div>
+            </div>
+            <div class="overview-actions">
+                <button data-role="room-overview-join-btn" class="btn-primary">Open Room</button>
+                <button data-role="room-overview-delete-btn" class="btn-secondary btn-danger hidden">Delete Room</button>
+                <button data-role="room-overview-leave-btn" class="btn-secondary btn-danger hidden">Leave Room</button>
+            </div>
+        </div>
+
+        <div class="overview-box" data-role="overview-members">
+            <p class="overview-box-p">Members:</p>
+            <div class="overview-box-list" data-role="overview-members-list">
+                <article class="member-card hidden" data-role="member-card-template">
+                    <div class="member-card__avatar">P</div>
+                    <div class="member-card__content">
+                        <p class="member-card__name">Jane Doe</p>
+                        <p class="member-card__meta">Member</p>
+                    </div>
+                    <button type="button" class="member-card__kick-btn hidden" data-role="member-kick-btn">Kick</button>
+                </article>
+            </div>
+            <p class="overview-box-p overview-members-total" data-role="overview-members-total">No members yet.</p>
+        </div>
+        
+        <div class="overview-apps" data-role="overview-apps">
+            <p class="overview-box-p">Applications:</p>
+            <button type="button" class="overview-box-btn" data-role="overview-apps-btn">View All</button>
+        </div>
+
+        <div data-role="error-message" class="form-errors hidden"></div>
+    </div>
+</div>

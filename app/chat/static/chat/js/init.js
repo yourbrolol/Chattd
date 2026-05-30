@@ -1,24 +1,47 @@
 import { sendMessage } from './socket.js';
-import { openNewTab, activateTab, cycleTabLeft, cycleTabRight, closeActiveTab } from './tabs.js';
+import {
+    openNewTab,
+    activateTab,
+    cycleTabLeft,
+    cycleTabRight,
+    closeActiveTab,
+    updateTabTitle,
+    setTabMetadata,
+    getTabElementById,
+    openChatTab,
+    openOverviewTab,
+    openTab,
+    openSettingsTab,
+    openApplicationsTab,
+    TAB_HANDLERS
+} from './tabs.js';
+import { state } from './state.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
-import { openChatTab, openOverviewTab } from './tabs.js';
 import { applyToRoom, reviewApplication, loadPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
-import { switchView } from './views.js';
 
-function bindMessageInput() {
-    const msgInput = document.getElementById('chat-message-input');
+function setUsername() {
+    const userEl = document.getElementById('username-p');
+    if (userEl) state.username = userEl.textContent || null;
+}
+
+export function bindMessageInput(contentNode) {
+    const msgInput = contentNode.querySelector('[data-role="chat-message-input"]');
     msgInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') sendMessage(contentNode);
     });
 
-    const submitBtn = document.getElementById('chat-message-submit');
-    if (submitBtn) submitBtn.onclick = sendMessage;
+    const submitBtn = contentNode.querySelector('[data-role="chat-message-submit"]');
+    if (submitBtn) {
+        submitBtn.onclick = () => sendMessage(contentNode);
+    }
 }
 
 function bindTabs() {
-    document.getElementById('add-tab-btn')?.addEventListener('click', openNewTab);
+    document.getElementById('add-tab-btn')?.addEventListener('click', () => {
+        openNewTab();
+    });
 
     document.getElementById('tabs')?.addEventListener('click', (e) => {
         const clickedTab = e.target.closest('.tab');
@@ -38,12 +61,17 @@ function bindSlashFocus() {
         if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         if (isTypingTarget(e.target)) return;
 
-        const chatView = document.getElementById('chat');
-        const input = document.getElementById('chat-message-input');
-        if (!input || chatView?.classList.contains('hidden')) return;
-
-        e.preventDefault();
-        input.focus();
+        // Find active chat input
+        const activeTab = document.querySelector('#tabs .tab.active');
+        const tabId = activeTab?.getAttribute('data-tab-id');
+        const tabInfo = tabId ? state.tabsById[tabId] : null;
+        if (tabInfo && tabInfo.type === 'room') {
+            const input = tabInfo.contentNode?.querySelector('[data-role="chat-message-input"]');
+            if (input) {
+                e.preventDefault();
+                input.focus();
+            }
+        }
     }, true);
 }
 
@@ -62,43 +90,42 @@ function bindTabKeyboard() {
             closeActiveTab();
         } else if (e.key === '5') {
             e.preventDefault();
-            renderRoomOverview();
+            // Alt+5 shortcut: open/refresh overview for active room
+            const activeTab = document.querySelector('#tabs .tab.active');
+            const tabId = activeTab?.getAttribute('data-tab-id');
+            const tabInfo = tabId ? state.tabsById[tabId] : null;
+            if (tabInfo && tabInfo.type === 'room-overview') {
+                // Already on overview, refresh it!
+                const handler = TAB_HANDLERS[tabInfo.type];
+                if (handler && handler.onActivate) {
+                    handler.onActivate(tabInfo.contentNode, tabInfo);
+                }
+            } else if (state.currentRoom) {
+                openOverviewTab(state.currentRoom);
+            }
         }
     });
 }
 
-// ---------- Apply-to-room view ----------
+export function bindApplyRoomView(contentNode, roomName) {
+    const nameEl = contentNode.querySelector('[data-role="apply-room-name"]');
+    if (nameEl) nameEl.textContent = roomName || '';
 
-let _pendingApplyRoomName = null;
-
-function showApplyRoomView(roomName) {
-    _pendingApplyRoomName = roomName;
-    const nameEl = document.getElementById('apply-room-name');
-    if (nameEl) nameEl.textContent = roomName;
-
-    const errEl = document.getElementById('apply-room-errors');
-    const okEl = document.getElementById('apply-room-success');
-    const submitBtn = document.getElementById('apply-room-submit-btn');
+    const errEl = contentNode.querySelector('[data-role="apply-room-errors"]');
+    const okEl = contentNode.querySelector('[data-role="apply-room-success"]');
+    const submitBtn = contentNode.querySelector('[data-role="apply-room-submit-btn"]');
     if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
     if (okEl) { okEl.textContent = ''; okEl.classList.add('hidden'); }
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Request'; }
 
-    switchView('apply-room');
-}
-
-function bindApplyRoomView() {
-    document.getElementById('apply-room-submit-btn')?.addEventListener('click', async () => {
-        if (!_pendingApplyRoomName) return;
-
-        const submitBtn = document.getElementById('apply-room-submit-btn');
-        const errEl = document.getElementById('apply-room-errors');
-        const okEl = document.getElementById('apply-room-success');
+    submitBtn?.addEventListener('click', async () => {
+        if (!roomName) return;
 
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
         if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
         if (okEl) { okEl.classList.add('hidden'); okEl.textContent = ''; }
 
-        const result = await applyToRoom(_pendingApplyRoomName);
+        const result = await applyToRoom(roomName);
 
         if (!result.ok) {
             const msgs = {
@@ -125,17 +152,22 @@ function bindApplyRoomView() {
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Request Sent'; }
     });
 
-    document.getElementById('apply-room-cancel-btn')?.addEventListener('click', () => {
-        _pendingApplyRoomName = null;
-        switchView('new-tab');
+    contentNode.querySelector('[data-role="apply-room-cancel-btn"]')?.addEventListener('click', () => {
+        // Go back to new-tab
+        const activeTab = document.querySelector('#tabs .tab.active');
+        const tabId = activeTab?.getAttribute('data-tab-id');
+        if (tabId) {
+            setTabMetadata(tabId, { special: 'new-tab' });
+            updateTabTitle(tabId, 'New Tab');
+            const el = getTabElementById(tabId);
+            if (el) activateTab(el);
+        }
     });
 }
 
-// ---------- Review-applications view ----------
-
-async function renderApplicationsList() {
-    const listEl = document.getElementById('applications-list');
-    const emptyEl = document.getElementById('applications-empty');
+export async function renderApplicationsList(contentNode) {
+    const listEl = contentNode.querySelector('[data-role="applications-list"]');
+    const emptyEl = contentNode.querySelector('[data-role="applications-empty"]');
     if (!listEl) return;
 
     listEl.innerHTML = '';
@@ -164,15 +196,15 @@ async function renderApplicationsList() {
     });
 
     listEl.querySelectorAll('.btn-approve').forEach(btn => {
-        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'approve'));
+        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'approve', contentNode));
     });
     listEl.querySelectorAll('.btn-reject').forEach(btn => {
-        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'reject'));
+        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'reject', contentNode));
     });
 }
 
-async function handleReview(appId, action) {
-    const card = document.querySelector(`[data-id="${appId}"]`)?.closest('.application-card');
+async function handleReview(appId, action, contentNode) {
+    const card = contentNode.querySelector(`[data-id="${appId}"]`)?.closest('.application-card');
     if (card) {
         card.classList.add('application-card--loading');
         card.querySelectorAll('button').forEach(b => { b.disabled = true; });
@@ -181,9 +213,9 @@ async function handleReview(appId, action) {
     const result = await reviewApplication(appId, action);
     if (result.ok) {
         card?.remove();
-        const listEl = document.getElementById('applications-list');
+        const listEl = contentNode.querySelector('[data-role="applications-list"]');
         if (listEl && listEl.children.length === 0) {
-            document.getElementById('applications-empty')?.classList.remove('hidden');
+            contentNode.querySelector('[data-role="applications-empty"]')?.classList.remove('hidden');
         }
         updateReviewBadge();
     } else {
@@ -202,7 +234,7 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-async function updateReviewBadge() {
+export async function updateReviewBadge() {
     const apps = await loadPendingApplications();
     const badge = document.getElementById('review-apps-badge');
     if (!badge) return;
@@ -215,20 +247,26 @@ async function updateReviewBadge() {
 }
 
 function bindReviewApplicationsView() {
-    document.getElementById('review-apps-btn')?.addEventListener('click', async () => {
-        await renderApplicationsList();
-        switchView('review-applications');
+    document.getElementById('review-apps-btn')?.addEventListener('click', () => {
+        openApplicationsTab();
     });
 }
 
-// ---------- Join flow ----------
-
-async function joinRoomAndOpen(roomName) {
+export async function joinRoomAndOpen(roomName) {
     const result = await joinRoom(roomName);
     if (!result.ok) {
         if (result.error === 'app_required') {
             showJoinError('');
-            showApplyRoomView(result.roomName || roomName);
+            
+            // Switch current active tab to 'apply-room'
+            const activeTab = document.querySelector('#tabs .tab.active');
+            const tabId = activeTab?.getAttribute('data-tab-id');
+            if (tabId) {
+                setTabMetadata(tabId, { special: 'apply-room', relatedRoom: result.roomName || roomName });
+                updateTabTitle(tabId, `Apply - ${result.roomName || roomName}`);
+                const el = getTabElementById(tabId);
+                if (el) activateTab(el);
+            }
             return false;
         }
         showJoinError(getJoinErrorMessage(result.error));
@@ -241,9 +279,9 @@ async function joinRoomAndOpen(roomName) {
     return true;
 }
 
-function bindJoinRoom() {
-    const joinBtn = document.getElementById('dashboard-join-room-btn');
-    const joinInput = document.getElementById('dashboard-join-room-input');
+export function bindJoinRoom(contentNode) {
+    const joinBtn = contentNode.querySelector('[data-role="join-room-btn"]');
+    const joinInput = contentNode.querySelector('[data-role="join-room-input"]');
 
     joinBtn?.addEventListener('click', async () => {
         if (!joinInput) return;
@@ -258,40 +296,47 @@ function bindJoinRoom() {
     });
 }
 
-function bindGroupCreation() {
-    document.getElementById('room-creation-form')?.addEventListener('submit', handleGroupSubmission);
-    document.getElementById('cancel-room-btn')?.addEventListener('click', cancelGroupCreation);
-
-    document.getElementById('dashboard-create-room-btn')?.addEventListener('click', () => {
+export function bindGroupCreation(contentNode) {
+    contentNode.querySelector('[data-role="create-room-btn"]')?.addEventListener('click', () => {
         const activeTab = document.querySelector('#tabs .tab.active');
-        if (activeTab && activeTab.getAttribute('data-special') === 'new-tab') {
-            activeTab.setAttribute('data-special', 'room-creation');
-            const titleSpan = activeTab.querySelector('.tab-title');
-            if (titleSpan) titleSpan.textContent = 'Create Room';
-            activateTab(activeTab);
+        const tabId = activeTab?.getAttribute('data-tab-id');
+        if (tabId) {
+            const t = tabId ? state.tabsById[tabId] : null;
+            if (t && t.type === 'new-tab') {
+                setTabMetadata(tabId, { special: 'room-creation' });
+                updateTabTitle(tabId, 'Create Room');
+                const el = getTabElementById(tabId);
+                if (el) activateTab(el);
+            }
         }
     });
 }
 
-// Room overview flow
+export function bindRoomCreationForm(contentNode) {
+    contentNode.querySelector('[data-role="room-creation-form"]')?.addEventListener('submit', (e) => handleGroupSubmission(e, contentNode));
+    contentNode.querySelector('[data-role="cancel-room-btn"]')?.addEventListener('click', () => cancelGroupCreation(contentNode));
+}
 
-function openRoomOverview() {
-    const btn = document.getElementById('hamburger-btn');
-    btn?.addEventListener('click', () => {
-        renderRoomOverview();
+function bindSettings() {
+    const settingsBtn = document.getElementById('user');
+    settingsBtn?.addEventListener('click', () => {
+        openSettingsTab();
     });
 }
 
 export function initApp() {
-    bindMessageInput();
+    setUsername();
     bindTabs();
     bindTabKeyboard();
     bindSlashFocus();
-    bindJoinRoom();
-    bindGroupCreation();
-    bindApplyRoomView();
     bindReviewApplicationsView();
-    openRoomOverview();
+    bindSettings();
     loadRooms((name) => { void openChatTab(name); });
     updateReviewBadge();
+
+    // Open placeholder tab by default if no tabs are open
+    const tabsContainer = document.getElementById('tabs');
+    if (tabsContainer && tabsContainer.children.length === 0) {
+        openTab('placeholder', { title: 'Welcome!', unique: true });
+    }
 }

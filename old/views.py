@@ -1,4 +1,7 @@
-from django.http import JsonResponse
+import os
+import base64
+
+from django.http import FileResponse, Http404, JsonResponse
 from chat.models import ChatRoom, User, RoomApplication
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
@@ -7,8 +10,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
 from asgiref.sync import sync_to_async
+
 from .forms import RegistrationForm, LoginForm, RoomCreationForm
+
 from .services.rooms import (
     JOIN_ALREADY_MEMBER,
     JOIN_AUTH_REQUIRED,
@@ -19,6 +25,10 @@ from .services.rooms import (
     APPLICATION_PENDING,
     create_room,
     join_room_sync,
+    get_room_details_sync,
+    ROOM_NOT_FOUND,
+    ROOM_FORBIDDEN,
+    ROOM_NOT_MEMBER,
 )
 from .services.applications import (
     APP_ALREADY_MEMBER,
@@ -30,7 +40,7 @@ from .services.applications import (
     apply_to_room_sync,
     review_application_sync,
 )
-from django.urls import reverse_lazy
+from .services.users import get_user_profile_data, USER_NOT_FOUND
 
 class AsyncFormView(FormView):
     async def get(self, request, *args, **kwargs):
@@ -74,6 +84,8 @@ class AsyncFormView(FormView):
 class ChatView(LoginRequiredMixin, TemplateView):
     template_name = "chat/index.html"
 
+# --- Authentication ---
+
 class RegisterView(AsyncFormView):
     form_class = RegistrationForm
     template_name = "auth/register.html"
@@ -100,6 +112,33 @@ class LoginView(AsyncFormView):
         await sync_to_async(login)(self.request, user)
         return await super().form_valid(form)
 
+@login_required
+async def logout_user(request):
+    await sync_to_async(logout)(request)
+    return redirect('login')
+
+# --- Users ---
+
+def serve_avatar(user_id):
+    target_user = User.objects.filter(pk=user_id).first()
+    if not target_user or not target_user.avatar: raise "User or avatar not found"
+
+    file_path = target_user.avatar.path
+    if os.path.exists(file_path): return base64.b64encode(open(file_path, "rb").read())
+        
+    raise FileNotFoundError("Avatar file not found")
+
+@login_required
+def user_get(request, user_id):
+    data, status = get_user_profile_data(user_id)
+    
+    if status == USER_NOT_FOUND:
+        return JsonResponse({"error": "not_found"}, status=404)
+        
+    return JsonResponse(data)
+
+# --- Rooms ---
+
 class RoomCreationView(AsyncFormView):
     form_class = RoomCreationForm
     template_name = "rooms/new_room.html"
@@ -114,14 +153,6 @@ class RoomCreationView(AsyncFormView):
         await create_room(room_name, self.request.user, form.cleaned_data['room_type'])
         return await super().form_valid(form)
 
-async def logout_user(request):
-    await sync_to_async(logout)(request)
-    return redirect('login')
-
-async def add_room(request):
-    room = await create_room("el-room")
-    return redirect(reverse_lazy('view_chats'))
-
 @login_required
 def list_rooms(request):
     rooms = list(
@@ -133,25 +164,17 @@ def list_rooms(request):
 
 @login_required
 def room_details(request, room_name):
-    room = ChatRoom.objects.filter(name=room_name).first()
-    if not room:
+    data, status = get_room_details_sync(room_name, request.user)
+
+    if status == ROOM_NOT_FOUND:
         return JsonResponse({"error": "not_found"}, status=404)
-
-    is_member = room.members.filter(pk=request.user.pk).exists()
-
-    if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member:
+        
+    if status == ROOM_FORBIDDEN:
         return JsonResponse({"error": "forbidden"}, status=403)
+        
+    if status == ROOM_NOT_MEMBER:
+        return JsonResponse({"error": "not_member"}, status=403)
 
-    if not is_member:
-        return JsonResponse({"error": "not_found"}, status=404)
-
-    data = {
-        "id": room.id,
-        "name": room.name,
-        "room_type": room.room_type,
-        "owner": room.owner.username if room.owner else None,
-        "members_data": list(room.memberships.values("user__username", "role")),
-    }
     return JsonResponse(data)
 
 @login_required
@@ -200,7 +223,6 @@ def join_room_view(request):
         'already_member': status == JOIN_ALREADY_MEMBER,
     })
 
-
 @login_required
 @require_POST
 def apply_to_room_view(request):
@@ -229,6 +251,7 @@ def apply_to_room_view(request):
         status=201,
     )
 
+# --- Applications ---
 
 @login_required
 @require_POST
@@ -252,7 +275,6 @@ def review_application_view(request, application_id: int):
             "status": app.status,
         }
     )
-
 
 @login_required
 def pending_applications_view(request):
