@@ -195,6 +195,18 @@ export function openTab(type, opts = {}) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return null;
 
+    // If opening any tab that is not a placeholder, close any open placeholder tabs first!
+    if (type !== 'placeholder') {
+        Object.keys(state.tabsById).forEach(id => {
+            const t = state.tabsById[id];
+            if (t && t.type === 'placeholder') {
+                const el = getTabElementById(id);
+                if (el) el.remove();
+                delete state.tabsById[id];
+            }
+        });
+    }
+
     const {
         title = 'New Tab',
         metadata = {},
@@ -264,16 +276,6 @@ export async function openChatTab(roomName) {
 }
 
 export function openNewTab() {
-    // If there is a placeholder tab open, close it before opening new tab
-    Object.keys(state.tabsById).forEach(id => {
-        const t = state.tabsById[id];
-        if (t && t.type === 'placeholder') {
-            const el = getTabElementById(id);
-            if (el) el.remove();
-            delete state.tabsById[id];
-        }
-    });
-
     openTab('new-tab', { title: 'New Tab' });
 }
 
