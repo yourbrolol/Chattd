@@ -337,6 +337,6 @@ export function initApp() {
     // Open placeholder tab by default if no tabs are open
     const tabsContainer = document.getElementById('tabs');
     if (tabsContainer && tabsContainer.children.length === 0) {
-        openTab('placeholder', { title: 'Placeholder', unique: true });
+        openTab('placeholder', { title: 'Welcome!', unique: true });
     }
 }

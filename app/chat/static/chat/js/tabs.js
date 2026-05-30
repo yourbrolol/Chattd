@@ -402,7 +402,7 @@ export function closeTab(tabElement) {
                 state.chatSocket = null;
             }
             // Mount the placeholder tab
-            openTab('placeholder', { title: 'Placeholder', unique: true });
+            openTab('placeholder', { title: 'Welcome!', unique: true });
         }
     }
 }
