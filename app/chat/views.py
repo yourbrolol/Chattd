@@ -10,8 +10,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
 from asgiref.sync import sync_to_async
+
 from .forms import RegistrationForm, LoginForm, RoomCreationForm
+
 from .services.rooms import (
     JOIN_ALREADY_MEMBER,
     JOIN_AUTH_REQUIRED,
@@ -22,6 +25,10 @@ from .services.rooms import (
     APPLICATION_PENDING,
     create_room,
     join_room_sync,
+    get_room_details_sync,
+    ROOM_NOT_FOUND,
+    ROOM_FORBIDDEN,
+    ROOM_NOT_MEMBER,
 )
 from .services.applications import (
     APP_ALREADY_MEMBER,
@@ -33,7 +40,7 @@ from .services.applications import (
     apply_to_room_sync,
     review_application_sync,
 )
-from django.urls import reverse, reverse_lazy
+from .services.users import get_user_profile_data, USER_NOT_FOUND
 
 class AsyncFormView(FormView):
     async def get(self, request, *args, **kwargs):
@@ -123,13 +130,11 @@ def serve_avatar(user_id):
 
 @login_required
 def user_get(request, user_id):
-    user = User.objects.filter(pk=user_id).first()
-    if not user: return JsonResponse({"error": "not_found"}, status=404)
-    data = {
-        "id": user.id,
-        "username": user.username,
-        "avatar": serve_avatar(user.id) if user.avatar else None,
-    }
+    data, status = get_user_profile_data(user_id)
+    
+    if status == USER_NOT_FOUND:
+        return JsonResponse({"error": "not_found"}, status=404)
+        
     return JsonResponse(data)
 
 # --- Rooms ---
@@ -159,34 +164,17 @@ def list_rooms(request):
 
 @login_required
 def room_details(request, room_name):
-    room = ChatRoom.objects.filter(name=room_name).first()
-    if not room: return JsonResponse({"error": "not_found"}, status=404)
+    data, status = get_room_details_sync(room_name, request.user)
 
-    is_member = room.members.filter(pk=request.user.pk).exists()
+    if status == ROOM_NOT_FOUND:
+        return JsonResponse({"error": "not_found"}, status=404)
+        
+    if status == ROOM_FORBIDDEN:
+        return JsonResponse({"error": "forbidden"}, status=403)
+        
+    if status == ROOM_NOT_MEMBER:
+        return JsonResponse({"error": "not_member"}, status=403)
 
-    if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member: return JsonResponse({"error": "forbidden"}, status=403)
-
-    if not is_member: return JsonResponse({"error": "not_member"}, status=403)
-
-    raw_members = room.memberships.values("user__id", "user__username", "role", "user__avatar")
-
-    members_list = []
-    for member in raw_members:
-        member_data = {
-            "id": member["user__id"],
-            "username": member["user__username"],
-            "role": member["role"],
-            "avatar": serve_avatar(member["user__id"]) if member["user__avatar"] else None,
-        }
-        members_list.append(member_data)
-
-    data = {
-        "id": room.id,
-        "name": room.name,
-        "room_type": room.room_type,
-        "owner": room.owner.username if room.owner else None,
-        "members_data": members_list,
-    }
     return JsonResponse(data)
 
 @login_required

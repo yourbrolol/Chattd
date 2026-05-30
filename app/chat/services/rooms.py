@@ -2,7 +2,11 @@ import logging
 
 from django.db import IntegrityError
 from channels.db import database_sync_to_async
+
 from chat.models import ChatRoom, RoomMembership, RoomApplication
+from chat.models import ChatRoom
+
+from .users import get_user_avatar_base64
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +22,10 @@ WS_CLOSE_AUTH_REQUIRED = 4001
 WS_CLOSE_FORBIDDEN = 4003
 WS_CLOSE_NOT_FOUND = 4004
 
+ROOM_OK = "ok"
+ROOM_NOT_FOUND = "not_found"
+ROOM_FORBIDDEN = "forbidden"
+ROOM_NOT_MEMBER = "not_member"
 
 def get_app_status(room, user):
     """Return latest application status for a user in a room, or None."""
@@ -30,7 +38,6 @@ def get_app_status(room, user):
         .first()
     )
     return app.status if app is not None else None
-
 
 def can_join_room(room, user):
     """
@@ -50,7 +57,6 @@ def can_join_room(room, user):
 
     return False
 
-
 def is_room_member(room, user):
     if user is None or not getattr(user, 'is_authenticated', False):
         return False
@@ -60,14 +66,12 @@ def is_room_member(room, user):
     room_id = room.pk if hasattr(room, 'pk') else room
     return RoomMembership.objects.filter(room_id=room_id, user_id=user_id).exists()
 
-
 def create_app(room, user):
     """Create a new application for a room."""
     return RoomApplication.objects.create(
         applicant=user,
         room=room
     )
-
 
 def join_room_sync(room_name, user):
     if user is None or not user.is_authenticated:
@@ -138,3 +142,51 @@ async def join_room(room_name, user):
 
 async def user_is_room_member(room, user):
     return await database_sync_to_async(is_room_member)(room, user)
+
+def get_room_details_sync(room_name: str, user) -> tuple[dict | None, str]:
+    """
+    Fetches room details, validates permissions, and compiles member data 
+    including base64 encoded avatars.
+    """
+    room = ChatRoom.objects.filter(name=room_name).first()
+    if not room:
+        return None, ROOM_NOT_FOUND
+
+    is_member = room.members.filter(pk=user.pk).exists()
+
+    if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member:
+        return None, ROOM_FORBIDDEN
+
+    if not is_member:
+        return None, ROOM_NOT_MEMBER
+
+    raw_members = room.memberships.select_related("user").values(
+        "user__id", "user__username", "role"
+    )
+
+    members_list = []
+    for member in raw_members:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        member_user = User.objects.filter(pk=member["user__id"]).first()
+        
+        avatar_data = None
+        if member_user:
+            avatar_data, _ = get_user_avatar_base64(member_user)
+
+        members_list.append({
+            "id": member["user__id"],
+            "username": member["user__username"],
+            "role": member["role"],
+            "avatar": avatar_data,
+        })
+
+    data = {
+        "id": room.id,
+        "name": room.name,
+        "room_type": room.room_type,
+        "owner": room.owner.username if room.owner else None,
+        "members_data": members_list,
+    }
+    
+    return data, ROOM_OK
