@@ -6,6 +6,7 @@ import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms
 import { applyToRoom, reviewApplication, loadPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
 import { switchView } from './views.js';
+import { openSettings } from './settings.js';
 
 function bindMessageInput() {
     const msgInput = document.getElementById('chat-message-input');
@@ -286,6 +287,15 @@ function openRoomOverview() {
     });
 }
 
+// Settings flow
+
+function bindSettings() {
+    const settingsBtn = document.getElementById('user');
+    settingsBtn?.addEventListener('click', () => {
+        openSettings();
+    });
+}
+
 export function initApp() {
     bindMessageInput();
     bindTabs();
@@ -296,6 +306,7 @@ export function initApp() {
     bindApplyRoomView();
     bindReviewApplicationsView();
     openRoomOverview();
+    bindSettings();
     loadRooms((name) => { void openChatTab(name); });
     updateReviewBadge();
 }

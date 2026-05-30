@@ -7,6 +7,7 @@ export function switchView(viewName) {
         'room-overview': document.getElementById('room-overview-view'),
         'apply-room': document.getElementById('apply-room-view'),
         'review-applications': document.getElementById('review-applications-view'),
+        'settings': document.getElementById('settings-view'),
     };
 
     Object.values(views).forEach(v => v?.classList.add('hidden'));

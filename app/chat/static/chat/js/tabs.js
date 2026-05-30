@@ -23,6 +23,7 @@ export function activateTab(tabElement) {
     const isNewTab = tabInfo?.type === 'new-tab';
     const isRoomOverview = tabInfo?.type === 'room-overview';
     const isApplications = tabInfo?.type === 'review-applications';
+    const isSettings = tabInfo?.type === 'settings';
 
     if (state.chatSocket) {
         state.chatSocket.close();
@@ -46,6 +47,9 @@ export function activateTab(tabElement) {
         state.currentRoom = room;
         switchView('chat');
         state.chatSocket = createChatSocket(state.currentRoom);
+    } else if (isSettings) {
+        state.currentRoom = null;
+        switchView('settings');
     }
 }
 
@@ -268,6 +272,24 @@ export function openOverviewTab(roomName = null) {
     const title = roomName ? `Overview - ${roomName}` : 'Rooms';
     const metadata = roomName ? { relatedRoom: roomName } : {};
     const newTab = createTabElement(title, 'room-overview', metadata);
+    tabsContainer.appendChild(newTab);
+    activateTab(newTab);
+    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+}
+
+export function openSettingsTab() {
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return;
+    const existingId = Object.keys(state.tabsById).find(id => {
+        const t = state.tabsById[id];
+        return t && t.type === 'settings';
+    });
+    if (existingId) {
+        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
+        if (existing) { activateTab(existing); return; }
+    }
+
+    const newTab = createTabElement('Settings', 'settings', {});
     tabsContainer.appendChild(newTab);
     activateTab(newTab);
     newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
