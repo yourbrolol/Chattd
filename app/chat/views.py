@@ -77,6 +77,8 @@ class AsyncFormView(FormView):
 class ChatView(LoginRequiredMixin, TemplateView):
     template_name = "chat/index.html"
 
+# --- Authentication ---
+
 class RegisterView(AsyncFormView):
     form_class = RegistrationForm
     template_name = "auth/register.html"
@@ -103,6 +105,35 @@ class LoginView(AsyncFormView):
         await sync_to_async(login)(self.request, user)
         return await super().form_valid(form)
 
+@login_required
+async def logout_user(request):
+    await sync_to_async(logout)(request)
+    return redirect('login')
+
+# --- Users ---
+
+def serve_avatar(user_id):
+    target_user = User.objects.filter(pk=user_id).first()
+    if not target_user or not target_user.avatar: raise "User or avatar not found"
+
+    file_path = target_user.avatar.path
+    if os.path.exists(file_path): return base64.b64encode(open(file_path, "rb").read())
+        
+    raise FileNotFoundError("Avatar file not found")
+
+@login_required
+def user_get(request, user_id):
+    user = User.objects.filter(pk=user_id).first()
+    if not user: return JsonResponse({"error": "not_found"}, status=404)
+    data = {
+        "id": user.id,
+        "username": user.username,
+        "avatar": serve_avatar(user.id) if user.avatar else None,
+    }
+    return JsonResponse(data)
+
+# --- Rooms ---
+
 class RoomCreationView(AsyncFormView):
     form_class = RoomCreationForm
     template_name = "rooms/new_room.html"
@@ -117,14 +148,6 @@ class RoomCreationView(AsyncFormView):
         await create_room(room_name, self.request.user, form.cleaned_data['room_type'])
         return await super().form_valid(form)
 
-async def logout_user(request):
-    await sync_to_async(logout)(request)
-    return redirect('login')
-
-async def add_room(request):
-    room = await create_room("el-room")
-    return redirect(reverse_lazy('view_chats'))
-
 @login_required
 def list_rooms(request):
     rooms = list(
@@ -133,15 +156,6 @@ def list_rooms(request):
         .distinct()
     )
     return JsonResponse(rooms, safe=False)
-
-def serve_avatar(user_id):
-    target_user = User.objects.filter(pk=user_id).first()
-    if not target_user or not target_user.avatar: raise "User or avatar not found"
-
-    file_path = target_user.avatar.path
-    if os.path.exists(file_path): return base64.b64encode(open(file_path, "rb").read())
-        
-    raise FileNotFoundError("Avatar file not found")
 
 @login_required
 def room_details(request, room_name):
@@ -158,14 +172,13 @@ def room_details(request, room_name):
 
     members_list = []
     for member in raw_members:
-        avatar_url = None
-        if member["user__avatar"]: avatar_url = serve_avatar(member["user__id"])
-            
-        members_list.append({
+        member_data = {
+            "id": member["user__id"],
             "username": member["user__username"],
             "role": member["role"],
-            "avatar_url": avatar_url
-        })
+            "avatar": serve_avatar(member["user__id"]) if member["user__avatar"] else None,
+        }
+        members_list.append(member_data)
 
     data = {
         "id": room.id,
@@ -222,7 +235,6 @@ def join_room_view(request):
         'already_member': status == JOIN_ALREADY_MEMBER,
     })
 
-
 @login_required
 @require_POST
 def apply_to_room_view(request):
@@ -251,6 +263,7 @@ def apply_to_room_view(request):
         status=201,
     )
 
+# --- Applications ---
 
 @login_required
 @require_POST
@@ -274,7 +287,6 @@ def review_application_view(request, application_id: int):
             "status": app.status,
         }
     )
-
 
 @login_required
 def pending_applications_view(request):
