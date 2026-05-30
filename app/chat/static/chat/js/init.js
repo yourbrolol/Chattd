@@ -85,6 +85,9 @@ function bindTabKeyboard() {
         } else if (e.key === '2') {
             e.preventDefault();
             cycleTabRight();
+        } else if (e.key === '3') {
+            e.preventDefault();
+            openNewTab();
         } else if (e.key === '4') {
             e.preventDefault();
             closeActiveTab();
