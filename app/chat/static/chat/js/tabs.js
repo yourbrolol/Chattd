@@ -152,7 +152,7 @@ export async function activateTab(tabElement) {
     // 7. Create contentNode if null
     let justCreated = false;
     if (!tabInfo.contentNode) {
-        tabInfo.contentNode = handler.factory();
+        tabInfo.contentNode = await handler.factory();
         justCreated = true;
     }
 
