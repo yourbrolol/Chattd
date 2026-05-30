@@ -141,7 +141,7 @@ export async function renderRoomOverview(roomName = null) {
             const memberEl = memberTemplate.cloneNode(true);
             memberEl.classList.remove('hidden');
             console.log(member)
-            memberEl.querySelector('.member-card__name').textContent = member.user__username;
+            memberEl.querySelector('.member-card__name').textContent = member.username;
             memberEl.querySelector('.member-card__meta').textContent = member.role;
             membersList?.appendChild(memberEl);
             total++;

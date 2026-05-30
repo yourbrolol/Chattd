@@ -1,4 +1,7 @@
-from django.http import JsonResponse
+import os
+import base64
+
+from django.http import FileResponse, Http404, JsonResponse
 from chat.models import ChatRoom, User, RoomApplication
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, FormView
@@ -30,7 +33,7 @@ from .services.applications import (
     apply_to_room_sync,
     review_application_sync,
 )
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 
 class AsyncFormView(FormView):
     async def get(self, request, *args, **kwargs):
@@ -131,26 +134,45 @@ def list_rooms(request):
     )
     return JsonResponse(rooms, safe=False)
 
+def serve_avatar(user_id):
+    target_user = User.objects.filter(pk=user_id).first()
+    if not target_user or not target_user.avatar: raise "User or avatar not found"
+
+    file_path = target_user.avatar.path
+    if os.path.exists(file_path): return base64.b64encode(open(file_path, "rb").read())
+        
+    raise FileNotFoundError("Avatar file not found")
+
 @login_required
 def room_details(request, room_name):
     room = ChatRoom.objects.filter(name=room_name).first()
-    if not room:
-        return JsonResponse({"error": "not_found"}, status=404)
+    if not room: return JsonResponse({"error": "not_found"}, status=404)
 
     is_member = room.members.filter(pk=request.user.pk).exists()
 
-    if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member:
-        return JsonResponse({"error": "forbidden"}, status=403)
+    if room.room_type == ChatRoom.RoomTypes.PRIVATE and not is_member: return JsonResponse({"error": "forbidden"}, status=403)
 
-    if not is_member:
-        return JsonResponse({"error": "not_found"}, status=404)
+    if not is_member: return JsonResponse({"error": "not_member"}, status=403)
+
+    raw_members = room.memberships.values("user__id", "user__username", "role", "user__avatar")
+
+    members_list = []
+    for member in raw_members:
+        avatar_url = None
+        if member["user__avatar"]: avatar_url = serve_avatar(member["user__id"])
+            
+        members_list.append({
+            "username": member["user__username"],
+            "role": member["role"],
+            "avatar_url": avatar_url
+        })
 
     data = {
         "id": room.id,
         "name": room.name,
         "room_type": room.room_type,
         "owner": room.owner.username if room.owner else None,
-        "members_data": list(room.memberships.values("user__username", "role")),
+        "members_data": members_list,
     }
     return JsonResponse(data)
 

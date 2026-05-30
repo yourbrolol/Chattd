@@ -164,4 +164,6 @@ AUTH_USER_MODEL = "chat.User"
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "chat" / "static"]
 
+MEDIA_ROOT = [STATICFILES_DIRS[0] / "media"]
+
 LOGIN_URL = "/login/"
