@@ -8,6 +8,11 @@ import { renderRoomOverview } from './overview.js';
 import { switchView } from './views.js';
 import { openSettings } from './settings.js';
 
+function setUsername() {
+    const userEl = document.getElementById('username-p');
+    if (userEl) state.username = userEl.textContent || null;
+}
+
 function bindMessageInput() {
     const msgInput = document.getElementById('chat-message-input');
     msgInput?.addEventListener('keydown', (e) => {
@@ -297,6 +302,7 @@ function bindSettings() {
 }
 
 export function initApp() {
+    setUsername();
     bindMessageInput();
     bindTabs();
     bindTabKeyboard();
