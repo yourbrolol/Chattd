@@ -1,62 +1,249 @@
 import { state } from './state.js';
-import { switchView } from './views.js';
+import { detachCurrentContent, attachTabContent } from './mount.js';
 import { createChatSocket } from './socket.js';
 import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
+import {
+    createNewTabContent,
+    createChatContent,
+    createRoomCreationContent,
+    createRoomOverviewContent,
+    createApplyRoomContent,
+    createReviewApplicationsContent,
+    createSettingsContent,
+    createPlaceholderContent
+} from './factories.js';
+import {
+    bindJoinRoom,
+    bindGroupCreation,
+    bindRoomCreationForm,
+    bindApplyRoomView,
+    renderApplicationsList,
+    bindMessageInput,
+    updateReviewBadge
+} from './init.js';
+import { renderRoomOverview } from './overview.js';
 
-export function activateTab(tabElement) {
+export const TAB_HANDLERS = {
+    'new-tab': {
+        factory: createNewTabContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            bindJoinRoom(contentNode);
+            bindGroupCreation(contentNode);
+        }
+    },
+    'room-creation': {
+        factory: createRoomCreationContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            bindRoomCreationForm(contentNode);
+        }
+    },
+    'room': {
+        factory: createChatContent,
+        dirty: false,
+        noCache: false,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.room || tabInfo.title;
+            
+            // Bind hamburger button
+            const hamburgerBtn = contentNode.querySelector('[data-role="hamburger-btn"]');
+            hamburgerBtn?.addEventListener('click', () => {
+                openOverviewTab(roomName);
+            });
+
+            // Bind message input
+            bindMessageInput(contentNode);
+        }
+    },
+    'room-overview': {
+        factory: createRoomOverviewContent,
+        dirty: true,
+        noCache: false,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            await renderRoomOverview(roomName, contentNode);
+        }
+    },
+    'apply-room': {
+        factory: createApplyRoomContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            bindApplyRoomView(contentNode, roomName);
+        }
+    },
+    'review-applications': {
+        factory: createReviewApplicationsContent,
+        dirty: true,
+        noCache: false,
+        onActivate: async (contentNode, tabInfo) => {
+            await renderApplicationsList(contentNode);
+        }
+    },
+    'settings': {
+        factory: createSettingsContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
+            if (usernameEl) {
+                usernameEl.textContent = state.username || '';
+            }
+        }
+    },
+    'placeholder': {
+        factory: createPlaceholderContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            // Placeholder has no actions
+        }
+    }
+};
+
+export async function activateTab(tabElement) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
 
+    // 1. Get previously active tab info
+    const activeTabEl = tabsContainer.querySelector('.tab.active');
+    const activeTabId = activeTabEl?.getAttribute('data-tab-id');
+    const prevTabInfo = activeTabId ? state.tabsById[activeTabId] : null;
+
+    // 2. Remove active state from all tabs
     const tabs = tabsContainer.querySelectorAll('.tab');
     tabs.forEach(tab => {
         tab.classList.remove('active');
         tab.setAttribute('aria-selected', 'false');
     });
 
+    // 3. Mark the new tab as active
     tabElement.classList.add('active');
     tabElement.setAttribute('aria-selected', 'true');
 
-    const tabId = tabElement.getAttribute('data-tab-id');
-    const tabInfo = tabId ? state.tabsById[tabId] : null;
-    const room = tabInfo && tabInfo.type === 'room' ? (tabInfo.metadata?.room || tabInfo.title) : null;
-    const isGroupCreation = tabInfo?.type === 'room-creation';
-    const isNewTab = tabInfo?.type === 'new-tab';
-    const isRoomOverview = tabInfo?.type === 'room-overview';
-    const isApplications = tabInfo?.type === 'review-applications';
-    const isSettings = tabInfo?.type === 'settings';
-
-    if (state.chatSocket) {
-        state.chatSocket.close();
-        state.chatSocket = null;
+    // 4. Clean up previous tab if it has noCache
+    if (prevTabInfo) {
+        const prevHandler = TAB_HANDLERS[prevTabInfo.type];
+        if (prevHandler?.noCache) {
+            prevTabInfo.contentNode = null;
+            prevTabInfo.roomLoaded = false;
+        }
     }
 
-    if (isNewTab) {
+    // 5. Detach current view content
+    detachCurrentContent();
+
+    // 6. Look up the new tab's info and handler
+    const tabId = tabElement.getAttribute('data-tab-id');
+    const tabInfo = tabId ? state.tabsById[tabId] : null;
+    if (!tabInfo) return;
+
+    const type = tabInfo.type;
+    const handler = TAB_HANDLERS[type];
+    if (!handler) {
+        console.error('No handler found for tab type:', type);
+        return;
+    }
+
+    // 7. Create contentNode if null
+    let justCreated = false;
+    if (!tabInfo.contentNode) {
+        tabInfo.contentNode = handler.factory();
+        justCreated = true;
+    }
+
+    // 8. Attach new contentNode to DOM
+    attachTabContent(tabInfo.contentNode);
+
+    // 9. Sync state.currentRoom
+    if (type === 'room') {
+        state.currentRoom = tabInfo.metadata?.room || tabInfo.title;
+    } else if (type === 'room-overview') {
+        state.currentRoom = tabInfo.metadata?.relatedRoom || null;
+    } else {
         state.currentRoom = null;
-        switchView('new-tab');
-    } else if (isGroupCreation) {
-        state.currentRoom = null;
-        switchView('room-creation');
-    } else if (isRoomOverview) {
-        const related = tabInfo?.metadata?.relatedRoom || null;
-        state.currentRoom = related ? related : null;
-        switchView('room-overview');
-    } else if (isApplications) {
-        state.currentRoom = null;
-        switchView('review-applications');
-    } else if (room) {
-        state.currentRoom = room;
-        switchView('chat');
+    }
+
+    // 10. Run onActivate handler if justCreated or dirty
+    if (justCreated || handler.dirty || tabInfo.dirty) {
+        tabInfo.dirty = false;
+        if (handler.onActivate) {
+            await handler.onActivate(tabInfo.contentNode, tabInfo);
+        }
+    }
+
+    // 11. Manage WebSocket connections
+    if (type !== 'room') {
+        if (state.chatSocket) {
+            state.chatSocket.close();
+            state.chatSocket = null;
+        }
+    } else {
+        if (state.chatSocket) {
+            state.chatSocket.close();
+            state.chatSocket = null;
+        }
         state.chatSocket = createChatSocket(state.currentRoom);
-    } else if (isSettings) {
-        state.currentRoom = null;
-        switchView('settings');
     }
 }
 
-export async function openChatTab(roomName) {
+export function openTab(type, opts = {}) {
     const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return false;
+    if (!tabsContainer) return null;
 
+    const {
+        title = 'New Tab',
+        metadata = {},
+        unique = false,
+        uniqueKey = null
+    } = opts;
+
+    let existingId = null;
+
+    if (uniqueKey) {
+        existingId = Object.keys(state.tabsById).find(id => {
+            const t = state.tabsById[id];
+            return t && t.type === type && t.metadata && t.metadata[uniqueKey] === metadata[uniqueKey];
+        });
+    } else if (unique) {
+        existingId = Object.keys(state.tabsById).find(id => {
+            const t = state.tabsById[id];
+            return t && t.type === type;
+        });
+    }
+
+    if (existingId) {
+        const existingTab = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
+        if (existingTab) {
+            activateTab(existingTab);
+            return existingTab;
+        }
+    }
+
+    // If opening placeholder, ensure we close any existing placeholders first to avoid duplicates
+    if (type === 'placeholder') {
+        Object.keys(state.tabsById).forEach(id => {
+            const t = state.tabsById[id];
+            if (t && t.type === 'placeholder') {
+                const el = getTabElementById(id);
+                if (el) el.remove();
+                delete state.tabsById[id];
+            }
+        });
+    }
+
+    const newTab = createTabElement(title, type, metadata);
+    tabsContainer.appendChild(newTab);
+    activateTab(newTab);
+    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+    return newTab;
+}
+
+export async function openChatTab(roomName) {
     const trimmed = (roomName || '').trim();
     if (!trimmed) return false;
 
@@ -67,34 +254,45 @@ export async function openChatTab(roomName) {
     }
     showJoinError('');
 
-    // prefer registry lookup to find existing room tab
-    const existingId = Object.keys(state.tabsById).find(id => {
-        const t = state.tabsById[id];
-        return t && t.type === 'room' && ((t.metadata && t.metadata.room === joinResult.name) || t.title === joinResult.name);
+    openTab('room', {
+        title: joinResult.name,
+        metadata: { room: joinResult.name },
+        unique: true,
+        uniqueKey: 'room'
     });
-    if (existingId) {
-        const existingTab = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
-        if (existingTab) {
-            activateTab(existingTab);
-            return true;
-        }
-    }
-
-    const newTab = createTabElement(joinResult.name, 'room');
-    tabsContainer.appendChild(newTab);
-    activateTab(newTab);
-    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
     return true;
 }
 
 export function openNewTab() {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
+    // If there is a placeholder tab open, close it before opening new tab
+    Object.keys(state.tabsById).forEach(id => {
+        const t = state.tabsById[id];
+        if (t && t.type === 'placeholder') {
+            const el = getTabElementById(id);
+            if (el) el.remove();
+            delete state.tabsById[id];
+        }
+    });
 
-    const newTab = createTabElement('New Tab', 'new-tab');
-    tabsContainer.appendChild(newTab);
-    activateTab(newTab);
-    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+    openTab('new-tab', { title: 'New Tab' });
+}
+
+export function openOverviewTab(roomName = null) {
+    const title = roomName ? `Overview - ${roomName}` : 'Rooms';
+    openTab('room-overview', {
+        title: title,
+        metadata: roomName ? { relatedRoom: roomName } : {},
+        unique: true,
+        uniqueKey: 'relatedRoom'
+    });
+}
+
+export function openSettingsTab() {
+    openTab('settings', { title: 'Settings', unique: true });
+}
+
+export function openApplicationsTab() {
+    openTab('review-applications', { title: 'Applications', unique: true });
 }
 
 function createTabElement(titleText, typeAttr, metadata = {}) {
@@ -103,15 +301,12 @@ function createTabElement(titleText, typeAttr, metadata = {}) {
     tabDiv.setAttribute('role', 'tab');
     tabDiv.setAttribute('aria-selected', 'false');
 
-    // generate a simple unique id for the tab and register metadata centrally
     const tabId = `t-${Date.now().toString(36)}-${Math.floor(Math.random()*10000).toString(36)}`;
     tabDiv.setAttribute('data-tab-id', tabId);
 
-    // make a shallow copy of metadata we can augment
     const metaCopy = Object.assign({}, metadata || {});
     if (typeAttr === 'room') {
         tabDiv.setAttribute('data-room', titleText);
-        // store canonical room identifier in metadata for registry lookups
         metaCopy.room = titleText;
     } else {
         tabDiv.setAttribute('data-special', typeAttr);
@@ -139,12 +334,13 @@ function createTabElement(titleText, typeAttr, metadata = {}) {
     tabDiv.appendChild(span);
     tabDiv.appendChild(closeBtn);
 
-    // store a structured representation in the central registry
     state.tabsById[tabId] = {
         id: tabId,
         title: String(titleText),
         type: typeAttr,
-        metadata: metaCopy
+        metadata: metaCopy,
+        contentNode: null,
+        dirty: false
     };
     return tabDiv;
 }
@@ -186,10 +382,14 @@ export function closeTab(tabElement) {
 
     const isActive = tabElement.classList.contains('active');
     const tabId = tabElement.getAttribute('data-tab-id');
-    tabElement.remove();
-
+    
     // clean up central registry
-    if (tabId && state.tabsById[tabId]) delete state.tabsById[tabId];
+    if (tabId && state.tabsById[tabId]) {
+        state.tabsById[tabId].contentNode = null;
+        delete state.tabsById[tabId];
+    }
+    
+    tabElement.remove();
 
     if (isActive) {
         const remainingTabs = tabsContainer.querySelectorAll('.tab');
@@ -201,12 +401,12 @@ export function closeTab(tabElement) {
                 state.chatSocket.close();
                 state.chatSocket = null;
             }
-            switchView('placeholder');
+            // Mount the placeholder tab
+            openTab('placeholder', { title: 'Placeholder', unique: true });
         }
     }
 }
 
-// Helper utilities for safer tab edits and metadata handling
 export function getTabElementById(tabId) {
     if (!tabId) return null;
     return document.querySelector(`#tabs .tab[data-tab-id="${tabId}"]`);
@@ -236,79 +436,23 @@ export function setTabMetadata(tabId, metadata) {
     });
     if (state.tabsById[tabId]) {
         state.tabsById[tabId].metadata = Object.assign({}, state.tabsById[tabId].metadata, meta);
-        // if special/type changed, keep the typed field in sync
-        if (meta.special) state.tabsById[tabId].type = String(meta.special);
-        if (meta.type) state.tabsById[tabId].type = String(meta.type);
+        
+        const oldType = state.tabsById[tabId].type;
+        // if special/type changed, keep the typed field in sync and discard old DOM contentNode
+        if (meta.special && String(meta.special) !== oldType) {
+            state.tabsById[tabId].type = String(meta.special);
+            state.tabsById[tabId].contentNode = null;
+            state.tabsById[tabId].roomLoaded = false;
+        }
+        if (meta.type && String(meta.type) !== oldType) {
+            state.tabsById[tabId].type = String(meta.type);
+            state.tabsById[tabId].contentNode = null;
+            state.tabsById[tabId].roomLoaded = false;
+        }
     }
     return true;
 }
 
 export function getTabMetadata(tabId) {
     return state.tabsById[tabId] ? state.tabsById[tabId].metadata : null;
-}
-
-export function openOverviewTab(roomName = null) {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
-    // try registry-first lookup for overview tab
-    let existingId = null;
-    if (roomName) {
-        existingId = Object.keys(state.tabsById).find(id => {
-            const t = state.tabsById[id];
-            return t && t.type === 'room-overview' && t.metadata && t.metadata.relatedRoom === roomName;
-        });
-    } else {
-        existingId = Object.keys(state.tabsById).find(id => {
-            const t = state.tabsById[id];
-            return t && t.type === 'room-overview' && !(t.metadata && t.metadata.relatedRoom);
-        });
-    }
-
-    if (existingId) {
-        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
-        if (existing) { activateTab(existing); return; }
-    }
-
-    const title = roomName ? `Overview - ${roomName}` : 'Rooms';
-    const metadata = roomName ? { relatedRoom: roomName } : {};
-    const newTab = createTabElement(title, 'room-overview', metadata);
-    tabsContainer.appendChild(newTab);
-    activateTab(newTab);
-    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
-}
-
-export function openSettingsTab() {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
-    const existingId = Object.keys(state.tabsById).find(id => {
-        const t = state.tabsById[id];
-        return t && t.type === 'settings';
-    });
-    if (existingId) {
-        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
-        if (existing) { activateTab(existing); return; }
-    }
-
-    const newTab = createTabElement('Settings', 'settings', {});
-    tabsContainer.appendChild(newTab);
-    activateTab(newTab);
-    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
-}
-
-export function openApplicationsTab() {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
-    const existingId = Object.keys(state.tabsById).find(id => {
-        const t = state.tabsById[id];
-        return t && t.type === 'review-applications';
-    });
-    if (existingId) {
-        const existing = document.querySelector(`#tabs .tab[data-tab-id="${existingId}"]`);
-        if (existing) { activateTab(existing); return; }
-    }
-
-    const newTab = createTabElement('Applications', 'review-applications', {});
-    tabsContainer.appendChild(newTab);
-    activateTab(newTab);
-    newTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
 }

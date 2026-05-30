@@ -1,3 +1,5 @@
+import { state } from './state.js';
+
 const JOIN_ERROR_MESSAGES = {
     not_found: 'Room not found. Check the name and try again.',
     forbidden: 'You cannot join this room.',
@@ -13,7 +15,13 @@ function getCsrfToken() {
 }
 
 export function showJoinError(message) {
-    const errorsDiv = document.getElementById('join-room-errors');
+    const activeTab = document.querySelector('#tabs .tab.active');
+    const tabId = activeTab?.getAttribute('data-tab-id');
+    const tabInfo = tabId ? state.tabsById[tabId] : null;
+    const contentNode = tabInfo?.contentNode;
+    if (!contentNode) return;
+
+    const errorsDiv = contentNode.querySelector('[data-role="join-room-errors"]') || contentNode.querySelector('#join-room-errors');
     if (!errorsDiv) return;
     if (!message) {
         errorsDiv.classList.add('hidden');

@@ -2,12 +2,13 @@ import { openChatTab, closeTab, getTabElementById } from './tabs.js';
 import { loadRooms } from './rooms.js';
 import { state } from './state.js';
 
-export async function handleGroupSubmission(e) {
+export async function handleGroupSubmission(e, contentNode) {
     e.preventDefault();
+    if (!contentNode) return;
 
-    const roomNameInput = document.getElementById('id_room_name');
-    const roomTypeSelect = document.getElementById('id_room_type');
-    const errorsDiv = document.getElementById('room-creation-errors');
+    const roomNameInput = contentNode.querySelector('[data-role="room-name-input"]') || contentNode.querySelector('#id_room_name');
+    const roomTypeSelect = contentNode.querySelector('[data-role="room-type-select"]') || contentNode.querySelector('#id_room_type');
+    const errorsDiv = contentNode.querySelector('[data-role="room-creation-errors"]') || contentNode.querySelector('#room-creation-errors');
 
     if (!roomNameInput || !roomTypeSelect) return;
 
@@ -36,7 +37,6 @@ export async function handleGroupSubmission(e) {
 
             loadRooms((name) => { void openChatTab(name); });
 
-            const tabsContainer = document.getElementById('tabs');
             // remove any temporary "room-creation" tabs via central registry
             Object.keys(state.tabsById).forEach(id => {
                 const t = state.tabsById[id];
@@ -61,7 +61,7 @@ export async function handleGroupSubmission(e) {
     }
 }
 
-export function cancelGroupCreation() {
+export function cancelGroupCreation(contentNode = null) {
     // close any room-creation tabs using the registry to ensure consistent cleanup
     Object.keys(state.tabsById).forEach(id => {
         const t = state.tabsById[id];

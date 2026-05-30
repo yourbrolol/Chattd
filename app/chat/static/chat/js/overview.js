@@ -1,6 +1,5 @@
-import { openChatTab, closeTab } from './tabs.js';
+import { openChatTab, closeTab, getTabElementById, openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
 import { state } from './state.js';
-import { openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
 
 function escapeHtml(str) {
     return String(str || '')
@@ -11,12 +10,17 @@ function escapeHtml(str) {
 }
 
 function closeRoomTabs(roomName) {
-    const overviewTab = document.querySelector(`#tabs .tab[data-special="room-overview"][data-related-room="${roomName}"]`);
-    const chatTab = document.querySelector(`#tabs .tab[data-room="${roomName}"]`);
-
-    if (overviewTab) closeTab(overviewTab);
-    if (chatTab) closeTab(chatTab);
-    if (!overviewTab && !chatTab) closeActiveTab();
+    Object.keys(state.tabsById).forEach(id => {
+        const t = state.tabsById[id];
+        if (t && (t.type === 'room-overview' && t.metadata?.relatedRoom === roomName)) {
+            const el = getTabElementById(id);
+            if (el) closeTab(el);
+        }
+        if (t && (t.type === 'room' && t.metadata?.room === roomName)) {
+            const el = getTabElementById(id);
+            if (el) closeTab(el);
+        }
+    });
 }
 
 async function deleteRoom(roomName) {
@@ -63,20 +67,22 @@ async function leaveRoom(roomName) {
     }
 }
 
-// renderRoomOverview: render details only for a specific room.
-// If no roomName is provided, it falls back to state.currentRoom.
-export async function renderRoomOverview(roomName = null) {
-    const view = document.getElementById('room-overview-view');
-    if (!view) return;
-
+export async function renderRoomOverview(roomName = null, contentNode = null) {
     const targetRoom = roomName || state.currentRoom;
-    openOverviewTab(targetRoom);
+    if (!targetRoom) return;
 
-    const errEl = view.querySelector('#error-message');
+    // Scoped element lookup fallback
+    if (!contentNode) {
+        const tabInfo = Object.values(state.tabsById).find(t => t.type === 'room-overview' && t.metadata?.relatedRoom === targetRoom);
+        contentNode = tabInfo?.contentNode;
+    }
+    if (!contentNode) return;
+
+    const errEl = contentNode.querySelector('[data-role="error-message"]') || contentNode.querySelector('#error-message');
     if (errEl) errEl.classList.add('hidden');
-    const nameEl = view.querySelector('#room-name');
+    const nameEl = contentNode.querySelector('[data-role="room-name"]') || contentNode.querySelector('#room-name');
     if (nameEl) nameEl.textContent = targetRoom || 'No room selected';
-    const typeEl = view.querySelector('#room-type');
+    const typeEl = contentNode.querySelector('[data-role="room-type"]') || contentNode.querySelector('#room-type');
     if (typeEl) typeEl.textContent = '';
 
     try {
@@ -91,26 +97,26 @@ export async function renderRoomOverview(roomName = null) {
         }
 
         const room = await res.json();
-        view.querySelector('#room-type').textContent = `Type: ${escapeHtml(room.room_type)}`;
+        if (typeEl) typeEl.textContent = `Type: ${escapeHtml(room.room_type)}`;
 
         const isOwner = room.owner === state.username;
         console.log('Room details:', room, 'Is owner:', isOwner);
 
-        const joinBtn = view.querySelector('#room-overview-join-btn');
+        const joinBtn = contentNode.querySelector('[data-role="room-overview-join-btn"]') || contentNode.querySelector('#room-overview-join-btn');
         if (joinBtn) {
             joinBtn.onclick = async () => {
                 await openChatTab(room.name);
             };
         }
 
-        const appsBtn = view.querySelector('#overview-apps-btn');
+        const appsBtn = contentNode.querySelector('[data-role="overview-apps-btn"]') || contentNode.querySelector('#overview-apps-btn');
         if (appsBtn) {
             appsBtn.onclick = () => {
                 openApplicationsTab();
             };
         }
 
-        const deleteBtn = view.querySelector('#room-overview-delete-btn');
+        const deleteBtn = contentNode.querySelector('[data-role="room-overview-delete-btn"]') || contentNode.querySelector('#room-overview-delete-btn');
         if (deleteBtn) {
             if (isOwner) deleteBtn.classList.remove('hidden');
             else deleteBtn.classList.add('hidden');
@@ -119,7 +125,7 @@ export async function renderRoomOverview(roomName = null) {
             };
         }
 
-        const leaveBtn = view.querySelector('#room-overview-leave-btn');
+        const leaveBtn = contentNode.querySelector('[data-role="room-overview-leave-btn"]') || contentNode.querySelector('#room-overview-leave-btn');
         if (leaveBtn) {
             if (!isOwner) leaveBtn.classList.remove('hidden');
             else leaveBtn.classList.add('hidden');
@@ -128,28 +134,36 @@ export async function renderRoomOverview(roomName = null) {
             };
         }
 
-        const memberTemplate = view.querySelector('.member-card');
-        const membersList = view.querySelector('#overview-members-list');
+        const memberTemplate = contentNode.querySelector('[data-role="member-card-template"]') || contentNode.querySelector('.member-card');
+        const membersList = contentNode.querySelector('[data-role="overview-members-list"]') || contentNode.querySelector('#overview-members-list');
 
         if (membersList) {
-            membersList.querySelectorAll('.member-card:not(.hidden)').forEach(el => el.remove());
+            membersList.querySelectorAll('.member-card:not(.hidden), article:not(.hidden)').forEach(el => el.remove());
         }
 
         let total = 0;
 
         room.members_data.forEach(member => {
+            if (!memberTemplate) return;
             const memberEl = memberTemplate.cloneNode(true);
             memberEl.classList.remove('hidden');
-            console.log(member)
-            memberEl.querySelector('.member-card__name').textContent = member.username;
-            memberEl.querySelector('.member-card__meta').textContent = member.role;
+            memberEl.removeAttribute('data-role'); // Avoid duplicate role queries
+            
+            const nameSpan = memberEl.querySelector('.member-card__name');
+            const metaSpan = memberEl.querySelector('.member-card__meta');
+            if (nameSpan) nameSpan.textContent = member.username;
+            if (metaSpan) metaSpan.textContent = member.role;
+            
             membersList?.appendChild(memberEl);
             total++;
         });
 
-        view.querySelector('#overview-members-total').textContent = `Total members: ${total}`;
+        const totalEl = contentNode.querySelector('[data-role="overview-members-total"]') || contentNode.querySelector('#overview-members-total');
+        if (totalEl) {
+            totalEl.textContent = `Total members: ${total}`;
+        }
     } catch (err) {
-        const list = view.querySelector('#overview-members-list');
+        const list = contentNode.querySelector('[data-role="overview-members-list"]') || contentNode.querySelector('#overview-members-list');
         if (list) list.textContent = 'Failed to load room details.';
         console.error('renderRoomOverview error:', err);
     }

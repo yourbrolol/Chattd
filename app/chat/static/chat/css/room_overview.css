@@ -68,14 +68,16 @@
     letter-spacing: 0.05em;
 }
 
-#overview-members-total {
+#overview-members-total,
+.overview-members-total {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0 0.5rem 0.5rem;
 }
 
-#overview-apps {
+#overview-apps,
+.overview-apps {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
@@ -83,7 +85,8 @@
     margin-top: 0.75rem;
 }
 
-#overview-apps .overview-box-p {
+#overview-apps .overview-box-p,
+.overview-apps .overview-box-p {
     padding: 0;
 }
 
