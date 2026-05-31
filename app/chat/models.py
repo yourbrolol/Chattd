@@ -117,7 +117,7 @@ class ChatMessage(models.Model):
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     content = models.TextField()
-    timestamp = models.TimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"[{self.room}] {self.content[:30]}"

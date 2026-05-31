@@ -132,7 +132,7 @@ export const TAB_HANDLERS = {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                 try {
-                    const response = await fetch('/settings/edit', {
+                    const response = await fetch('/settings/edit/', {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': csrfToken

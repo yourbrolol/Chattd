@@ -19,7 +19,7 @@ export async function handleGroupSubmission(e, contentNode) {
     formData.append('room_type', roomTypeSelect.value);
 
     try {
-        const response = await fetch('/rooms/create', {
+        const response = await fetch('/rooms/create/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData
