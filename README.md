@@ -14,25 +14,43 @@
 
 **Here are the steps to set up the application. You need Python for this guide.**
 
-### Clone the repo and go to it's root folder
+1. Clone the repo and go to it's root folder
 
 ```bash
 cd SpreadTalk # or other name
 ```
 
-### Create a virtual enviroment
+2. Create a virtual enviroment
 
 ```bash
 python3 -m venv .venv # change .venv to your name is needed; .venv name is recommended
 ```
 
-### Download required packages
+3. Enter the virtual environment:
+
+- On Linux:
+```bash
+source .venv/bin/activate
+```
+
+- On Windows (Powershell / cmd):
+```pwsh
+.venv/Scripts/Activate # might be incorrect; haven't used Windows for a while
+```
+
+4. Download required packages
 
 ```bash
 pip install -r app/requirements.txt
 ```
 
-### (if using a new db) Apply migrations
+5. Clone .env.example to .env
+
+```bash
+cp .env.example .env
+```
+
+6. (if using a new db) Apply migrations
 
 ```bash
 python app/manage.py makemigrations # optional; not recommended to run
@@ -47,7 +65,7 @@ python app/manage.py migrate
 
 ### Option 1: Run natively
 
-1. Enter the virtual enviroment:
+1. Enter the virtual environment:
 
 - On Linux:
 ```bash
@@ -61,7 +79,7 @@ source .venv/bin/activate
 
 2. Run the app:
 ```bash
-python manage.py runserver # or python3
+python app/manage.py runserver # or python3
 # or via Daphne (for prod!): daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
 ```
 
