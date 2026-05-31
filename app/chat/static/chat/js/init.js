@@ -18,7 +18,7 @@ import {
 import { state } from './state.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
-import { applyToRoom, reviewApplication, loadPendingApplications } from './applications.js';
+import { applyToRoom, reviewApplication, loadRoomPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
 
 function setUsername() {
@@ -168,13 +168,14 @@ export function bindApplyRoomView(contentNode, roomName) {
     });
 }
 
-export async function renderApplicationsList(contentNode) {
+export async function renderApplicationsList(contentNode, roomName) {
     const listEl = contentNode.querySelector('[data-role="applications-list"]');
     const emptyEl = contentNode.querySelector('[data-role="applications-empty"]');
     if (!listEl) return;
 
     listEl.innerHTML = '';
-    const apps = await loadPendingApplications();
+
+    const apps = await loadRoomPendingApplications(roomName);
 
     if (apps.length === 0) {
         emptyEl?.classList.remove('hidden');
@@ -185,6 +186,7 @@ export async function renderApplicationsList(contentNode) {
     apps.forEach(app => {
         const card = document.createElement('div');
         card.className = 'application-card';
+        card.setAttribute('data-id', app.id); 
         card.innerHTML = `
             <div class="application-card__info">
                 <span class="application-card__user">${escapeHtml(app.applicant ?? '(deleted)')}</span>
@@ -199,32 +201,32 @@ export async function renderApplicationsList(contentNode) {
     });
 
     listEl.querySelectorAll('.btn-approve').forEach(btn => {
-        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'approve', contentNode));
+        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'approve', contentNode, roomName));
     });
     listEl.querySelectorAll('.btn-reject').forEach(btn => {
-        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'reject', contentNode));
+        btn.addEventListener('click', () => handleReview(Number(btn.dataset.id), 'reject', contentNode, roomName));
     });
 }
 
-async function handleReview(appId, action, contentNode) {
-    const card = contentNode.querySelector(`[data-id="${appId}"]`)?.closest('.application-card');
-    if (card) {
-        card.classList.add('application-card--loading');
-        card.querySelectorAll('button').forEach(b => { b.disabled = true; });
+/**
+ * Submits the review action and re-renders the current room context on success.
+ */
+async function handleReview(applicationId, action, contentNode, roomName) {
+    const cardEl = contentNode.querySelector(`.application-card[data-id="${applicationId}"]`);
+    if (cardEl) {
+        cardEl.classList.add('application-card--loading');
+        cardEl.querySelectorAll('button').forEach(btn => btn.disabled = true);
     }
 
-    const result = await reviewApplication(appId, action);
+    const result = await reviewApplication(applicationId, action);
+
     if (result.ok) {
-        card?.remove();
-        const listEl = contentNode.querySelector('[data-role="applications-list"]');
-        if (listEl && listEl.children.length === 0) {
-            contentNode.querySelector('[data-role="applications-empty"]')?.classList.remove('hidden');
-        }
-        updateReviewBadge();
+        await renderApplicationsList(contentNode, roomName);
     } else {
-        if (card) {
-            card.classList.remove('application-card--loading');
-            card.querySelectorAll('button').forEach(b => { b.disabled = false; });
+        alert(`Failed to execute review: ${result.error}`);
+        if (cardEl) {
+            cardEl.classList.remove('application-card--loading');
+            cardEl.querySelectorAll('button').forEach(btn => btn.disabled = false);
         }
     }
 }
@@ -238,7 +240,7 @@ function escapeHtml(str) {
 }
 
 export async function updateReviewBadge() {
-    const apps = await loadPendingApplications();
+    const apps = await loadRoomPendingApplications();
     const badge = document.getElementById('review-apps-badge');
     if (!badge) return;
     if (apps.length > 0) {
@@ -247,12 +249,6 @@ export async function updateReviewBadge() {
     } else {
         badge.classList.add('hidden');
     }
-}
-
-function bindReviewApplicationsView() {
-    document.getElementById('review-apps-btn')?.addEventListener('click', () => {
-        openApplicationsTab();
-    });
 }
 
 export async function joinRoomAndOpen(roomName) {
@@ -332,7 +328,7 @@ export function initApp() {
     bindTabs();
     bindTabKeyboard();
     bindSlashFocus();
-    bindReviewApplicationsView();
+    // bindReviewApplicationsView();
     bindSettings();
     loadRooms((name) => { void openChatTab(name); });
     updateReviewBadge();

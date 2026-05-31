@@ -112,7 +112,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         const appsBtn = contentNode.querySelector('[data-role="overview-apps-btn"]') || contentNode.querySelector('#overview-apps-btn');
         if (appsBtn) {
             appsBtn.onclick = () => {
-                openApplicationsTab();
+                openApplicationsTab(room.name);
             };
         }
 

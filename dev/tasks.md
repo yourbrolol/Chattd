@@ -1,6 +1,6 @@
 **Critical:**
 
-- Finish application system
+-
 
 **Importaant:**
 
@@ -21,3 +21,4 @@
 - Add working user avatars (and connect them)
 - Add a logout button
 - Move user's messages to the right of the room tab
+- Finish application system

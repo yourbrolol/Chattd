@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from chat.models import ChatRoom, RoomApplication
 
 from chat.models import RoomApplication
 from chat.services.applications import (
@@ -54,6 +56,33 @@ def pending_applications_view(request):
         {
             "id": a.id,
             "room": a.room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ]
+    return JsonResponse(data, safe=False)
+
+@login_required
+def room_pending_applications_view(request, room_name: str):
+    """
+    Fetch pending applications specifically for a single room.
+    Only allows access if the requesting user is the room owner.
+    """
+    room = get_object_or_404(ChatRoom, name=room_name)
+    if room.owner != request.user:
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    apps = (
+        RoomApplication.objects.filter(room=room, status=RoomApplication.Status.PENDING)
+        .select_related("applicant")
+        .order_by("created_at")
+    )
+    
+    data = [
+        {
+            "id": a.id,
+            "room": room.name,
             "applicant": a.applicant.username if a.applicant else None,
             "created_at": a.created_at.isoformat(),
         }

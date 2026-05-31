@@ -88,7 +88,8 @@ export const TAB_HANDLERS = {
         dirty: true,
         noCache: false,
         onActivate: async (contentNode, tabInfo) => {
-            await renderApplicationsList(contentNode);
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            await renderApplicationsList(contentNode, roomName);
         }
     },
     'settings': {
@@ -372,8 +373,17 @@ export function openSettingsTab() {
     openTab('settings', { title: 'Settings', unique: true });
 }
 
-export function openApplicationsTab() {
-    openTab('review-applications', { title: 'Applications', unique: true });
+export function openApplicationsTab(roomName) {
+    if (!roomName) return;
+
+    const title = `Applications - ${roomName}`;
+    
+    openTab('review-applications', {
+        title: title,
+        metadata: { relatedRoom: roomName },
+        unique: true,
+        uniqueKey: 'relatedRoom' // Scopes the tab uniquely to this specific room name field
+    });
 }
 
 function createTabElement(titleText, typeAttr, metadata = {}) {

@@ -66,12 +66,25 @@ export async function reviewApplication(applicationId, action) {
 }
 
 /**
- * Fetch pending applications for rooms the current user owns.
+ * Fetch pending applications for a room the current user owns.
  * Returns an array of { id, room, applicant, status } objects, or [].
  */
+export async function loadRoomPendingApplications(roomName) {
+    if (!roomName) return [];
+    
+    try {
+        const response = await fetch(`/rooms/${encodeURIComponent(roomName)}/applications/`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch {
+        return [];
+    }
+}
+
+// SCRAPPED
 export async function loadPendingApplications() {
     try {
-        const response = await fetch('/rooms/applications/pending/');
+        const response = await fetch('/rooms/applications/');
         if (!response.ok) return [];
         return await response.json();
     } catch {
