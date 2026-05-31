@@ -28,10 +28,15 @@
             <div id="user">
                 {% if request.user.is_authenticated %}
                     <p id="username-p">{{ request.user.username }}</p>
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" id="user-icon">
+                    {% else %}
+                        <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
+                    {% endif %}
                 {% else %}
                     <p id="username-p">Logged out</p>
+                    <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
                 {% endif %}
-                <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
                 <a href="{% url 'logout' %}" id="logout-link" class="btn-primary">Logout</a>
             </div>
         </nav>

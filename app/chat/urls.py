@@ -12,6 +12,7 @@ urlpatterns = [
     
     # User Views
     path('api/users/<int:user_id>/', users.user_get, name='user_get'),
+    path('settings/edit', users.settings_edit, name='settings_edit'),
     
     # Room Views
     path("rooms/", rooms.list_rooms, name="list_rooms"),

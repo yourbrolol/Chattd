@@ -160,25 +160,18 @@ def get_room_details_sync(room_name: str, user) -> tuple[dict | None, str]:
     if not is_member:
         return None, ROOM_NOT_MEMBER
 
-    raw_members = room.memberships.select_related("user").values(
-        "user__id", "user__username", "role"
-    )
+    memberships = room.memberships.select_related("user")
 
     members_list = []
-    for member in raw_members:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        member_user = User.objects.filter(pk=member["user__id"]).first()
-        
-        avatar_data = None
-        if member_user:
-            avatar_data, _ = get_user_avatar_base64(member_user)
+    for membership in memberships:
+        user = membership.user
+        avatar_url = user.avatar.url if user and user.avatar else None
 
         members_list.append({
-            "id": member["user__id"],
-            "username": member["user__username"],
-            "role": member["role"],
-            "avatar": avatar_data,
+            "id": user.id if user else None,
+            "username": user.username if user else "(deleted user)",
+            "role": membership.role,
+            "avatar": avatar_url,
         })
 
     data = {

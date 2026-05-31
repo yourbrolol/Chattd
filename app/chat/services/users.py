@@ -36,11 +36,11 @@ def get_user_profile_data(user_id: int) -> tuple[dict | None, str]:
     if not user:
         return None, USER_NOT_FOUND
 
-    avatar_data, avatar_status = get_user_avatar_base64(user)
+    avatar_url = user.avatar.url if user.avatar else None
 
     data = {
         "id": user.id,
         "username": user.username,
-        "avatar": avatar_data,
+        "avatar": avatar_url,
     }
     return data, USER_OK

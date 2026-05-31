@@ -56,6 +56,13 @@ export const TAB_HANDLERS = {
 
             // Bind message input
             bindMessageInput(contentNode);
+
+            // Bind dynamic avatar in input row
+            const navAvatar = document.getElementById('user-icon');
+            const chatAvatar = contentNode.querySelector('[data-role="avatar"]');
+            if (chatAvatar && navAvatar) {
+                chatAvatar.innerHTML = `<img src="${navAvatar.src}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
         }
     },
     'room-overview': {
@@ -93,6 +100,78 @@ export const TAB_HANDLERS = {
             if (usernameEl) {
                 usernameEl.textContent = state.username || '';
             }
+
+            const form = contentNode.querySelector('[data-role="settings-form"]');
+            form?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const successEl = contentNode.querySelector('[data-role="settings-success"]');
+                const errorsEl = contentNode.querySelector('[data-role="settings-errors"]');
+                const submitBtn = contentNode.querySelector('.btn-save');
+
+                if (successEl) successEl.classList.add('hidden');
+                if (errorsEl) errorsEl.classList.add('hidden');
+
+                const fileInput = contentNode.querySelector('[data-role="avatar-input"]');
+                if (!fileInput || !fileInput.files[0]) {
+                    if (errorsEl) {
+                        errorsEl.textContent = "Please select an image file first.";
+                        errorsEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Saving...";
+                }
+
+                const formData = new FormData();
+                formData.append('avatar', fileInput.files[0]);
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                try {
+                    const response = await fetch('/settings/edit', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        if (successEl) {
+                            successEl.textContent = "Avatar updated successfully!";
+                            successEl.classList.remove('hidden');
+                        }
+                        // Update nav bar avatar
+                        const navAvatar = document.getElementById('user-icon');
+                        if (navAvatar) {
+                            navAvatar.src = result.avatar_url;
+                        }
+                        // Clear file input
+                        fileInput.value = '';
+                    } else {
+                        if (errorsEl) {
+                            errorsEl.textContent = result.error || "An error occurred while saving.";
+                            errorsEl.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Settings save error:", err);
+                    if (errorsEl) {
+                        errorsEl.textContent = "Network error. Please try again.";
+                        errorsEl.classList.remove('hidden');
+                    }
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Save Changes";
+                    }
+                }
+            });
         }
     },
     'placeholder': {

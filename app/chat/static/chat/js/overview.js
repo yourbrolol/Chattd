@@ -154,6 +154,15 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
             if (nameSpan) nameSpan.textContent = member.username;
             if (metaSpan) metaSpan.textContent = member.role;
             
+            const avatarDiv = memberEl.querySelector('.member-card__avatar');
+            if (avatarDiv) {
+                if (member.avatar) {
+                    avatarDiv.innerHTML = `<img src="${member.avatar}" alt="${escapeHtml(member.username)}" class="member-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    avatarDiv.textContent = (member.username || '?').substring(0, 1).toUpperCase();
+                }
+            }
+
             membersList?.appendChild(memberEl);
             total++;
         });

@@ -17,9 +17,14 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(username, password, **extra_fields)
 
+def user_avatar_path(instance, filename):
+    ext = filename.split('.')[-1].lower() if '.' in filename else 'jpg'
+    ext = ''.join(c for c in ext if c.isalnum())
+    return f'avatars/user_{instance.pk}.{ext}'
+
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=20, unique=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to=user_avatar_path, null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
