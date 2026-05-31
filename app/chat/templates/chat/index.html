@@ -19,6 +19,7 @@
         <link rel="stylesheet" href="{% static 'chat/css/tabs/settings.css' %}">
         <link rel="stylesheet" href="{% static 'chat/css/tabs/tabs.css' %}">
         <link rel="stylesheet" href="{% static 'chat/css/tabs/views.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/search.css' %}">
         <!-- Application tabs -->
         <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/apply_room.css' %}">
         <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/review_applications.css' %}">
@@ -50,7 +51,9 @@
             <div id="chats">
                 <div id="chats-header">
                     <div id="chats-text">Chats</div>
+                    <button id="search-tab-btn" class="sidebar-action-btn" aria-label="Search rooms">🔍</button>
                 </div>
+                <div id="rooms-list"></div>
             </div>
             <div id="view-main">
                 <div id="tabs-container">

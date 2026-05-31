@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.urls import reverse_lazy
+from django.db.models import Q
 
 from chat.models import ChatRoom
 from chat.forms import RoomCreationForm
@@ -35,6 +36,30 @@ class RoomCreationView(AsyncFormView):
 
         await create_room(room_name, self.request.user, form.cleaned_data['room_type'])
         return await super().form_valid(form)
+
+@login_required
+def search_rooms_view(request):
+    query = request.GET.get("q", "").strip()
+    if not query:
+        return JsonResponse({"public_rooms": [], "joined_rooms": []})
+
+    joined_rooms = ChatRoom.objects.filter(
+        memberships__user=request.user,
+        name__icontains=query
+    ).distinct()[:10]
+
+    public_rooms = ChatRoom.objects.filter(
+        room_type=ChatRoom.RoomTypes.PUBLIC,
+        name__icontains=query
+    ).exclude(
+        memberships__user=request.user
+    ).distinct()[:10]
+
+    data = {
+        "joined_rooms": [{"name": r.name, "is_public": r.room_type == ChatRoom.RoomTypes.PUBLIC} for r in joined_rooms],
+        "public_rooms": [{"name": r.name} for r in public_rooms],
+    }
+    return JsonResponse(data)
 
 @login_required
 def list_rooms(request):

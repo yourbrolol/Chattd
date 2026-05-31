@@ -13,6 +13,7 @@ import {
     openTab,
     openSettingsTab,
     openApplicationsTab,
+    openSearchTab,
     TAB_HANDLERS
 } from './tabs.js';
 import { state } from './state.js';
@@ -20,6 +21,7 @@ import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
 import { applyToRoom, reviewApplication, loadRoomPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
+import { renderSearchTab } from './search.js';
 
 function setUsername() {
     const userEl = document.getElementById('username-p');
@@ -323,6 +325,17 @@ function bindSettings() {
     });
 }
 
+export function runSearchTab(contentNode) {
+    if (!contentNode) return;
+    renderSearchTab(contentNode);
+}
+
+export function bindSearchTab(contentNode) {
+    document.getElementById('search-tab-btn')?.addEventListener('click', () => {
+        openSearchTab(contentNode);
+    });
+}
+
 export function initApp() {
     setUsername();
     bindTabs();
@@ -330,8 +343,9 @@ export function initApp() {
     bindSlashFocus();
     // bindReviewApplicationsView();
     bindSettings();
+    bindSearchTab();
     loadRooms((name) => { void openChatTab(name); });
-    updateReviewBadge();
+    // updateReviewBadge();
 
     // Open placeholder tab by default if no tabs are open
     const tabsContainer = document.getElementById('tabs');

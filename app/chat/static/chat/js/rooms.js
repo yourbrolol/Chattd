@@ -79,20 +79,10 @@ export function getJoinErrorMessage(error) {
 }
 
 export function loadRooms(onRoomClick) {
-    const roomsDiv = document.getElementById('chats');
-    if (!roomsDiv) return;
+    const listDiv = document.getElementById('rooms-list');
+    if (!listDiv) return;
 
-    const header = document.getElementById('chats-text');
-    roomsDiv.innerHTML = '';
-    if (header) {
-        roomsDiv.appendChild(header);
-    } else {
-        const chatsText = document.createElement('div');
-        chatsText.id = 'chats-text';
-        chatsText.className = 'chats-text';
-        chatsText.textContent = 'Chats';
-        roomsDiv.appendChild(chatsText);
-    }
+    listDiv.innerHTML = '';
 
     fetch('/rooms/')
         .then(r => {
@@ -104,7 +94,9 @@ export function loadRooms(onRoomClick) {
                 const btn = document.createElement('div');
                 btn.className = 'room';
                 btn.textContent = r.name;
-                roomsDiv.appendChild(btn);
+                
+                listDiv.appendChild(btn);
+                
                 btn.addEventListener('pointerup', () => onRoomClick?.(r.name));
             });
         })

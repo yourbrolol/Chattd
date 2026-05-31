@@ -19,6 +19,7 @@ urlpatterns = [
     path("rooms/join/", rooms.join_room_view, name="join_room"),
     path("rooms/create/", rooms.RoomCreationView.as_view(), name="create_room"), # Added missing trailing slash
     path("rooms/apply/", applications.apply_to_room_view, name="apply_to_room"),
+    path('rooms/search/', rooms.search_rooms_view, name='room_search'),
     path("rooms/applications/pending/", applications.pending_applications_view, name="pending_applications"),
     path("rooms/applications/<int:application_id>/review/", applications.review_application_view, name="review_application"),
     

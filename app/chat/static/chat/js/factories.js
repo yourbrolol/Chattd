@@ -64,3 +64,7 @@ export async function createSettingsContent() {
 export async function createPlaceholderContent() {
     return await fetchTemplate('placeholder_view');
 }
+
+export async function createSearchContent() {
+    return await fetchTemplate('search_view');
+}

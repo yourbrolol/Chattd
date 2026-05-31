@@ -10,7 +10,8 @@ import {
     createApplyRoomContent,
     createReviewApplicationsContent,
     createSettingsContent,
-    createPlaceholderContent
+    createPlaceholderContent,
+    createSearchContent
 } from './factories.js';
 import {
     bindJoinRoom,
@@ -19,7 +20,9 @@ import {
     bindApplyRoomView,
     renderApplicationsList,
     bindMessageInput,
-    updateReviewBadge
+    updateReviewBadge,
+    bindSearchTab,
+    runSearchTab
 } from './init.js';
 import { renderRoomOverview } from './overview.js';
 
@@ -173,6 +176,14 @@ export const TAB_HANDLERS = {
                     }
                 }
             });
+        }
+    },
+    'search': {
+        factory: createSearchContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            runSearchTab(contentNode);
         }
     },
     'placeholder': {
@@ -384,6 +395,10 @@ export function openApplicationsTab(roomName) {
         unique: true,
         uniqueKey: 'relatedRoom' // Scopes the tab uniquely to this specific room name field
     });
+}
+
+export function openSearchTab() {
+    openTab('search', { title: 'Find Rooms', unique: true });
 }
 
 function createTabElement(titleText, typeAttr, metadata = {}) {

@@ -1,0 +1,74 @@
+.search-rooms-view {
+    flex: 1;
+    overflow-y: auto;
+    background: #0f172a;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.search-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    color: #f1f5f9;
+    font-size: 1rem;
+}
+
+.search-results-section h3 {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.5rem 0;
+}
+
+.search-result-row {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.search-result-row .room-name {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.btn-search-action {
+    background: #334155;
+    color: #f1f5f9;
+    border: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-search-action:hover {
+    background: #475569;
+}
+
+.btn-search-action.btn-join-style {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.btn-search-action.btn-join-style:hover {
+    filter: brightness(1.1);
+}
+
+.search-empty {
+    color: #64748b;
+    text-align: center;
+    margin-top: 2rem;
+}
