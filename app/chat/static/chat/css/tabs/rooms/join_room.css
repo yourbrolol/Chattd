@@ -1,4 +1,6 @@
 .join-room-card {
+    display: flex;
+    border-radius: 1rem;
     flex-direction: column;
     align-items: stretch;
     text-align: left;
@@ -8,6 +10,7 @@
     overflow: hidden;
     border-color: #334155;
     background: linear-gradient(145deg, #1e293b 0%, #172033 100%);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .join-room-card::before {
