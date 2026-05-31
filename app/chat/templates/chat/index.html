@@ -6,21 +6,27 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token }}">
         <title>SpreadTalk</title>
-        <link rel="stylesheet" href="{% static 'chat/css/core.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/nav.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/layout.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/views.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/new_tab.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/room_overview.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/join_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/room_creation.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/sidebar.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/apply_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/review_applications.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/chat_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/responsive.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/settings.css' %}">
+        <!-- Core styles -->
+        <link rel="stylesheet" href="{% static 'chat/css/core/core.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/core/layout.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/core/responsive.css' %}">
+        <!-- General styles -->
+        <link rel="stylesheet" href="{% static 'chat/css/general/nav.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/general/sidebar.css' %}">
+        <!-- Tab styles -->
+        <!-- General tabs-->
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/new_tab.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/settings.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/tabs.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/views.css' %}">
+        <!-- Application tabs -->
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/apply_room.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/review_applications.css' %}">
+        <!-- Room tabs -->
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/chat_room.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/join_room.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/room_creation.css' %}">
+        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/room_overview.css' %}">
     </head>
     <body>
         <nav class="nav">
