@@ -61,7 +61,7 @@ def apply_to_room_sync(room_name, user):
     return app, APP_OK
 
 
-def review_application_sync(application_id, acting_user, approve: bool):
+def review_application_sync(application_id, acting_user, approve: bool, auto_create_membership=True):
     """
     Approve or reject a RoomApplication.
 
@@ -86,6 +86,8 @@ def review_application_sync(application_id, acting_user, approve: bool):
     app.status = new_status
     app.save(update_fields=["status"])
 
-    # Membership is still created via join_room; approval only unlocks joining.
+    if auto_create_membership and approve:
+        RoomMembership.objects.get_or_create(user=app.applicant, room=app.room)
+
     return app, None
 
