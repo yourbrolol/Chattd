@@ -31,14 +31,12 @@ def settings_edit(request):
 
     user = request.user
 
-    # Remove old avatar file if it exists
     if user.avatar:
         try:
             old_path = user.avatar.path
             if os.path.exists(old_path):
                 os.remove(old_path)
         except Exception as e:
-            # Log error but don't block upload
             pass
 
     user.avatar = avatar_file
