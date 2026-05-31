@@ -1,20 +1,58 @@
 import { state } from './state.js';
 
+function escapeHtml(string) {
+    return String(string).replace(/[&<>"']/g, function (s) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[s];
+    });
+}
+
 export function appendMessage(data, contentNode) {
     if (!contentNode) return;
     const chatLog = contentNode.querySelector('[data-role="chat-log"]') || contentNode.querySelector('#chat-log');
     if (!chatLog) return;
-
+    
+    const messageRow = document.createElement('div');
+    messageRow.className = 'message-row';
+    if (data.user === state.username) {
+        messageRow.classList.add('own');
+    }
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar chat-avatar';
+    
+    if (data.avatar) {
+        avatar.innerHTML = `<img src="${data.avatar}" alt="${escapeHtml(data.user)}" class="member-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    } else {
+        
+        avatar.textContent = (data.user || '?').substring(0, 1).toUpperCase();
+        avatar.classList.add('avatar-fallback');
+    }
+    
     const div = document.createElement('div');
     div.className = 'message';
-    
-    // Add own styling if it is our own message
     if (data.user === state.username) {
         div.classList.add('own');
     }
     
-    div.textContent = `${data.user}: ${data.content}`;
-    chatLog.appendChild(div);
+    div.innerHTML = `<strong>${escapeHtml(data.user)}</strong><br>${escapeHtml(data.content)}`;
+    
+    if (data.user === state.username) {
+        
+        messageRow.appendChild(div);
+        messageRow.appendChild(avatar);
+    } else {
+        
+        messageRow.appendChild(avatar);
+        messageRow.appendChild(div);
+    }
+
+    chatLog.appendChild(messageRow);
     chatLog.scrollTop = chatLog.scrollHeight;
 }
 
@@ -41,13 +79,13 @@ export function createChatSocket(room) {
             const chatLog = contentNode?.querySelector('[data-role="chat-log"]') || contentNode?.querySelector('#chat-log');
             if (chatLog) {
                 if (!tabInfo.roomLoaded) {
-                    chatLog.querySelectorAll(".message").forEach(el => el.remove());
+                    chatLog.querySelectorAll(".message-row").forEach(el => el.remove());
                     data.message_history.forEach(msg => appendMessage(msg, contentNode));
                     tabInfo.roomLoaded = true;
                 }
             }
         } else if (data.type === 'chat_message') {
-            appendMessage({ user: data.user, content: data.content }, contentNode);
+            appendMessage({ user: data.user, content: data.content, avatar: data.avatar }, contentNode);
         }
     };
 
@@ -69,7 +107,6 @@ export function createChatSocket(room) {
 
 export function sendMessage(contentNode = null) {
     if (!contentNode) {
-        // Fallback to active tab's contentNode
         const activeTab = document.querySelector('#tabs .tab.active');
         const tabId = activeTab?.getAttribute('data-tab-id');
         const tabInfo = tabId ? state.tabsById[tabId] : null;

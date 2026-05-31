@@ -2,6 +2,9 @@ import json
 import logging
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+
+from chat.models import ChatMessage
 
 from .services.messages import add_message, retrieve_messages
 from .services.rooms import (
@@ -41,13 +44,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name,
         )
 
-        messages = await retrieve_messages(room, "timestamp", ["user__username", "content"])
+        messages = await database_sync_to_async(
+            lambda: list(
+                ChatMessage.objects
+                .filter(room_id=room.id)
+                .order_by("timestamp")
+                .select_related("user")
+            )
+        )()
 
         await self.accept()
         await self.send(text_data=json.dumps({
             'type': 'init',
             'message_history': [
-                {"user": msg["user__username"], "content": msg["content"]} for msg in messages
+                {"user": msg.user.username, "content": msg.content, "avatar": msg.user.avatar.url if msg.user.avatar else None} for msg in messages
             ],
         }))
 
@@ -93,7 +103,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'chat_message',
-                    'message': {"user": user.username, "content": message.content},
+                    'message': {"user": user.username, "content": message.content, "avatar": user.avatar.url if user.avatar else None},
                 },
             )
 
@@ -101,11 +111,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         content = event['message']
         user = content['user']
         message = content['content']
-
+        avatar = content['avatar']
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'user': user,
             'content': message,
+            'avatar': avatar,
         }))
 
         logger.info("consumers.py: chat_message(): %s: %s", user, message)
