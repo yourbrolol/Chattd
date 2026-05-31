@@ -47,7 +47,7 @@ pip install -r app/requirements.txt
 5. Clone .env.example to .env
 
 ```bash
-cp .env.example .env
+cp app/.env.example app/.env
 ```
 
 6. (if using a new db) Apply migrations

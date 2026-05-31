@@ -1,9 +1,46 @@
-<form method="post">
-  {% csrf_token %}
-  <input type="text" name="username" placeholder="Username" required>
-  <input type="password" name="password" placeholder="Password" required>
-  <button type="submit">Register</button>
-  {% if form.errors %}
-    {{ form.errors }}
-  {% endif %}
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SpreadTalk</title>
+    <link rel="stylesheet" href="{% static 'chat/css/core.css' %}">
+    <link rel="stylesheet" href="{% static 'chat/css/register.css' %}">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Create Account</h1>
+                <p>Join SpreadTalk today</p>
+            </div>
+
+            {% if form.errors %}
+                <ul class="error-list">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="Username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required autocomplete="new-password">
+                </div>
+                <button type="submit">Register</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a href="{% url 'login' %}">Login here</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
