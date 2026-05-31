@@ -14,6 +14,12 @@ __pycache__/
 
 .env
 
+# User data
+
+*.sqlite3
+*.log
+**/media/
+
 # Dev
 
 **/localdev/

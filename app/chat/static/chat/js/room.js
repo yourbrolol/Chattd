@@ -12,10 +12,25 @@ export async function handleGroupSubmission(e, contentNode) {
 
     if (!roomNameInput || !roomTypeSelect) return;
 
+    const roomName = roomNameInput.value.trim();
+
+    // 1. Define the allowed characters regex (Matches Django Channels requirements)
+    // Only allows ASCII alphanumerics, hyphens (-), underscores (_), and periods (.)
+    const validRoomNameRegex = /^[a-zA-Z0-9._-]+$/;
+
+    // 2. Validate the room name before sending it to the server
+    if (!validRoomNameRegex.test(roomName)) {
+        if (errorsDiv) {
+            errorsDiv.textContent = 'Room name can only contain letters, numbers, hyphens, underscores, or periods. Spaces and special characters are not allowed.';
+            errorsDiv.classList.remove('hidden');
+        }
+        return; // Stop the execution here so no fetch request is sent
+    }
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const formData = new URLSearchParams();
     formData.append('csrfmiddlewaretoken', csrfToken);
-    formData.append('room_name', roomNameInput.value);
+    formData.append('room_name', roomName); // Using the trimmed valid room name
     formData.append('room_type', roomTypeSelect.value);
 
     try {
@@ -28,7 +43,6 @@ export async function handleGroupSubmission(e, contentNode) {
         const isSuccess = response.redirected || !response.url.endsWith('/rooms/create');
 
         if (response.ok && isSuccess) {
-            const newRoomName = roomNameInput.value.trim();
             roomNameInput.value = '';
             if (errorsDiv) {
                 errorsDiv.classList.add('hidden');
@@ -47,9 +61,9 @@ export async function handleGroupSubmission(e, contentNode) {
                 }
             });
 
-            setTimeout(() => { void openChatTab(newRoomName); }, 100);
+            setTimeout(() => { void openChatTab(roomName); }, 100);
         } else if (errorsDiv) {
-            errorsDiv.textContent = 'An error occurred. Make sure the room name is unique, between 1-20 characters, and contains no special characters.';
+            errorsDiv.textContent = 'An error occurred. Make sure the room name is unique and between 1-20 characters.';
             errorsDiv.classList.remove('hidden');
         }
     } catch (err) {
