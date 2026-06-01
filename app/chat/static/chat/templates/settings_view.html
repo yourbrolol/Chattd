@@ -5,7 +5,11 @@
         
         <div class="settings-section">
             <h3>Account</h3>
-            <p><strong>Username:</strong> <span data-role="settings-username"></span></p>
+            <div class="username-field-container">
+                <strong>Username:</strong> 
+                <span data-role="settings-username" class="clickable-username"></span>
+                <input type="text" name="username" data-role="settings-username-input" class="username-input hidden" maxlength="30">
+            </div>
             
             <div class="avatar-changer">
                 <label>Change Avatar:</label>

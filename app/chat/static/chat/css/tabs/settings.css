@@ -47,15 +47,48 @@
     color: #e2e8f0;
 }
 
-.settings-section p {
+.username-field-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 1.14rem;
     color: #cbd5e1;
     margin: 0 0 1.5rem 0;
+    height: 2rem;
 }
 
 .settings-section strong {
     color: #94a3b8;
     font-weight: 500;
+}
+
+.clickable-username {
+    cursor: pointer;
+    border-bottom: 1px dashed #3b82f6;
+    color: #ffffff;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.clickable-username:hover {
+    color: #3b82f6;
+    border-bottom-color: transparent;
+}
+
+.username-input {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 0.45rem;
+    padding: 0.2rem 0.6rem;
+    color: #ffffff;
+    font-size: 1.14rem;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.username-input:focus {
+    border-color: #3b82f6;
 }
 
 .avatar-changer {
@@ -116,4 +149,8 @@
 
 .btn-save:hover {
     background: #2563eb;
+}
+
+.hidden {
+    display: none !important;
 }
