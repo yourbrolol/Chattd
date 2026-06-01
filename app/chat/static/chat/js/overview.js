@@ -69,7 +69,7 @@ async function leaveRoom(roomName) {
 
 async function updateRoomName(oldName, newName, contentNode) {
     if (!newName || newName.trim() === "" || oldName === newName) return oldName;
-    
+
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const response = await fetch(`/rooms/${encodeURIComponent(oldName)}/edit/`, {
@@ -88,12 +88,121 @@ async function updateRoomName(oldName, newName, contentNode) {
         }
 
         alert('Room renamed successfully.');
-        
+
         return newName.trim();
     } catch (err) {
         alert('An error occurred while updating the room name.');
         console.error('Update room name error:', err);
         return oldName;
+    }
+}
+
+function bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNode) {
+    if (isOwner) {
+        nameEl.classList.add('editable-name');
+        nameEl.setAttribute('title', 'Click to rename');
+
+        nameEl.onclick = () => {
+            nameEl.classList.add('hidden');
+            nameInput.classList.remove('hidden');
+            nameInput.value = nameEl.textContent;
+            nameInput.focus();
+        };
+
+        const saveEdit = async () => {
+            if (nameInput.classList.contains('hidden')) return;
+
+            const updatedValue = nameInput.value.trim();
+            console.log('Attempting to save new room name:', updatedValue);
+            if (updatedValue && updatedValue !== nameEl.textContent) {
+                const savedName = await updateRoomName(targetRoom, updatedValue, contentNode);
+                nameEl.textContent = savedName;
+
+                if (savedName !== targetRoom) {
+                    targetRoom = savedName;
+                }
+            }
+
+            nameInput.classList.add('hidden');
+            nameEl.classList.remove('hidden');
+        };
+
+        // Save on Enter, Cancel on Escape
+        nameInput.onkeydown = async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                await saveEdit();
+            } else if (e.key === 'Escape') {
+                nameInput.classList.add('hidden');
+                nameEl.classList.remove('hidden');
+            }
+        };
+
+        nameInput.onblur = async () => {
+            await saveEdit();
+        };
+    } else {
+        nameEl.classList.remove('editable-name');
+        nameEl.removeAttribute('title');
+        nameEl.onclick = null;
+    }
+}
+
+function createMemberCard(member, memberTemplate, membersList) {
+    if (!memberTemplate) return;
+    const memberEl = memberTemplate.cloneNode(true);
+    memberEl.classList.remove('hidden');
+    memberEl.removeAttribute('data-role');
+
+    const nameSpan = memberEl.querySelector('.member-card__name');
+    const metaSpan = memberEl.querySelector('.member-card__meta');
+    if (nameSpan) nameSpan.textContent = member.username;
+    if (metaSpan) metaSpan.textContent = member.role;
+
+    const avatarDiv = memberEl.querySelector('.member-card__avatar');
+    if (avatarDiv) {
+        if (member.avatar) {
+            console.log(member.avatar);
+            avatarDiv.innerHTML = `<img src="${member.avatar}" alt="${escapeHtml(member.username)}" class="member-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        } else {
+            avatarDiv.textContent = (member.username || '?').substring(0, 1).toUpperCase();
+        }
+    }
+
+    return memberEl;
+}
+
+function bindActionButtons(contentNode, room, isOwner) {
+    const joinBtn = contentNode.querySelector('[data-role="room-overview-join-btn"]') || contentNode.querySelector('#room-overview-join-btn');
+    if (joinBtn) {
+        joinBtn.onclick = async () => {
+            await openChatTab(room.name);
+        };
+    }
+
+    const appsBtn = contentNode.querySelector('[data-role="overview-apps-btn"]') || contentNode.querySelector('#overview-apps-btn');
+    if (appsBtn) {
+        appsBtn.onclick = () => {
+            openApplicationsTab(room.name);
+        };
+    }
+
+    const deleteBtn = contentNode.querySelector('[data-role="room-overview-delete-btn"]') || contentNode.querySelector('#room-overview-delete-btn');
+    if (deleteBtn) {
+        if (isOwner) deleteBtn.classList.remove('hidden');
+        else deleteBtn.classList.add('hidden');
+        deleteBtn.onclick = async () => {
+            await deleteRoom(room.name);
+        };
+    }
+
+    const leaveBtn = contentNode.querySelector('[data-role="room-overview-leave-btn"]') || contentNode.querySelector('#room-overview-leave-btn');
+    if (leaveBtn) {
+        if (!isOwner) leaveBtn.classList.remove('hidden');
+        else leaveBtn.classList.add('hidden');
+        leaveBtn.onclick = async () => {
+            await leaveRoom(room.name);
+        };
     }
 }
 
@@ -132,92 +241,11 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         const isOwner = room.owner === state.username;
         console.log('Room details:', room, 'Is owner:', isOwner);
 
-        // --- INLINE EDITING INTERACTION LOGIC (Moved here, post-fetch) ---
         const nameInput = contentNode.querySelector('[data-role="room-name-input"]');
-        
-        if (nameEl && nameInput) {
-            if (isOwner) {
-                nameEl.classList.add('editable-name');
-                nameEl.setAttribute('title', 'Click to rename');
-                
-                nameEl.onclick = () => {
-                    nameEl.classList.add('hidden');
-                    nameInput.classList.remove('hidden');
-                    nameInput.value = nameEl.textContent;
-                    nameInput.focus();
-                };
 
-                const saveEdit = async () => {
-                    if (nameInput.classList.contains('hidden')) return;
-                    
-                    const updatedValue = nameInput.value.trim();
-                    console.log('Attempting to save new room name:', updatedValue);
-                    if (updatedValue && updatedValue !== nameEl.textContent) {
-                        const savedName = await updateRoomName(targetRoom, updatedValue, contentNode);
-                        nameEl.textContent = savedName;
-                        
-                        if (savedName !== targetRoom) {
-                            targetRoom = savedName; 
-                        }
-                    }
-                    
-                    nameInput.classList.add('hidden');
-                    nameEl.classList.remove('hidden');
-                };
+        if (nameEl && nameInput) bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNode);
 
-                // Save on Enter, Cancel on Escape
-                nameInput.onkeydown = async (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        await saveEdit();
-                    } else if (e.key === 'Escape') {
-                        nameInput.classList.add('hidden');
-                        nameEl.classList.remove('hidden');
-                    }
-                };
-
-                nameInput.onblur = async () => {
-                    await saveEdit();
-                };
-            } else {
-                nameEl.classList.remove('editable-name');
-                nameEl.removeAttribute('title');
-                nameEl.onclick = null;
-            }
-        }
-        // --- END OF INLINE EDITING LOGIC ---
-
-        const joinBtn = contentNode.querySelector('[data-role="room-overview-join-btn"]') || contentNode.querySelector('#room-overview-join-btn');
-        if (joinBtn) {
-            joinBtn.onclick = async () => {
-                await openChatTab(room.name);
-            };
-        }
-
-        const appsBtn = contentNode.querySelector('[data-role="overview-apps-btn"]') || contentNode.querySelector('#overview-apps-btn');
-        if (appsBtn) {
-            appsBtn.onclick = () => {
-                openApplicationsTab(room.name);
-            };
-        }
-
-        const deleteBtn = contentNode.querySelector('[data-role="room-overview-delete-btn"]') || contentNode.querySelector('#room-overview-delete-btn');
-        if (deleteBtn) {
-            if (isOwner) deleteBtn.classList.remove('hidden');
-            else deleteBtn.classList.add('hidden');
-            deleteBtn.onclick = async () => {
-                await deleteRoom(room.name);
-            };
-        }
-
-        const leaveBtn = contentNode.querySelector('[data-role="room-overview-leave-btn"]') || contentNode.querySelector('#room-overview-leave-btn');
-        if (leaveBtn) {
-            if (!isOwner) leaveBtn.classList.remove('hidden');
-            else leaveBtn.classList.add('hidden');
-            leaveBtn.onclick = async () => {
-                await leaveRoom(room.name);
-            };
-        }
+        bindActionButtons(contentNode, room, isOwner);
 
         const memberTemplate = contentNode.querySelector('[data-role="member-card-template"]') || contentNode.querySelector('.member-card');
         const membersList = contentNode.querySelector('[data-role="overview-members-list"]') || contentNode.querySelector('#overview-members-list');
@@ -229,27 +257,8 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         let total = 0;
 
         room.members_data.forEach(member => {
-            if (!memberTemplate) return;
-            const memberEl = memberTemplate.cloneNode(true);
-            memberEl.classList.remove('hidden');
-            memberEl.removeAttribute('data-role'); 
-            
-            const nameSpan = memberEl.querySelector('.member-card__name');
-            const metaSpan = memberEl.querySelector('.member-card__meta');
-            if (nameSpan) nameSpan.textContent = member.username;
-            if (metaSpan) metaSpan.textContent = member.role;
-            
-            const avatarDiv = memberEl.querySelector('.member-card__avatar');
-            if (avatarDiv) {
-                if (member.avatar) {
-                    console.log(member.avatar);
-                    avatarDiv.innerHTML = `<img src="${member.avatar}" alt="${escapeHtml(member.username)}" class="member-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                } else {
-                    avatarDiv.textContent = (member.username || '?').substring(0, 1).toUpperCase();
-                }
-            }
-
-            membersList?.appendChild(memberEl);
+            const memberEl = createMemberCard(member, memberTemplate, membersList);
+            if (memberEl) membersList?.appendChild(memberEl);
             total++;
         });
 
