@@ -25,6 +25,7 @@ import {
     runSearchTab
 } from './init.js';
 import { renderRoomOverview } from './overview.js';
+import { renderSettingsTab } from './settings.js';
 
 export const TAB_HANDLERS = {
     'new-tab': {
@@ -100,136 +101,7 @@ export const TAB_HANDLERS = {
         dirty: false,
         noCache: true,
         onActivate: async (contentNode, tabInfo) => {
-            const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
-            const usernameInput = contentNode.querySelector('[data-role="settings-username-input"]');
-
-            // Set initial state matching values
-            if (usernameEl) {
-                usernameEl.textContent = state.username || '';
-                if (usernameInput) {
-                    usernameInput.value = state.username || '';
-                }
-            }
-
-            // --- Dynamic UI Toggle Listeners ---
-            if (usernameEl && usernameInput) {
-                // Click username text -> Switch to input box
-                usernameEl.addEventListener('click', () => {
-                    usernameEl.classList.add('hidden');
-                    usernameInput.classList.remove('hidden');
-                    usernameInput.focus();
-                    usernameInput.select();
-                });
-
-                // Focus away from input box -> Fall back to text label
-                usernameInput.addEventListener('blur', () => {
-                    if (usernameInput.value.trim() !== "") {
-                        usernameEl.textContent = usernameInput.value.trim();
-                    }
-                    usernameInput.classList.add('hidden');
-                    usernameEl.classList.remove('hidden');
-                });
-
-                // Press enter key inside input -> Trigger focus out (blur)
-                usernameInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        usernameInput.blur();
-                    }
-                });
-            }
-
-            // --- Form Submission Logic ---
-            const form = contentNode.querySelector('[data-role="settings-form"]');
-            form?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const successEl = contentNode.querySelector('[data-role="settings-success"]');
-                const errorsEl = contentNode.querySelector('[data-role="settings-errors"]');
-                const submitBtn = contentNode.querySelector('.btn-save');
-
-                if (successEl) successEl.classList.add('hidden');
-                if (errorsEl) errorsEl.classList.add('hidden');
-
-                const fileInput = contentNode.querySelector('[data-role="avatar-input"]');
-                
-                // Determine what fields have updated
-                const hasNewAvatar = fileInput && fileInput.files[0];
-                const hasNewUsername = usernameInput && usernameInput.value.trim() !== "" && usernameInput.value.trim() !== (state.username || '');
-
-                // Error validation: Stop submission if absolutely nothing changed
-                if (!hasNewAvatar && !hasNewUsername) {
-                    if (errorsEl) {
-                        errorsEl.textContent = "Please change your username or select an avatar image first.";
-                        errorsEl.classList.remove('hidden');
-                    }
-                    return;
-                }
-
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = "Saving...";
-                }
-
-                // Construct FormData conditionally
-                const formData = new FormData();
-                if (hasNewAvatar) {
-                    formData.append('avatar', fileInput.files[0]);
-                }
-                if (hasNewUsername) {
-                    formData.append('username', usernameInput.value.trim());
-                }
-
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-                try {
-                    const response = await fetch('/settings/edit/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    if (response.ok && result.success) {
-                        if (successEl) {
-                            successEl.textContent = "Settings updated successfully!";
-                            successEl.classList.remove('hidden');
-                        }
-                        
-                        // Sync state architecture if username changed successfully
-                        if (hasNewUsername) {
-                            state.username = usernameInput.value.trim();
-                        }
-
-                        // Update standard nav bar avatar icon if one was uploaded
-                        const navAvatar = document.getElementById('user-icon');
-                        if (navAvatar && result.avatar_url) {
-                            navAvatar.src = result.avatar_url;
-                        }
-                        
-                        // Reset file selector view
-                        if (fileInput) fileInput.value = '';
-                    } else {
-                        if (errorsEl) {
-                            errorsEl.textContent = result.error || "An error occurred while saving.";
-                            errorsEl.classList.remove('hidden');
-                        }
-                    }
-                } catch (err) {
-                    console.error("Settings save error:", err);
-                    if (errorsEl) {
-                        errorsEl.textContent = "Network error. Please try again.";
-                        errorsEl.classList.remove('hidden');
-                    }
-                } finally {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = "Save Changes";
-                    }
-                }
-            });
+            renderSettingsTab(contentNode);
         }
     },
     'search': {
