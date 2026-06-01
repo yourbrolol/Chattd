@@ -97,7 +97,7 @@ async function updateRoomName(oldName, newName, contentNode) {
     }
 }
 
-async function kickMember(member) {
+async function kickMember(member, contentNode) {
     if (member.username === state.username) {
         alert('You cannot kick yourself. To leave the room, use the Leave button.');
         return false;
@@ -119,6 +119,7 @@ async function kickMember(member) {
             return;
         }
         alert(`${member.username} has been kicked from the room.`);
+        contentNode.querySelector(`[data-member="${member.username}"]`)?.remove();
         return true;
     }
     catch (err) {
@@ -179,7 +180,7 @@ function bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNo
     }
 }
 
-function createMemberCard(member, memberTemplate, membersList, isOwner = false) {
+function createMemberCard(member, memberTemplate, membersList, isOwner = false, contentNode) {
     if (!memberTemplate) return;
     const memberEl = memberTemplate.cloneNode(true);
     memberEl.classList.remove('hidden');
@@ -193,7 +194,7 @@ function createMemberCard(member, memberTemplate, membersList, isOwner = false) 
         const kickBtn = memberEl.querySelector('.member-card__kick-btn');
         if (kickBtn) kickBtn.classList.remove('hidden');
         kickBtn.onclick = async () => {
-            kicked = await kickMember(member);
+            kicked = await kickMember(member, contentNode);
         };
     }
 
@@ -294,7 +295,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         let total = 0;
 
         room.members_data.forEach(member => {
-            const memberEl = createMemberCard(member, memberTemplate, membersList, isOwner);
+            const memberEl = createMemberCard(member, memberTemplate, membersList, isOwner, contentNode);
             if (memberEl) membersList?.appendChild(memberEl);
             total++;
         });
