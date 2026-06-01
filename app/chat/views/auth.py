@@ -14,6 +14,12 @@ class RegisterView(AsyncFormView):
 
     async def form_valid(self, form):
         await sync_to_async(form.save)()
+        user = await sync_to_async(authenticate)(
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password'],
+        )
+        if user:
+            await sync_to_async(login)(self.request, user)
         return await super().form_valid(form)
 
 class LoginView(AsyncFormView):
