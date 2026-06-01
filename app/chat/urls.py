@@ -25,6 +25,7 @@ urlpatterns = [
     
     # 5. Dynamic/Parameterized Room Views (Catch-all patterns at the bottom)
     path("rooms/<str:room_name>/", rooms.room_details, name="room_detail"),
+    path("rooms/<str:room_name>/edit/", rooms.edit_room_view, name="edit_room"),
     path("rooms/<str:room_name>/leave/", rooms.leave_room_view, name="leave_room"),
     path("rooms/<str:room_name>/delete/", rooms.delete_room_view, name="delete_room"),
     path('rooms/<str:room_name>/applications/', applications.room_pending_applications_view, name='room_pending_applications'),

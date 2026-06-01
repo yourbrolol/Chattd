@@ -67,8 +67,38 @@ async function leaveRoom(roomName) {
     }
 }
 
+async function updateRoomName(oldName, newName, contentNode) {
+    if (!newName || newName.trim() === "" || oldName === newName) return oldName;
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const response = await fetch(`/rooms/${encodeURIComponent(oldName)}/edit/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ name: newName.trim() })
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            alert(data.error || 'Failed to update room name.');
+            return oldName;
+        }
+
+        alert('Room renamed successfully.');
+        
+        return newName.trim();
+    } catch (err) {
+        alert('An error occurred while updating the room name.');
+        console.error('Update room name error:', err);
+        return oldName;
+    }
+}
+
 export async function renderRoomOverview(roomName = null, contentNode = null) {
-    const targetRoom = roomName || state.currentRoom;
+    let targetRoom = roomName || state.currentRoom;
     if (!targetRoom) return;
 
     // Scoped element lookup fallback
@@ -101,6 +131,61 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
 
         const isOwner = room.owner === state.username;
         console.log('Room details:', room, 'Is owner:', isOwner);
+
+        // --- INLINE EDITING INTERACTION LOGIC (Moved here, post-fetch) ---
+        const nameInput = contentNode.querySelector('[data-role="room-name-input"]');
+        
+        if (nameEl && nameInput) {
+            if (isOwner) {
+                nameEl.classList.add('editable-name');
+                nameEl.setAttribute('title', 'Click to rename');
+                
+                nameEl.onclick = () => {
+                    nameEl.classList.add('hidden');
+                    nameInput.classList.remove('hidden');
+                    nameInput.value = nameEl.textContent;
+                    nameInput.focus();
+                };
+
+                const saveEdit = async () => {
+                    if (nameInput.classList.contains('hidden')) return;
+                    
+                    const updatedValue = nameInput.value.trim();
+                    console.log('Attempting to save new room name:', updatedValue);
+                    if (updatedValue && updatedValue !== nameEl.textContent) {
+                        const savedName = await updateRoomName(targetRoom, updatedValue, contentNode);
+                        nameEl.textContent = savedName;
+                        
+                        if (savedName !== targetRoom) {
+                            targetRoom = savedName; 
+                        }
+                    }
+                    
+                    nameInput.classList.add('hidden');
+                    nameEl.classList.remove('hidden');
+                };
+
+                // Save on Enter, Cancel on Escape
+                nameInput.onkeydown = async (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        await saveEdit();
+                    } else if (e.key === 'Escape') {
+                        nameInput.classList.add('hidden');
+                        nameEl.classList.remove('hidden');
+                    }
+                };
+
+                nameInput.onblur = async () => {
+                    await saveEdit();
+                };
+            } else {
+                nameEl.classList.remove('editable-name');
+                nameEl.removeAttribute('title');
+                nameEl.onclick = null;
+            }
+        }
+        // --- END OF INLINE EDITING LOGIC ---
 
         const joinBtn = contentNode.querySelector('[data-role="room-overview-join-btn"]') || contentNode.querySelector('#room-overview-join-btn');
         if (joinBtn) {
@@ -147,7 +232,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
             if (!memberTemplate) return;
             const memberEl = memberTemplate.cloneNode(true);
             memberEl.classList.remove('hidden');
-            memberEl.removeAttribute('data-role'); // Avoid duplicate role queries
+            memberEl.removeAttribute('data-role'); 
             
             const nameSpan = memberEl.querySelector('.member-card__name');
             const metaSpan = memberEl.querySelector('.member-card__meta');

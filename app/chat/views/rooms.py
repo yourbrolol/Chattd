@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -118,3 +120,21 @@ def join_room_view(request):
         'joined': status in (JOIN_OK, JOIN_ALREADY_MEMBER),
         'already_member': status == JOIN_ALREADY_MEMBER,
     })
+
+@login_required
+@require_POST
+def edit_room_view(request, room_name):
+    data = json.loads(request.body)
+    new_name = data.get('name', '').strip()
+    if not new_name:
+        return JsonResponse({'error': 'empty_name'}, status=400)
+
+    room = ChatRoom.objects.filter(name=room_name).first()
+    if not room: return JsonResponse({"error": "not_found"}, status=404)
+    if room.owner_id != request.user.pk: return JsonResponse({"error": "forbidden"}, status=403)
+    if ChatRoom.objects.filter(name=new_name).exclude(pk=room.pk).exists():
+        return JsonResponse({'error': 'name_taken'}, status=400)
+
+    room.name = new_name
+    room.save()
+    return JsonResponse({'message': 'name_updated', 'new_name': new_name})

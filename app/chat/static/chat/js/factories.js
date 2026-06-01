@@ -5,7 +5,10 @@ async function fetchTemplate(name) {
         return templateCache[name].cloneNode(true);
     }
 
-    const response = await fetch(`/static/chat/templates/${name}.html`);
+    const response = await fetch(
+        `/static/chat/templates/${name}.html?v=${Date.now()}`,
+        { cache: 'no-store' }
+    );
     if (!response.ok) {
         throw new Error(`Failed to load template: ${name}`);
     }
@@ -18,7 +21,11 @@ async function fetchTemplate(name) {
         throw new Error(`Invalid template content for: ${name}`);
     }
 
-    templateCache[name] = element;
+    const DEV_MODE = true;
+
+    if (!DEV_MODE && templateCache[name]) {
+        return templateCache[name].cloneNode(true);
+    }
     return element.cloneNode(true);
 }
 

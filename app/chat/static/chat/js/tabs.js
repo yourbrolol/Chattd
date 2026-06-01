@@ -72,7 +72,7 @@ export const TAB_HANDLERS = {
     'room-overview': {
         factory: createRoomOverviewContent,
         dirty: true,
-        noCache: false,
+        noCache: true,
         onActivate: async (contentNode, tabInfo) => {
             const roomName = tabInfo.metadata?.relatedRoom || null;
             await renderRoomOverview(roomName, contentNode);
