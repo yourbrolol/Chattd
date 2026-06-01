@@ -138,3 +138,22 @@ def edit_room_view(request, room_name):
     room.name = new_name
     room.save()
     return JsonResponse({'message': 'name_updated', 'new_name': new_name})
+
+@login_required
+@require_POST
+def kick_member_view(request, room_name):
+    data = json.loads(request.body)
+    username_to_kick = data.get('username', '').strip()
+    if not username_to_kick:
+        return JsonResponse({'error': 'empty_username'}, status=400)
+
+    room = ChatRoom.objects.filter(name=room_name).first()
+    if not room: return JsonResponse({"error": "not_found"}, status=404)
+    if room.owner_id != request.user.pk: return JsonResponse({"error": "forbidden"}, status=403)
+
+    user_to_kick = room.members.filter(username=username_to_kick).first()
+    if not user_to_kick:
+        return JsonResponse({'error': 'user_not_member'}, status=404)
+
+    room.members.remove(user_to_kick)
+    return JsonResponse({'message': 'member_kicked'})

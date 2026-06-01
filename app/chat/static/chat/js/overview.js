@@ -97,6 +97,37 @@ async function updateRoomName(oldName, newName, contentNode) {
     }
 }
 
+async function kickMember(member) {
+    if (member.username === state.username) {
+        alert('You cannot kick yourself. To leave the room, use the Leave button.');
+        return false;
+    }
+    if (!confirm(`Are you sure you want to kick ${member.username}?`)) return false;
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const res = await fetch(`/rooms/${encodeURIComponent(state.currentRoom)}/kick/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ username: member.username })
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || 'Failed to kick member. You might not have permission to do this.');
+            return;
+        }
+        alert(`${member.username} has been kicked from the room.`);
+        return true;
+    }
+    catch (err) {
+        alert('An error occurred while trying to kick the member.');
+        console.error('Kick member error:', err);
+        return false;
+    }
+}
+
 function bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNode) {
     if (isOwner) {
         nameEl.classList.add('editable-name');
@@ -148,7 +179,7 @@ function bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNo
     }
 }
 
-function createMemberCard(member, memberTemplate, membersList) {
+function createMemberCard(member, memberTemplate, membersList, isOwner = false) {
     if (!memberTemplate) return;
     const memberEl = memberTemplate.cloneNode(true);
     memberEl.classList.remove('hidden');
@@ -158,6 +189,13 @@ function createMemberCard(member, memberTemplate, membersList) {
     const metaSpan = memberEl.querySelector('.member-card__meta');
     if (nameSpan) nameSpan.textContent = member.username;
     if (metaSpan) metaSpan.textContent = member.role;
+    if (isOwner) {
+        const kickBtn = memberEl.querySelector('.member-card__kick-btn');
+        if (kickBtn) kickBtn.classList.remove('hidden');
+        kickBtn.onclick = async () => {
+            kicked = await kickMember(member);
+        };
+    }
 
     const avatarDiv = memberEl.querySelector('.member-card__avatar');
     if (avatarDiv) {
@@ -256,7 +294,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         let total = 0;
 
         room.members_data.forEach(member => {
-            const memberEl = createMemberCard(member, memberTemplate, membersList);
+            const memberEl = createMemberCard(member, memberTemplate, membersList, isOwner);
             if (memberEl) membersList?.appendChild(memberEl);
             total++;
         });
