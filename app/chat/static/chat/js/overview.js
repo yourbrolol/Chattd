@@ -210,7 +210,6 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
     let targetRoom = roomName || state.currentRoom;
     if (!targetRoom) return;
 
-    // Scoped element lookup fallback
     if (!contentNode) {
         const tabInfo = Object.values(state.tabsById).find(t => t.type === 'room-overview' && t.metadata?.relatedRoom === targetRoom);
         contentNode = tabInfo?.contentNode;
