@@ -13,7 +13,7 @@ APP_AUTH_REQUIRED = "auth_required"
 APP_ALREADY_PENDING = "already_pending"
 APP_ALREADY_APPROVED = "already_approved"
 
-async def apply_to_room_sync(
+async def apply_to_room(
     db: AsyncSession, room_name: str, user: User
 ) -> Tuple[Optional[RoomApplication], str]:
     if user is None:
@@ -65,7 +65,7 @@ async def apply_to_room_sync(
 
     return app, APP_OK
 
-async def review_application_sync(
+async def review_application(
     db: AsyncSession,
     application_id: int,
     acting_user: User,
@@ -81,7 +81,7 @@ async def review_application_sync(
     room_stmt = select(ChatRoom).where(ChatRoom.id == app.room_id)
     room_result = await db.execute(room_stmt)
     room = room_result.scalars().first()
-    if not room or room.owner_id != acting_user.id:
+    if not room or getattr(room, "owner_id") != acting_user.id:
         return None, "forbidden"
 
     new_status = "APPROVED" if approve else "REJECTED"
