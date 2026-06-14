@@ -7,7 +7,3 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str = Field(..., max_length=20, description="The username of the user")
     password: str = Field(..., description="The password of the user")
-
-class RoomCreate(BaseModel):
-    name: str = Field(..., max_length=20, description="The name of the room")
-    room_type: str = Field(..., description="The type of the room")  # "public" or "private"
