@@ -5,11 +5,12 @@ These are equivalent to Django models but for SQLAlchemy.
 Each class = one database table.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
-from database import Base
+import enum
+from app.core.database import Base
 
 
 class User(Base):
@@ -136,12 +137,25 @@ class User(Base):
 
 class ChatRoom(Base):
     """Chat room model - will be fully defined later"""
+
+    class RoomType(str, enum.Enum):
+        PUBLIC = 'PUBLIC',
+        UNLISTED = 'UNLISTED',
+        PRIVATE = 'PRIVATE',
+
     __tablename__ = "chatrooms"
     id = Column(Integer, primary_key=True)
     name = Column(String(20), nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner = relationship(
         "User", back_populates="owned_chatrooms", foreign_keys=[owner_id])
+    
+    type = Column(
+        SQLEnum(RoomType),
+        default=RoomType.PUBLIC,
+        nullable=False,
+    )
+
     applications = relationship("RoomApplication", back_populates="room")
     members = relationship("RoomMembership", back_populates="room")
     messages = relationship("ChatMessage", back_populates="room")
@@ -172,9 +186,20 @@ class ChatMessage(Base):
 
 class RoomApplication(Base):
     """Room application model - will be fully defined later"""
+
+    class ApplicationStatus(str, enum.Enum):
+        PENDING = "PENDING"
+        APPROVED = "APPROVED"
+        REJECTED = "REJECTED"
+
     __tablename__ = "room_applications"
     id = Column(Integer, primary_key=True)
     applicant_id = Column(Integer, ForeignKey("users.id"))
     applicant = relationship("User", back_populates="room_applications")
     room_id = Column(Integer, ForeignKey("chatrooms.id"))
     room = relationship("ChatRoom", back_populates="applications")
+    status = Column(
+        SQLEnum(ApplicationStatus),
+        default=ApplicationStatus.PENDING,
+        nullable=False,
+    )
