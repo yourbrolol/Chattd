@@ -1,3 +1,4 @@
+from sqlalchemy.engine import default
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -10,6 +11,11 @@ from app.chat.routers.applications import router as applications_router
 from app.chat.routers.users import router as users_router
 from app.core.websockets import router as ws_router
 
+from decouple import config
+
+RUN_API = config("RUN_API", default=True)
+SERVE_FE = config("SERVE_FE", default=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize DB tables
@@ -20,12 +26,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SpreadTalk API", lifespan=lifespan)
 
-# Mount media folder for serving avatars
-os.makedirs("media", exist_ok=True)
-app.mount("/media", StaticFiles(directory="media"), name="media")
+if RUN_API:
+    os.makedirs("media", exist_ok=True)
+    app.mount("/media", StaticFiles(directory="media"), name="media")
 
-app.include_router(auth_router)
-app.include_router(rooms_router)
-app.include_router(applications_router)
-app.include_router(users_router)
-app.include_router(ws_router)
+    app.include_router(auth_router)
+    app.include_router(rooms_router)
+    app.include_router(applications_router)
+    app.include_router(users_router)
+    app.include_router(ws_router)
+
+if SERVE_FE:
+    pass
