@@ -1,130 +1,69 @@
 """
-SQLAlchemy ORM Models
+SQLAlchemy ORM Models - Fully Type-Checked Edition
 
-These are equivalent to Django models but for SQLAlchemy.
-Each class = one database table.
+Each class = one database table, fully annotated for Pyrefly / type checkers.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from datetime import datetime
 import enum
+from typing import List, Optional
+
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.sql import func
+
 from app.core.database import Base
 
 
 class User(Base):
     """
     User model - stores authentication and profile data.
-
-    Equivalent to Django's AbstractBaseUser + PermissionsMixin
-
-    Fields:
-        id: Primary key (auto-increment)
-        username: Unique username (max 20 chars)
-        password_hash: Bcrypt hashed password
-        avatar: Path to avatar image file (nullable)
-        is_active: Whether user account is active
-        is_staff: Whether user can access admin
-        is_superuser: Whether user has all permissions
-        created_at: Account creation timestamp
-        updated_at: Last account update timestamp
-
-    Relationships:
-        owned_chatrooms: Rooms owned by this user
-        room_memberships: Rooms this user is a member of
-        messages: Messages sent by this user
-        room_applications: Applications submitted by this user
     """
-
     __tablename__ = "users"
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True,
-    )
+    # Primary key and core attributes
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    # Optional field (Pyrefly sees this as Optional[str] / str | None)
+    avatar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
 
-    username = Column(
-        String(20),
-        unique=True,
-        nullable=False,
-        index=True,
-    )
+    # Boolean flags
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    password_hash = Column(
-        String(255),
-        nullable=False,
-    )
+    # Timestamps (mapped to python datetime objects)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    avatar = Column(
-        String(255),
-        nullable=True,
-        default=None,
-    )
-
-    is_active = Column(
-        Boolean,
-        default=True,
-        nullable=False,
-    )
-
-    is_staff = Column(
-        Boolean,
-        default=False,
-        nullable=False,
-    )
-
-    is_superuser = Column(
-        Boolean,
-        default=False,
-        nullable=False,
-    )
-
-    created_at = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False,
-    )
-
-    updated_at = Column(
-        DateTime,
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
-
-    owned_chatrooms = relationship(
+    # Relationships (Using List[...] tells Pyrefly it's an iterable collection)
+    owned_chatrooms: Mapped[List["ChatRoom"]] = relationship(
         "ChatRoom",
         back_populates="owner",
         foreign_keys="ChatRoom.owner_id",
     )
-
-    room_memberships = relationship(
+    room_memberships: Mapped[List["RoomMembership"]] = relationship(
         "RoomMembership",
         back_populates="user",
     )
-
-    messages = relationship(
+    messages: Mapped[List["ChatMessage"]] = relationship(
         "ChatMessage",
         back_populates="user",
     )
-
-    room_applications = relationship(
+    room_applications: Mapped[List["RoomApplication"]] = relationship(
         "RoomApplication",
         back_populates="applicant",
     )
 
     def __repr__(self) -> str:
-        """String representation for debugging"""
         return f"<User(id={self.id}, username='{self.username}')>"
 
     def __str__(self) -> str:
-        """Friendly string representation"""
         return self.username
 
     def to_dict(self) -> dict:
-        """Convert model to dictionary (useful for API responses)"""
         return {
             "id": self.id,
             "username": self.username,
@@ -144,26 +83,26 @@ class ChatRoom(Base):
         PRIVATE = 'PRIVATE'
 
     __tablename__ = "chatrooms"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(20), unique=True, nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    owner = relationship(
-        "User", back_populates="owned_chatrooms", foreign_keys=[owner_id])
     
-    type = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    
+    # owner_id can be None/Null if the owner deletes their account
+    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    owner: Mapped[Optional["User"]] = relationship(
+        "User", back_populates="owned_chatrooms", foreign_keys=[owner_id]
+    )
+    
+    type: Mapped[RoomType] = mapped_column(
         SQLEnum(RoomType),
         default=RoomType.PUBLIC,
         nullable=False,
     )
-    created_at = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False,
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
-    applications = relationship("RoomApplication", back_populates="room")
-    members = relationship("RoomMembership", back_populates="room")
-    messages = relationship("ChatMessage", back_populates="room")
+    applications: Mapped[List["RoomApplication"]] = relationship("RoomApplication", back_populates="room")
+    members: Mapped[List["RoomMembership"]] = relationship("RoomMembership", back_populates="room")
+    messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", back_populates="room")
 
 
 class RoomMembership(Base):
@@ -176,21 +115,20 @@ class RoomMembership(Base):
         ADMIN = 'admin'
 
     __tablename__ = "room_memberships"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    user = relationship("User", back_populates="room_memberships")
-    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
-    room = relationship("ChatRoom", back_populates="members")
-    role = Column(
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="room_memberships")
+    
+    room_id: Mapped[int] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
+    room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="members")
+    
+    role: Mapped[str] = mapped_column(
         String(20),
         default=Role.MEMBER,
         nullable=False,
     )
-    joined_at = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False,
-    )
+    joined_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     __table_args__ = (
         UniqueConstraint('room_id', 'user_id', name='unique_room_user_membership'),
@@ -200,13 +138,16 @@ class RoomMembership(Base):
 class ChatMessage(Base):
     """Chat message model - stores room messages."""
     __tablename__ = "chatmessages"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
-    user = relationship("User", back_populates="messages")
-    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
-    room = relationship("ChatRoom", back_populates="messages")
-    content = Column(String(1000), nullable=False)
-    timestamp = Column(DateTime, server_default=func.now(), nullable=False)
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="messages")
+    
+    room_id: Mapped[int] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
+    room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="messages")
+    
+    content: Mapped[str] = mapped_column(String(1000), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
 
 class RoomApplication(Base):
@@ -218,18 +159,17 @@ class RoomApplication(Base):
         REJECTED = "REJECTED"
 
     __tablename__ = "room_applications"
-    id = Column(Integer, primary_key=True)
-    applicant_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    applicant = relationship("User", back_populates="room_applications")
-    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="SET NULL"), nullable=True)
-    room = relationship("ChatRoom", back_populates="applications")
-    status = Column(
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    applicant_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    applicant: Mapped[Optional["User"]] = relationship("User", back_populates="room_applications")
+    
+    room_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="SET NULL"), nullable=True)
+    room: Mapped[Optional["ChatRoom"]] = relationship("ChatRoom", back_populates="applications")
+    
+    status: Mapped[ApplicationStatus] = mapped_column(
         SQLEnum(ApplicationStatus),
         default=ApplicationStatus.PENDING,
         nullable=False,
     )
-    created_at = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False,
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
