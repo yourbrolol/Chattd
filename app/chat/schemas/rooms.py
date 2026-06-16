@@ -4,7 +4,12 @@ from typing import List, Optional
 # --- Request Schemas ---
 
 class RoomCreate(BaseModel):
-    room_name: str = Field(..., max_length=20, description="The name of the room to create")
+    room_name: str = Field(
+        ...,
+        max_length=20,
+        pattern=r'^[a-zA-Z0-9._-]+$',
+        description="The name of the room to create"
+    )
     room_type: str = Field(..., description="The type of the room (e.g., public, private)")
 
 class RoomSearch(BaseModel):

@@ -5,7 +5,7 @@ These are equivalent to Django models but for SQLAlchemy.
 Each class = one database table.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -136,16 +136,16 @@ class User(Base):
 
 
 class ChatRoom(Base):
-    """Chat room model - will be fully defined later"""
+    """Chat room model - matches Django's ChatRoom"""
 
     class RoomType(str, enum.Enum):
-        PUBLIC = 'PUBLIC',
-        UNLISTED = 'UNLISTED',
-        PRIVATE = 'PRIVATE',
+        PUBLIC = 'PUBLIC'
+        UNLISTED = 'UNLISTED'
+        PRIVATE = 'PRIVATE'
 
     __tablename__ = "chatrooms"
     id = Column(Integer, primary_key=True)
-    name = Column(String(20), nullable=False)
+    name = Column(String(20), unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner = relationship(
         "User", back_populates="owned_chatrooms", foreign_keys=[owner_id])
@@ -155,6 +155,11 @@ class ChatRoom(Base):
         default=RoomType.PUBLIC,
         nullable=False,
     )
+    created_at = Column(
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
+    )
 
     applications = relationship("RoomApplication", back_populates="room")
     members = relationship("RoomMembership", back_populates="room")
@@ -162,30 +167,50 @@ class ChatRoom(Base):
 
 
 class RoomMembership(Base):
-    """Room membership model - will be fully defined later"""
+    """Through model for room membership with per-user roles."""
+
+    class Role(str, enum.Enum):
+        OWNER = 'owner'
+        MEMBER = 'member'
+        MODERATOR = 'moderator'
+        ADMIN = 'admin'
+
     __tablename__ = "room_memberships"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     user = relationship("User", back_populates="room_memberships")
-    room_id = Column(Integer, ForeignKey("chatrooms.id"), nullable=True)
+    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
     room = relationship("ChatRoom", back_populates="members")
+    role = Column(
+        String(20),
+        default=Role.MEMBER,
+        nullable=False,
+    )
+    joined_at = Column(
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint('room_id', 'user_id', name='unique_room_user_membership'),
+    )
 
 
 class ChatMessage(Base):
-    """Chat message model - will be fully defined later"""
+    """Chat message model - stores room messages."""
     __tablename__ = "chatmessages"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     user = relationship("User", back_populates="messages")
-    room_id = Column(Integer, ForeignKey("chatrooms.id"))
+    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
     room = relationship("ChatRoom", back_populates="messages")
     content = Column(String(1000), nullable=False)
     timestamp = Column(DateTime, server_default=func.now(), nullable=False)
-    # TODO: add hash
 
 
 class RoomApplication(Base):
-    """Room application model - will be fully defined later"""
+    """Room application model - user requests to join private rooms."""
 
     class ApplicationStatus(str, enum.Enum):
         PENDING = "PENDING"
@@ -194,12 +219,17 @@ class RoomApplication(Base):
 
     __tablename__ = "room_applications"
     id = Column(Integer, primary_key=True)
-    applicant_id = Column(Integer, ForeignKey("users.id"))
+    applicant_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     applicant = relationship("User", back_populates="room_applications")
-    room_id = Column(Integer, ForeignKey("chatrooms.id"))
+    room_id = Column(Integer, ForeignKey("chatrooms.id", ondelete="SET NULL"), nullable=True)
     room = relationship("ChatRoom", back_populates="applications")
     status = Column(
         SQLEnum(ApplicationStatus),
         default=ApplicationStatus.PENDING,
+        nullable=False,
+    )
+    created_at = Column(
+        DateTime,
+        server_default=func.now(),
         nullable=False,
     )
