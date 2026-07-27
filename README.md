@@ -17,7 +17,7 @@
 1. Clone the repo and go to it's root folder
 
 ```bash
-cd SpreadTalk # or other name
+cd Chattd # previously SpreadTalk
 ```
 
 2. Create a virtual enviroment
