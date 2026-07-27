@@ -1,6 +1,6 @@
-# SpreadTalk
+# Chattd - "Chat Daemon"
 
-## Thank you for cloning SpreadTalk's repository! This README will walk you through on how to set up and use the application
+## Thank you for cloning Chattd! This README will walk you through on how to set up and use the application
 
 ## Stack
 
