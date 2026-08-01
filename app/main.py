@@ -34,4 +34,6 @@ if RUN_API:
 if SERVE_FE:
     from app.chat.routers.fe_router import router as fe_router
     
+    app.mount("/static", StaticFiles(directory="app/chat/static"), name="static")
+    
     app.include_router(fe_router)
