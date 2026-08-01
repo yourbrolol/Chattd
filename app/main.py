@@ -5,10 +5,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.core.database import init_db, close_db
-from app.chat.routers.auth import router as auth_router
-from app.chat.routers.rooms import router as rooms_router
-from app.chat.routers.applications import router as applications_router
-from app.chat.routers.users import router as users_router
 from app.core.websockets import router as ws_router
 
 from decouple import config
@@ -27,14 +23,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="SpreadTalk API", lifespan=lifespan)
 
 if RUN_API:
+    from app.chat.routers.api_router import router as api_router
+    
     os.makedirs("media", exist_ok=True)
     app.mount("/media", StaticFiles(directory="media"), name="media")
 
-    app.include_router(auth_router)
-    app.include_router(rooms_router)
-    app.include_router(applications_router)
-    app.include_router(users_router)
+    app.include_router(api_router)
     app.include_router(ws_router)
 
 if SERVE_FE:
-    pass
+    from app.chat.routers.fe_router import router as fe_router
+    
+    app.include_router(fe_router)
