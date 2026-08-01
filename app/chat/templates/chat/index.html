@@ -1,5 +1,3 @@
-{% load static %}
-{% now "U" as timestamp %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -7,44 +5,45 @@
         <meta name="csrf-token" content="{{ csrf_token }}">
         <title>SpreadTalk</title>
         <!-- Core styles -->
-        <link rel="stylesheet" href="{% static 'chat/css/core/core.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/core/layout.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/core/responsive.css' %}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/core/core.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/core/layout.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/core/responsive.css') }}">
         <!-- General styles -->
-        <link rel="stylesheet" href="{% static 'chat/css/general/nav.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/general/sidebar.css' %}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/general/nav.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/general/sidebar.css') }}">
         <!-- Tab styles -->
         <!-- General tabs-->
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/new_tab.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/settings.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/tabs.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/views.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/search.css' %}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/new_tab.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/settings.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/tabs.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/views.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/search.css') }}">
         <!-- Application tabs -->
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/apply_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/applications/review_applications.css' %}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/applications/apply_room.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/applications/review_applications.css') }}">
         <!-- Room tabs -->
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/chat_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/join_room.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/room_creation.css' %}">
-        <link rel="stylesheet" href="{% static 'chat/css/tabs/rooms/room_overview.css' %}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/rooms/chat_room.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/rooms/join_room.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/rooms/room_creation.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', path='chat/css/tabs/rooms/room_overview.css') }}">
     </head>
     <body>
         <nav class="nav">
             <div id="title-decorator"><p class="title">SpreadTalk</p></div>
             <div id="user">
-                {% if request.user.is_authenticated %}
+                {% if request.user and request.user.is_authenticated %}
                     <p id="username-p">{{ request.user.username }}</p>
                     {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" id="user-icon">
+                        <!-- Assumes your avatar field stores the absolute URL or static path -->
+                        <img src="{{ request.user.avatar }}" id="user-icon">
                     {% else %}
-                        <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
+                        <img src="{{ url_for('static', path='chat/user_icon.png') }}" id="user-icon">
                     {% endif %}
                 {% else %}
                     <p id="username-p">Logged out</p>
-                    <img src="{% static 'chat/user_icon.png' %}" id="user-icon">
+                    <img src="{{ url_for('static', path='chat/user_icon.png') }}" id="user-icon">
                 {% endif %}
-                <a href="{% url 'logout' %}" id="logout-link" class="btn-primary">Logout</a>
+                <a href="{{ url_for('logout') }}" id="logout-link" class="btn-primary">Logout</a>
             </div>
         </nav>
         <div id="main">
@@ -65,6 +64,6 @@
                 </div>
             </div>
         </div>
-        <script src="{% static 'chat/main.js' %}?v={{ timestamp }}" type="module" defer></script>
+        <script src="{{ url_for('static', path='chat/main.js') }}?v={{ timestamp }}" type="module" defer></script>
     </body>
 </html>
