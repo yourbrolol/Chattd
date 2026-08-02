@@ -11,3 +11,14 @@ class RegistrationForm(Form):
         "Password",
         validators=[DataRequired(), Length(min=8)]
     )
+
+class LoginForm(Form):
+    username = StringField(
+        "Username",
+        validators=[DataRequired(), Length(min=3, max=32)]
+    )
+
+    password = PasswordField(
+        "Password",
+        validators=[DataRequired(), Length(min=8)]
+    )
