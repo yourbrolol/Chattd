@@ -1,0 +1,15 @@
+app/chat/static/chat/js/applications.js: /rooms/apply/
+app/chat/static/chat/js/applications.js: /rooms/applications/${applicationId}/review/
+app/chat/static/chat/js/applications.js: /rooms/${encodeURIComponent(roomName)}/applications/
+app/chat/static/chat/js/applications.js: /rooms/applications/
+app/chat/static/chat/js/factories.js: /static/chat/templates/${name}.html?v=${Date.now()}
+app/chat/static/chat/js/overview.js: /rooms/${encodeURIComponent(roomName)}/delete/
+app/chat/static/chat/js/overview.js: /rooms/${encodeURIComponent(roomName)}/leave/
+app/chat/static/chat/js/overview.js: /rooms/${encodeURIComponent(oldName)}/edit/
+app/chat/static/chat/js/overview.js: /rooms/${encodeURIComponent(state.currentRoom)}/kick/
+app/chat/static/chat/js/overview.js: /rooms/${encodeURIComponent(targetRoom)}/
+app/chat/static/chat/js/room.js: /rooms/create/
+app/chat/static/chat/js/rooms.js: /rooms/join/
+app/chat/static/chat/js/rooms.js: /rooms/
+app/chat/static/chat/js/search.js: /rooms/search/?q=${encodeURIComponent(query)}
+app/chat/static/chat/js/settings.js: /settings/edit/

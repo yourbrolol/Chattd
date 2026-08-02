@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { api } from './api.js';
 
 export function renderSettingsTab(contentNode) {
     const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
@@ -75,13 +76,7 @@ export function renderSettingsTab(contentNode) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
         try {
-            const response = await fetch('/settings/edit/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                body: formData
-            });
+            const response = await api.settings.edit(formData, { headers: { 'X-CSRFToken': csrfToken } });
 
             const result = await response.json();
             if (response.ok && result.success) {

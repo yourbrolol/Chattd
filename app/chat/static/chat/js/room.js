@@ -1,4 +1,5 @@
 import { openChatTab, closeTab, getTabElementById } from './tabs.js';
+import { api } from './api.js';
 import { loadRooms } from './rooms.js';
 import { state } from './state.js';
 
@@ -34,11 +35,7 @@ export async function handleGroupSubmission(e, contentNode) {
     formData.append('room_type', roomTypeSelect.value);
 
     try {
-        const response = await fetch('/rooms/create/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
+        const response = await api.rooms.create(formData);
 
         const isSuccess = response.redirected || !response.url.endsWith('/rooms/create');
 

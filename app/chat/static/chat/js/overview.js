@@ -1,4 +1,5 @@
 import { openChatTab, closeTab, getTabElementById, openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
+import { api } from './api.js';
 import { state } from './state.js';
 
 function escapeHtml(str) {
@@ -27,12 +28,7 @@ async function deleteRoom(roomName) {
     if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const delRes = await fetch(`/rooms/${encodeURIComponent(roomName)}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-            },
-        });
+        const delRes = await api.rooms.delete(roomName, { headers: { 'X-CSRFToken': csrfToken } });
         if (!delRes.ok) {
             alert('Failed to delete room. You might not have permission to do this.');
             return;
@@ -49,12 +45,7 @@ async function leaveRoom(roomName) {
     if (!confirm('Are you sure you want to leave this room?')) return;
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const leaveRes = await fetch(`/rooms/${encodeURIComponent(roomName)}/leave/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-            },
-        });
+        const leaveRes = await api.rooms.leave(roomName, { headers: { 'X-CSRFToken': csrfToken } });
         if (!leaveRes.ok) {
             alert('Failed to leave room. You might not have permission to do this.');
             return;
@@ -72,14 +63,7 @@ async function updateRoomName(oldName, newName, contentNode) {
 
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const response = await fetch(`/rooms/${encodeURIComponent(oldName)}/edit/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-            },
-            body: JSON.stringify({ name: newName.trim() })
-        });
+        const response = await api.rooms.update(oldName, { name: newName.trim() }, { headers: { 'X-CSRFToken': csrfToken } });
 
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
@@ -105,14 +89,7 @@ async function kickMember(member, contentNode) {
     if (!confirm(`Are you sure you want to kick ${member.username}?`)) return false;
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const res = await fetch(`/rooms/${encodeURIComponent(state.currentRoom)}/kick/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-            },
-            body: JSON.stringify({ username: member.username })
-        });
+        const res = await api.rooms.kick(state.currentRoom, member.username, { headers: { 'X-CSRFToken': csrfToken } });
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             alert(data.error || 'Failed to kick member. You might not have permission to do this.');
@@ -263,7 +240,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
     if (typeEl) typeEl.textContent = '';
 
     try {
-        const res = await fetch(`/rooms/${encodeURIComponent(targetRoom)}/`);
+        const res = await api.rooms.get(targetRoom);
 
         if (!res.ok) {
             if (errEl) {

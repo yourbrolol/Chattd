@@ -1,4 +1,5 @@
 import { openChatTab } from "./tabs.js";
+import { api } from './api.js';
 
 function escapeHtml(str) {
     return String(str || '')
@@ -32,7 +33,7 @@ export async function renderSearchTab(contentNode) {
         // Debounce backend hits by 250ms to keep it performant
         debounceTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`/rooms/search/?q=${encodeURIComponent(query)}`);
+                const response = await api.rooms.search(query);
                 if (!response.ok) return;
                 const data = await response.json();
 

@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { api } from './api.js';
 
 const JOIN_ERROR_MESSAGES = {
     not_found: 'Room not found. Check the name and try again.',
@@ -43,11 +44,7 @@ export async function joinRoom(roomName) {
     formData.append('room_name', trimmed);
 
     try {
-        const response = await fetch('/rooms/join/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData,
-        });
+        const response = await api.rooms.join(formData);
 
         if (response.status === 401) {
             return { ok: false, error: 'auth_required' };
@@ -84,7 +81,7 @@ export function loadRooms(onRoomClick) {
 
     listDiv.innerHTML = '';
 
-    fetch('/rooms/')
+    api.rooms.list()
         .then(r => {
             if (!r.ok) throw new Error('list failed');
             return r.json();

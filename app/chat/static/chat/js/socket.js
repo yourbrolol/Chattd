@@ -1,5 +1,4 @@
 import { state } from './state.js';
-
 function escapeHtml(string) {
     return String(string).replace(/[&<>"']/g, function (s) {
         return {

@@ -1,3 +1,5 @@
+import { api } from './api.js';
+
 function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
@@ -16,11 +18,7 @@ export async function applyToRoom(roomName) {
     body.append('room_name', trimmed);
 
     try {
-        const response = await fetch('/rooms/apply/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body,
-        });
+        const response = await api.applications.apply(trimmed, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
         const data = await response.json().catch(() => ({}));
 
@@ -47,11 +45,7 @@ export async function reviewApplication(applicationId, action) {
     body.append('action', action);
 
     try {
-        const response = await fetch(`/rooms/applications/${applicationId}/review/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body,
-        });
+        const response = await api.applications.review(applicationId, action, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
         const data = await response.json().catch(() => ({}));
 
@@ -73,7 +67,7 @@ export async function loadRoomPendingApplications(roomName) {
     if (!roomName) return [];
     
     try {
-        const response = await fetch(`/rooms/${encodeURIComponent(roomName)}/applications/`);
+        const response = await api.applications.list(roomName);
         if (!response.ok) return [];
         return await response.json();
     } catch {
@@ -84,7 +78,7 @@ export async function loadRoomPendingApplications(roomName) {
 // SCRAPPED
 export async function loadPendingApplications() {
     try {
-        const response = await fetch('/rooms/applications/');
+        const response = await api.applications.pending();
         if (!response.ok) return [];
         return await response.json();
     } catch {
