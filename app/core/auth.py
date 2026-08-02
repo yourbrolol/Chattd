@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from starlette.authentication import AuthenticationBackend, AuthCredentials, AuthenticationError
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -26,7 +27,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(datetime.timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -53,3 +54,26 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+class JWTAuthBackend(AuthenticationBackend):
+    async def authenticate(self, request):
+        token = request.headers.get("Authorization")
+        if not token or not token.startswith("Bearer "):
+            return None
+        token = token.split(" ")[1]
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise AuthenticationError("Invalid token")
+        except JWTError:
+            raise AuthenticationError("Invalid token")
+
+        async with get_db() as db:
+            stmt = select(User).where(User.username == username)
+            result = await db.execute(stmt)
+            user = result.scalars().first()
+            if user is None:
+                raise AuthenticationError("User not found")
+
+        return AuthCredentials(["authenticated"]), user

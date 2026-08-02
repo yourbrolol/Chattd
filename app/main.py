@@ -24,6 +24,10 @@ app = FastAPI(title="SpreadTalk API", lifespan=lifespan)
 
 if RUN_API:
     from app.chat.routers.api_router import router as api_router
+    from app.core.auth import JWTAuthBackend
+    from starlette.middleware.authentication import AuthenticationMiddleware
+    
+    app.add_middleware(AuthenticationMiddleware, backend=JWTAuthBackend())
     
     os.makedirs("media", exist_ok=True)
     app.mount("/media", StaticFiles(directory="media"), name="media")
