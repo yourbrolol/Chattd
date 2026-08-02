@@ -26,7 +26,7 @@
             {% endif %}
 
             <form method="post">
-                {% csrf_token %}
+                {{ csrf_token }}
                 <div class="form-group">
                     <input type="text" name="username" placeholder="Username" required autocomplete="username">
                 </div>
@@ -37,7 +37,7 @@
             </form>
 
             <div class="auth-footer">
-                Already have an account? <a href="{% url 'login' %}">Login here</a>
+                Already have an account? <a href="{{ url_for('login') }}">Login here</a>
             </div>
         </div>
     </div>

@@ -21,11 +21,19 @@ async def home_page(request: Request):
 @router.get("/register/", response_class=HTMLResponse, tags=["register_page"])
 async def reg_page(request: Request):
     return templates.TemplateResponse(
-        request=request, name="auth/register.html"
+        request=request, name="auth/register.html", context={
+            "request": request,
+            "timestamp": int(time.time()), # Replaces {% now "U" %}
+            "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
+        }
     )
 
 @router.get("/login/", response_class=HTMLResponse, tags=["login_page"])
 async def login_page(request: Request):
     return templates.TemplateResponse(
-        request=request, name="auth/login.html"
+        request=request, name="auth/login.html", context={
+            "request": request,
+            "timestamp": int(time.time()), # Replaces {% now "U" %}
+            "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
+        }
     )
