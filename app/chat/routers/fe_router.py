@@ -20,7 +20,7 @@ async def home_page(request: Request):
         }
     )
 
-@router.get("/register/", response_class=HTMLResponse, tags=["register_page"])
+@router.get("/register/", name="reg_page", response_class=HTMLResponse, tags=["register_page"])
 async def reg_page(request: Request):
     form = RegistrationForm()
     return templates.TemplateResponse(
@@ -32,7 +32,7 @@ async def reg_page(request: Request):
         }
     )
 
-@router.post("/register/", response_class=HTMLResponse, tags=["register_page"])
+@router.post("/register/", name="reg_submit", response_class=HTMLResponse, tags=["register_page"])
 async def reg_page_post(request: Request):
     form = RegistrationForm(await request.form())
     if form.validate():
@@ -57,7 +57,7 @@ async def reg_page_post(request: Request):
             }
         )
 
-@router.get("/login/", response_class=HTMLResponse, tags=["login_page"])
+@router.get("/login/", name="login_page", response_class=HTMLResponse, tags=["login_page"])
 async def login_page(request: Request):
     form = LoginForm()
     return templates.TemplateResponse(
@@ -69,7 +69,7 @@ async def login_page(request: Request):
         }
     )
 
-@router.post("/login/", response_class=HTMLResponse, tags=["login_page"])
+@router.post("/login/", name="login_submit", response_class=HTMLResponse, tags=["login_page"])
 async def login_page_post(request: Request):
     form = LoginForm(await request.form())
     if form.validate():

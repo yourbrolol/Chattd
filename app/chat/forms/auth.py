@@ -15,10 +15,10 @@ class RegistrationForm(Form):
 class LoginForm(Form):
     username = StringField(
         "Username",
-        validators=[DataRequired(), Length(min=3, max=32)]
+        validators=[DataRequired(), Length(min=1, max=20)]
     )
 
     password = PasswordField(
         "Password",
-        validators=[DataRequired(), Length(min=8)]
+        validators=[DataRequired(), Length(min=8, max=20)]
     )

@@ -27,7 +27,7 @@
             </div>
             {% endif %}
 
-            <form method="POST" action="{{ url_for('login') }}">
+            <form method="POST" action="{{ url_for('login_submit') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -45,7 +45,7 @@
             </form>
 
             <div class="auth-footer">
-                Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+                Don't have an account? <a href="{{ url_for('reg_page') }}">Register here</a>
             </div>
         </div>
     </div>
