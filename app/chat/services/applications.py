@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from app.chat.models import ChatRoom, RoomMembership, RoomApplication, User
 
 logger = logging.getLogger(__name__)
@@ -102,3 +103,52 @@ async def review_application(
     await db.commit()
     await db.refresh(app)
     return app, None
+
+
+async def get_pending_applications_for_owner(db: AsyncSession, current_user: User) -> list[dict]:
+    stmt = (
+        select(RoomApplication)
+        .join(ChatRoom)
+        .options(selectinload(RoomApplication.applicant), selectinload(RoomApplication.room))
+        .where(ChatRoom.owner_id == current_user.id, RoomApplication.status == RoomApplication.ApplicationStatus.PENDING)
+        .order_by(RoomApplication.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    apps = result.scalars().all()
+    return [
+        {
+            "id": a.id,
+            "room": a.room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ]
+
+
+async def get_pending_applications_for_room(db: AsyncSession, room_name: str, current_user: User) -> Tuple[Optional[list[dict]], Optional[str]]:
+    room_stmt = select(ChatRoom).where(ChatRoom.name == room_name)
+    room_res = await db.execute(room_stmt)
+    room = room_res.scalars().first()
+    if not room:
+        return None, "room_not_found"
+    if room.owner_id != current_user.id:
+        return None, "forbidden"
+
+    stmt = (
+        select(RoomApplication)
+        .options(selectinload(RoomApplication.applicant))
+        .where(RoomApplication.room_id == room.id, RoomApplication.status == RoomApplication.ApplicationStatus.PENDING)
+        .order_by(RoomApplication.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    apps = result.scalars().all()
+    return [
+        {
+            "id": a.id,
+            "room": room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ], None
