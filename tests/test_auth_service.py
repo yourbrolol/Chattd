@@ -41,3 +41,18 @@ async def test_register_rejects_duplicate_username(session: AsyncSession) -> Non
 
     assert user is None
     assert code == "username_taken"
+
+
+@pytest.mark.anyio
+async def test_register_and_login_user_with_long_password(session: AsyncSession) -> None:
+    long_password = "x" * 80
+    user, code = await register_user(session, UserCreate(username="bob", password=long_password))
+
+    assert code == "ok"
+    assert user is not None
+
+    token_payload, login_code = await login_user(session, UserLogin(username="bob", password=long_password))
+
+    assert login_code == "ok"
+    assert token_payload["token_type"] == "bearer"
+    assert token_payload["access_token"]
