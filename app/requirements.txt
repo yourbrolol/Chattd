@@ -41,6 +41,8 @@ MarkupSafe==3.0.3
 mdurl==0.1.2
 msgpack==1.1.2
 packaging==26.2
+bcrypt<5
+bcrypt<5
 passlib==1.7.4
 pillow==12.2.0
 py-ubjson==0.16.1
