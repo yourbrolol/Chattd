@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,17 +41,8 @@ async def reg_page_post(request: Request, db: AsyncSession = Depends(get_db)):
     form = RegistrationForm(await request.form())
     if form.validate():
         user, code = await register_user(db=db, user_data=UserCreate(**form.data))
-        if code == "ok": return HTMLResponse("reg okkk")
-        # return templates.TemplateResponse(
-        #     request=request, name="auth/register_success.html", context={
-        #         "request": request,
-        #         "username": form.username.data,
-        #         "timestamp": int(time.time()), # Replaces {% now "U" %}
-        #         "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
-        #     }
-        # )
+        if code == "ok": return HTMLResponse(f"{code} - User {user.username} registered successfully!")
     else:
-        # Handle form errors
         return templates.TemplateResponse(
             request=request, name="auth/register.html", context={
                 "request": request,
@@ -79,16 +70,20 @@ async def login_page_post(request: Request, db: AsyncSession = Depends(get_db)):
     form = LoginForm(await request.form())
     if form.validate():
         token, code = await login_user(db=db, user_data=UserLogin(**form.data))
-        # return templates.TemplateResponse(
-        #     request=request, name="auth/login_success.html", context={
-        #         "request": request,
-        #         "username": form.username.data,
-        #         "timestamp": int(time.time()), # Replaces {% now "U" %}
-        #         "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
-        #     }
-        # )
+        response = JSONResponse(content={"message": "Login successful"})
+        # Note: The secure flag on cookies ensures they're only sent over encrypted HTTPS connections. For local development (HTTP) set it to False
+        response.set_cookie(
+            key="jwt_token",
+            value=token,
+            httponly=True,
+            max_age=3600,
+            expires=3600,
+            samesite="lax",
+            #secure=True, enable in prod
+            domain=None,
+        )
+        return response
     else:
-        # Handle form errors
         return templates.TemplateResponse(
             request=request, name="auth/login.html", context={
                 "request": request,
