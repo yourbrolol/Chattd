@@ -33,7 +33,7 @@ async def login_page_post(request: Request, db: AsyncSession = Depends(get_db)):
         token, code = await login_user(db=db, user_data=UserLogin(**form.data))
         response = JSONResponse(content={"message": "Login successful"})
         response.set_cookie(
-            key="jwt_token",
+            key="access_token",
             value=token,
             httponly=True,
             max_age=3600,

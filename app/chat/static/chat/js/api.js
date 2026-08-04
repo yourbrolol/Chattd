@@ -27,6 +27,7 @@ async function request(path, options = {}) {
 
     const response = await fetch(API_PREFIX + path, {
         headers: finalHeaders,
+        credentials: "include",
         ...rest,
         body: finalBody,
     });
