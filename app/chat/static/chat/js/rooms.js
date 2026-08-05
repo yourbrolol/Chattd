@@ -82,10 +82,6 @@ export function loadRooms(onRoomClick) {
     listDiv.innerHTML = '';
 
     api.rooms.list()
-        .then(r => {
-            if (!r.ok) throw new Error('list failed');
-            return r.json();
-        })
         .then(rooms => {
             rooms.forEach(r => {
                 const btn = document.createElement('div');
