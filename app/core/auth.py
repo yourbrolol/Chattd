@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import json
+import logging
 from starlette.authentication import AuthenticationBackend, AuthCredentials, AuthenticationError
 from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
@@ -19,10 +21,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=1440
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+logger = logging.getLogger(__name__)
+
 async def get_token_from_cookie(request: Request) -> str:
     token = request.cookies.get("access_token")
 
     if token is None:
+        logger.error("No token found in cookies")
         raise HTTPException(
             status_code=401,
             detail="Not authenticated"
@@ -52,11 +57,15 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        cleaned = token.replace("'", '"')
+        cleaned = json.loads(cleaned)
+        payload = jwt.decode(cleaned['access_token'], SECRET_KEY, algorithms=[ALGORITHM])
+        logger.debug(f"Decoded JWT payload: {payload}")
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"Error decoding JWT token {token}, exception: {e}")
         raise credentials_exception
 
     stmt = select(User).where(User.username == username)
@@ -76,8 +85,10 @@ class JWTAuthBackend(AuthenticationBackend):
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             username: str = payload.get("sub")
             if username is None:
+                logger.error("Invalid token: sub claim is missing")
                 raise AuthenticationError("Invalid token")
-        except JWTError:
+        except JWTError as e:
+            logger.error(f"Error decoding JWT token: {e}")
             raise AuthenticationError("Invalid token")
 
         async with get_db() as db:
@@ -85,6 +96,7 @@ class JWTAuthBackend(AuthenticationBackend):
             result = await db.execute(stmt)
             user = result.scalars().first()
             if user is None:
+                logger.warning("User not found")
                 raise AuthenticationError("User not found")
 
         return AuthCredentials(["authenticated"]), user
