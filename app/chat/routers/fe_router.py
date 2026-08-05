@@ -1,3 +1,4 @@
+import logging
 import time
 
 from fastapi import APIRouter, Request
@@ -11,8 +12,11 @@ router = APIRouter(prefix="", tags=["frontend"])
 
 templates = Jinja2Templates(directory="app/chat/templates")
 
+logger = logging.getLogger(__name__)
+
 @router.get("/", response_class=HTMLResponse, tags=["main_page"])
 async def home_page(request: Request):
+    #TEST: logger.warning(request.user)
     return templates.TemplateResponse(
         request=request, name="chat/index.html", context={
             "request": request,
