@@ -27,8 +27,7 @@ function closeRoomTabs(roomName) {
 async function deleteRoom(roomName) {
     if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const delRes = await api.rooms.delete(roomName, { headers: { 'X-CSRFToken': csrfToken } });
+        const delRes = await api.rooms.delete(roomName);
         if (!delRes.ok) {
             alert('Failed to delete room. You might not have permission to do this.');
             return;
@@ -44,8 +43,7 @@ async function deleteRoom(roomName) {
 async function leaveRoom(roomName) {
     if (!confirm('Are you sure you want to leave this room?')) return;
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const leaveRes = await api.rooms.leave(roomName, { headers: { 'X-CSRFToken': csrfToken } });
+        const leaveRes = await api.rooms.leave(roomName);
         if (!leaveRes.ok) {
             alert('Failed to leave room. You might not have permission to do this.');
             return;
@@ -62,8 +60,7 @@ async function updateRoomName(oldName, newName, contentNode) {
     if (!newName || newName.trim() === "" || oldName === newName) return oldName;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const response = await api.rooms.update(oldName, { name: newName.trim() }, { headers: { 'X-CSRFToken': csrfToken } });
+        const response = await api.rooms.update(oldName, { name: newName.trim() });
 
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));

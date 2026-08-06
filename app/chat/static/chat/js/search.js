@@ -34,8 +34,7 @@ export async function renderSearchTab(contentNode) {
         debounceTimeout = setTimeout(async () => {
             try {
                 const response = await api.rooms.search(query);
-                if (!response.ok) return;
-                const data = await response.json();
+                const data = response.data
 
                 // Clear previous cycles
                 if (joinedList) joinedList.innerHTML = '';

@@ -47,8 +47,6 @@ export async function reviewApplication(applicationId, action) {
     try {
         const response = await api.applications.review(applicationId, action, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
-        const data = await response.json().catch(() => ({}));
-
         if (response.status === 403) return { ok: false, error: 'forbidden' };
         if (response.status === 404) return { ok: false, error: 'not_found' };
         if (!response.ok) return { ok: false, error: 'network' };
@@ -69,7 +67,7 @@ export async function loadRoomPendingApplications(roomName) {
     try {
         const response = await api.applications.list(roomName);
         if (!response.ok) return [];
-        return await response.json();
+        return await response.data;
     } catch {
         return [];
     }
@@ -80,7 +78,7 @@ export async function loadPendingApplications() {
     try {
         const response = await api.applications.pending();
         if (!response.ok) return [];
-        return await response.json();
+        return await response.data;
     } catch {
         return [];
     }

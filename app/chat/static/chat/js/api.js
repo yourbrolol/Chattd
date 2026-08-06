@@ -44,7 +44,45 @@ async function request(path, options = {}) {
         return;
     }
 
-    return response.json();
+    const rawData = await response.json()
+
+    const target = {
+        status: response.status,
+        ok: response.ok,
+        data: response.ok ? rawData : null,
+        error: !response.ok ? rawData : null,
+        
+        // Для String(object) або `${object}`
+        toString() {
+            return JSON.stringify(this.ok ? this.data : this.error, null, 2);
+        }
+    };
+
+    return new Proxy(target, {
+        get(obj, prop) {
+            if (prop in obj) {
+                return obj[prop];
+            }
+            
+            if (obj.data && typeof obj.data === 'object') {
+                const value = obj.data[prop];
+                if (typeof value === 'function') {
+                    return value.bind(obj.data);
+                }
+                return value;
+            }
+            
+            if (obj.error && typeof obj.error === 'object') {
+                const value = obj.error[prop];
+                if (typeof value === 'function') {
+                    return value.bind(obj.error);
+                }
+                return value;
+            }
+            
+            return undefined;
+        }
+    });
 }
 
 export const http = {

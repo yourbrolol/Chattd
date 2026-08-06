@@ -32,15 +32,12 @@ export async function handleGroupSubmission(e, contentNode) {
         'room_name': roomName,
         'room_type': roomTypeSelect.value,
     };
-    
-    console.log(roomData);
 
     try {
         const response = await api.rooms.create(roomData);
+        const data = response.data
 
-        const isSuccess = response.redirected || !response.url.endsWith('/rooms/create');
-
-        if (response.ok && isSuccess) {
+        if (response.ok) {
             roomNameInput.value = '';
             if (errorsDiv) {
                 errorsDiv.classList.add('hidden');

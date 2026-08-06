@@ -53,7 +53,7 @@ export async function joinRoom(roomName) {
             return { ok: false, error: 'not_found' };
         }
         if (response.status === 403) {
-            const data403 = await response.json().catch(() => ({}));
+            const data403 = await response.data.catch(() => ({}));
             // app_required / app_pending arrive as { warning: '...' }
             const warning = data403?.warning;
             if (warning === 'app_required') return { ok: false, error: 'app_required', roomName: trimmed };
@@ -64,7 +64,7 @@ export async function joinRoom(roomName) {
             return { ok: false, error: 'network' };
         }
 
-        const data = await response.json();
+        const data = response.data;
         return { ok: true, name: data.name, roomType: data.room_type };
     } catch {
         return { ok: false, error: 'network' };
@@ -83,6 +83,7 @@ export function loadRooms(onRoomClick) {
 
     api.rooms.list()
         .then(rooms => {
+            console.log(rooms)
             rooms.forEach(r => {
                 const btn = document.createElement('div');
                 btn.className = 'room';
