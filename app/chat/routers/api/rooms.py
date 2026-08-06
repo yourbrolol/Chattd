@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +18,8 @@ from app.chat.schemas.rooms import (
 from app.chat.services import rooms as rooms_service
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
+
+logger = logging.getLogger(__name__)
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_room(

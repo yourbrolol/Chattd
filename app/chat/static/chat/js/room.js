@@ -27,15 +27,16 @@ export async function handleGroupSubmission(e, contentNode) {
         }
         return; // Stop the execution here so no fetch request is sent
     }
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    const formData = new URLSearchParams();
-    formData.append('csrfmiddlewaretoken', csrfToken);
-    formData.append('room_name', roomName); // Using the trimmed valid room name
-    formData.append('room_type', roomTypeSelect.value);
+    
+    const roomData = {
+        'room_name': roomName,
+        'room_type': roomTypeSelect.value,
+    };
+    
+    console.log(roomData);
 
     try {
-        const response = await api.rooms.create(formData);
+        const response = await api.rooms.create(roomData);
 
         const isSuccess = response.redirected || !response.url.endsWith('/rooms/create');
 

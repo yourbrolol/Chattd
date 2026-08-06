@@ -23,6 +23,9 @@ async function request(path, options = {}) {
         if (!Object.prototype.hasOwnProperty.call(finalHeaders, "Content-Type")) {
             finalHeaders["Content-Type"] = "application/json";
         }
+        if (!Object.prototype.hasOwnProperty.call(finalHeaders, "X-CSRFToken")) {
+            finalHeaders["X-CSRFToken"] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
     }
 
     const response = await fetch(API_PREFIX + path, {

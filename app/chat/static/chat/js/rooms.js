@@ -39,9 +39,9 @@ export async function joinRoom(roomName) {
         return { ok: false, error: 'empty' };
     }
 
-    const formData = new URLSearchParams();
-    formData.append('csrfmiddlewaretoken', getCsrfToken());
-    formData.append('room_name', trimmed);
+    const formData = {
+        'room_name': trimmed,
+    }
 
     try {
         const response = await api.rooms.join(formData);
