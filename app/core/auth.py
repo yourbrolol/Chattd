@@ -47,7 +47,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def authenticate_token(token: str, db: AsyncSession) -> User:
+async def authenticate_token(token: str, db: AsyncSession) -> User | UnauthenticatedUser:
     # credentials_exception = HTTPException(
     #     status_code=status.HTTP_401_UNAUTHORIZED,
     #     detail="Could not validate credentials",
@@ -60,17 +60,14 @@ async def authenticate_token(token: str, db: AsyncSession) -> User:
         payload = jwt.decode(cleaned['access_token'], SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Decoded JWT payload: {payload}")
         username: str = payload.get("sub")
-        if username is None:
-            raise AuthenticationError("User not found")
+        if username is None: return UnauthenticatedUser()
     except JWTError as e:
         logger.error(f"Error decoding JWT token {token}, exception: {e}")
         raise AuthenticationError("Error decoding JWT token.")
     stmt = select(User).where(User.username == username)
     result = await db.execute(stmt)
     user = result.scalars().first()
-    if user is None:
-        logger.warning("User not found")
-        raise AuthenticationError("User not found")
+    if user is None: return UnauthenticatedUser()
     return user
 
 async def get_current_user(
@@ -100,6 +97,8 @@ class JWTAuthBackend(AuthenticationBackend):
             if token is None: return AuthCredentials([]), UnauthenticatedUser()
 
             async with SessionLocal() as db: user = await authenticate_token(token, db)
+            
+            if user is UnauthenticatedUser(): return AuthCredentials([]), UnauthenticatedUser()
 
             print("User:", user)
 
