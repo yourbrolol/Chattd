@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
 import json
 import logging
-from starlette.authentication import AuthenticationBackend, AuthCredentials, AuthenticationError
+from starlette.authentication import AuthenticationBackend, AuthCredentials, AuthenticationError, UnauthenticatedUser
 from typing import Optional
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -76,18 +76,35 @@ async def authenticate_token(token: str, db: AsyncSession) -> User:
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(get_token_from_cookie)
-) -> User:
-    """Alias for authenticate_token."""
+) -> User | UnauthenticatedUser:
+    if token is None: return UnauthenticatedUser()
+    return await authenticate_token(token, db)
+
+async def get_current_ws_user(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db),
+) -> User | UnauthenticatedUser:
+    token = websocket.cookies.get("access_token")
+    if token is None: return UnauthenticatedUser()
+
     return await authenticate_token(token, db)
 
 class JWTAuthBackend(AuthenticationBackend):
-    async def authenticate(self, request):
-        token = request.cookies.get("access_token")
+    async def authenticate(self, conn):
+        try:
+            print("AUTH BACKEND")
 
-        if token is None:
-            return None
+            token = conn.cookies.get("access_token")
+            print("Token:", token)
+            
+            if token is None: return AuthCredentials([]), UnauthenticatedUser()
 
-        async with SessionLocal() as db:
-            user = await authenticate_token(token, db)
+            async with SessionLocal() as db: user = await authenticate_token(token, db)
 
-        return AuthCredentials(["authenticated"]), user
+            print("User:", user)
+
+            return AuthCredentials(["authenticated"]), user
+
+        except Exception:
+            logger.exception("Authentication backend failed")
+            raise

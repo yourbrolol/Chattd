@@ -56,7 +56,10 @@ class User(Base):
         "RoomApplication",
         back_populates="applicant",
     )
-
+    
+    @property
+    def is_authenticated(self) -> bool: return True
+    
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username='{self.username}')>"
 

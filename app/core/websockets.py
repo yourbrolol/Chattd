@@ -1,12 +1,12 @@
 import json
 import logging
 from typing import Dict, Set, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from jose import jwt, JWTError
 from sqlalchemy.future import select
 
 from app.core.database import SessionLocal
-from app.core.auth import SECRET_KEY, ALGORITHM
+from app.core.auth import get_current_ws_user, SECRET_KEY, ALGORITHM
 from app.chat.models import User
 from app.chat.services.rooms import (
     get_room,
@@ -63,18 +63,15 @@ async def get_user_from_token(token: str) -> Optional[User]:
     except JWTError:
         return None
 
-@router.websocket("/ws/chat/{room_name}")
+@router.websocket("/ws/chat/{room_name}/")
 async def websocket_endpoint(
     websocket: WebSocket,
     room_name: str,
-    token: Optional[str] = Query(None)
+    #user: User | None = Depends(get_current_ws_user),
 ):
-    if not token:
-        await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)
-        return
-        
-    user = await get_user_from_token(token)
-    if not user:
+    print("Enter websocket.")
+    user = websocket.user
+    if not user.is_authenticated:
         await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)
         return
 
