@@ -247,7 +247,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
             return;
         }
 
-        const room = await res.json();
+        const room = await res.data;
         if (typeEl) typeEl.textContent = `Type: ${escapeHtml(room.room_type)}`;
 
         const isOwner = room.owner === state.username;
