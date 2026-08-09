@@ -104,8 +104,8 @@ class ChatRoom(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     applications: Mapped[List["RoomApplication"]] = relationship("RoomApplication", back_populates="room")
-    members: Mapped[List["RoomMembership"]] = relationship("RoomMembership", back_populates="room")
-    messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", back_populates="room")
+    members: Mapped[List["RoomMembership"]] = relationship("RoomMembership", cascade="all, delete-orphan", back_populates="room", passive_deletes=True)
+    messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", cascade="all, delete-orphan", back_populates="room", passive_deletes=True)
 
 
 class RoomMembership(Base):
@@ -146,7 +146,7 @@ class ChatMessage(Base):
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     user: Mapped[Optional["User"]] = relationship("User", back_populates="messages")
     
-    room_id: Mapped[int] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
+    room_id: Mapped[int] = mapped_column(ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
     room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="messages")
     
     content: Mapped[str] = mapped_column(String(1000), nullable=False)
