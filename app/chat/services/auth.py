@@ -36,5 +36,5 @@ async def login_user(db: AsyncSession, user_data: UserLogin) -> Tuple[dict, str]
     if not user or not verify_password(user_data.password, user.password_hash):
         return {}, AUTH_INVALID_CREDENTIALS
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}, AUTH_OK
