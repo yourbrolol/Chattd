@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -25,4 +26,14 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
 
 @router.post("/logout")
 async def logout():
-    return {"message": "Successfully logged out"}
+    redirect_response = RedirectResponse(url="/login", status_code=303)
+    
+    redirect_response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        samesite="lax",
+        #secure=True
+    )
+    
+    return redirect_response
