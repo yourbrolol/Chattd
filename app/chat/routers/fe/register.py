@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,12 +26,12 @@ async def reg_page(request: Request):
         }
     )
 
-@router.post("/", name="reg_submit", response_class=HTMLResponse, tags=["register_page"])
+@router.post("/", name="reg_submit", response_class=RedirectResponse | HTMLResponse, tags=["register_page"])
 async def reg_page_post(request: Request, db: AsyncSession = Depends(get_db)):
     form = RegistrationForm(await request.form())
     if form.validate():
         user, code = await register_user(db=db, user_data=UserCreate(**form.data))
-        if code == "ok": return HTMLResponse(f"{code} - User {user.username} registered successfully!")
+        if code == "ok": return RedirectResponse("/login", status_code=303)
     else:
         return templates.TemplateResponse(
             request=request, name="auth/register.html", context={

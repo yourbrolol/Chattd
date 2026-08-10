@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,12 +26,12 @@ async def login_page(request: Request):
         }
     )
 
-@router.post("/", name="login_submit", response_class=HTMLResponse, tags=["login_page"])
+@router.post("/", name="login_submit", response_class=RedirectResponse | HTMLResponse, tags=["login_page"])
 async def login_page_post(request: Request, db: AsyncSession = Depends(get_db)):
     form = LoginForm(await request.form())
     if form.validate():
         token, code = await login_user(db=db, user_data=UserLogin(**form.data))
-        response = JSONResponse(content={"message": "Login successful"})
+        response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(
             key="access_token",
             value=token,
