@@ -122,7 +122,7 @@ export const api = {
         create: (body, options = {}) => http.post("/rooms", body, options),
         join: (body, options = {}) => http.post("/rooms/join", body, options),
         get: (roomName, options = {}) => http.get(`/rooms/${encodeURIComponent(roomName)}`, options),
-        delete: (roomName, options = {}) => http.delete(`/rooms/${encodeURIComponent(roomName)}`, options),
+        delete: (roomName, options = {}) => http.delete(`/rooms/${encodeURIComponent(roomName)}/delete`, options),
         leave: (roomName, options = {}) => http.post(`/rooms/${encodeURIComponent(roomName)}/leave`, undefined, options),
         update: (roomName, body, options = {}) => http.patch(`/rooms/${encodeURIComponent(roomName)}`, body, options),
         kick: (roomName, username, options = {}) => http.post(`/rooms/${encodeURIComponent(roomName)}/kick`, { username }, options),

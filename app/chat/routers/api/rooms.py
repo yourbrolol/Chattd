@@ -79,7 +79,7 @@ async def leave_room(
         raise HTTPException(status_code=403, detail="not_member")
     return {"message": "left_room"}
 
-@router.delete("/{room_name}")
+@router.delete("/{room_name}/delete")
 async def delete_room(
     room_name: str,
     db: AsyncSession = Depends(get_db),
