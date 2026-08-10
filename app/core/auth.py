@@ -93,7 +93,7 @@ class JWTAuthBackend(AuthenticationBackend):
             print("AUTH BACKEND")
 
             token = conn.cookies.get("access_token")
-            print("Token:", token, "Type:", type(token), "Length", len(token))
+            print("Token:", token, "Type:", type(token))
             
             if token is None: return AuthCredentials([]), UnauthenticatedUser()
 

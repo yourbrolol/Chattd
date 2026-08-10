@@ -35,14 +35,14 @@ async function request(path, options = {}) {
         body: finalBody,
     });
 
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || response.statusText);
-    }
+    // if (!response.ok) {
+    //     const text = await response.text();
+    //     throw new Error(text || response.statusText);
+    // }
 
-    if (response.status === 204) {
-        return;
-    }
+    // if (response.status === 204) {
+    //     return;
+    // }
 
     const rawData = await response.json()
 
@@ -52,7 +52,6 @@ async function request(path, options = {}) {
         data: response.ok ? rawData : null,
         error: !response.ok ? rawData : null,
         
-        // Для String(object) або `${object}`
         toString() {
             return JSON.stringify(this.ok ? this.data : this.error, null, 2);
         }

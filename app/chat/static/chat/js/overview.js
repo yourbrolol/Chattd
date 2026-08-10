@@ -63,7 +63,7 @@ async function updateRoomName(oldName, newName, contentNode) {
         const response = await api.rooms.update(oldName, { name: newName.trim() });
 
         if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
+            const data = await response.data;
             alert(data.error || 'Failed to update room name.');
             return oldName;
         }

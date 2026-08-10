@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -92,7 +93,7 @@ async def delete_room(
         raise HTTPException(status_code=403, detail="forbidden")
     return {"message": "room_deleted"}
 
-@router.post("/join")
+@router.post("/join", response_class=JSONResponse)
 async def join_room(
     join_data: JoinRoom,
     db: AsyncSession = Depends(get_db),
@@ -107,16 +108,16 @@ async def join_room(
     if status_code == rooms_service.JOIN_FORBIDDEN:
         raise HTTPException(status_code=403, detail="forbidden")
     if status_code == rooms_service.APPLICATION_REQUIRED:
-        return {"warning": "app_required"}
+        return JSONResponse(status_code=403, content={"warning": "app_required"})
     if status_code == rooms_service.APPLICATION_PENDING:
-        return {"warning": "app_pending"}
+        return JSONResponse(status_code=403, content={"warning": "app_pending"})
     
-    return {
+    return JSONResponse(content={
         "name": room.name,
         "room_type": room.type.value,
         "joined": status_code in (rooms_service.JOIN_OK, rooms_service.JOIN_ALREADY_MEMBER),
         "already_member": status_code == rooms_service.JOIN_ALREADY_MEMBER,
-    }
+    })
 
 @router.patch("/{room_name}")
 async def edit_room(

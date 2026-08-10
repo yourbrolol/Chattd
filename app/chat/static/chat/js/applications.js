@@ -20,7 +20,7 @@ export async function applyToRoom(roomName) {
     try {
         const response = await api.applications.apply(trimmed, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response.data;
 
         if (response.status === 401) return { ok: false, error: 'auth_required' };
         if (response.status === 404) return { ok: false, error: 'not_found' };
