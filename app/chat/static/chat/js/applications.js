@@ -18,7 +18,7 @@ export async function applyToRoom(roomName) {
     body.append('room_name', trimmed);
 
     try {
-        const response = await api.applications.apply(trimmed, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        const response = await api.applications.apply(trimmed);
 
         const data = await response.data;
 

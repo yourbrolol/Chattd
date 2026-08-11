@@ -36,7 +36,7 @@ async def apply_to_room(
     if not app:
         raise HTTPException(status_code=400, detail="unknown_error")
         
-    room_name = app.room.name if getattr(app, "room", None) else ""
+    room_name = app.room.name
 
     return {
         "id": app.id,
