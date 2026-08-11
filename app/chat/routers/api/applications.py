@@ -35,12 +35,10 @@ async def apply_to_room(
         raise HTTPException(status_code=200, detail="already_pending")
     if not app:
         raise HTTPException(status_code=400, detail="unknown_error")
-        
-    room_name = app.room.name
 
     return {
         "id": app.id,
-        "room": room_name,
+        "room": apply_data.room_name,
         "status": app.status.value
     }
 
@@ -56,14 +54,12 @@ async def review_application(
         raise HTTPException(status_code=400, detail="invalid_action")
 
     approve = action == "approve"
-    app, error = await apps_service.review_application(db, application_id, current_user, approve)
+    app, room_name, error = await apps_service.review_application(db, application_id, current_user, approve)
     
     if error == apps_service.APP_NOT_FOUND or app is None:
         raise HTTPException(status_code=404, detail="not_found")
     if error == "forbidden":
         raise HTTPException(status_code=403, detail="forbidden")
-
-    room_name = app.room.name if getattr(app, "room", None) else ""
 
     return {
         "id": app.id,

@@ -77,17 +77,17 @@ async def review_application(
     result = await db.execute(stmt)
     app = result.scalars().first()
     if not app:
-        return None, APP_NOT_FOUND
+        return None, None, APP_NOT_FOUND
 
     room_stmt = select(ChatRoom).where(ChatRoom.id == app.room_id)
     room_result = await db.execute(room_stmt)
     room = room_result.scalars().first()
     if not room or getattr(room, "owner_id") != acting_user.id:
-        return None, "forbidden"
+        return None, None, "forbidden"
 
     new_status = "APPROVED" if approve else "REJECTED"
     if app.status == new_status:
-        return app, None
+        return app, room.name, None
 
     app.status = new_status
 
@@ -99,10 +99,10 @@ async def review_application(
         if not mem_result.scalars().first():
             membership = RoomMembership(user_id=app.applicant_id, room_id=app.room_id)
             db.add(membership)
-
+    
     await db.commit()
     await db.refresh(app)
-    return app, None
+    return app, room.name, None
 
 
 async def get_pending_applications_for_owner(db: AsyncSession, current_user: User) -> list[dict]:

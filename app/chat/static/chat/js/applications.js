@@ -40,19 +40,16 @@ export async function applyToRoom(roomName) {
  * Returns { ok, app } or { ok: false, error }.
  */
 export async function reviewApplication(applicationId, action) {
-    const body = new URLSearchParams();
-    body.append('csrfmiddlewaretoken', getCsrfToken());
-    body.append('action', action);
-
     try {
-        const response = await api.applications.review(applicationId, action, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        const response = await api.applications.review(applicationId, action);
 
         if (response.status === 403) return { ok: false, error: 'forbidden' };
         if (response.status === 404) return { ok: false, error: 'not_found' };
         if (!response.ok) return { ok: false, error: 'network' };
 
         return { ok: true, app: data };
-    } catch {
+    } catch (e) {
+        console.error(e)
         return { ok: false, error: 'network' };
     }
 }
