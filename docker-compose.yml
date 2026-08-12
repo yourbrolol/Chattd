@@ -3,21 +3,15 @@ x-common: &common
     context: .
     dockerfile: Dockerfile
   volumes:
-    - ./app:/app
+    - ./app:/workspace/app
   env_file:
     - ./app/.env
   restart: unless-stopped
 
 services:
-  spreadtalk-dev:
+  spreadtalk:
     <<: *common
     ports:
       - "8000:8000"
-    command: python manage.py runserver 0.0.0.0:8000
-
-  # spreadtalk-prod:
-  #   <<: *common
-  #   ports:
-  #     - "8001:8000"
-  #   command: daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
-  #   profiles: ["prod"]
+    working_dir: /workspace
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug --reload

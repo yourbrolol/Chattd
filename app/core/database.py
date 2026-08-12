@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # For PostgreSQL (production): "postgresql+asyncpg://user:password@localhost/dbname"
 DATABASE_URL = config(
     "DATABASE_URL",
-    default="sqlite+aiosqlite:///./db.sqlite3"  # Default to local SQLite
+    default="sqlite+aiosqlite:///./app/db.sqlite3"  # Default to local SQLite
 )
 
 logger.info(f"Database URL: {DATABASE_URL}")

@@ -7,16 +7,12 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY app/requirements.txt /app/
-COPY app/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY app/requirements.txt /tmp/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY app/ /app/
+COPY app/ /workspace/app/
 
 EXPOSE 8000
-
-ENTRYPOINT ["/entrypoint.sh"]
