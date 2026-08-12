@@ -58,7 +58,8 @@ export async function handleGroupSubmission(e, contentNode) {
 
             setTimeout(() => { void openChatTab(roomName); }, 100);
         } else if (errorsDiv) {
-            errorsDiv.textContent = 'An error occurred. Make sure the room name is unique and between 1-20 characters.';
+            console.log(response)
+            errorsDiv.textContent = response.error.detail || 'An error occurred while creating the room.';
             errorsDiv.classList.remove('hidden');
         }
     } catch (err) {
