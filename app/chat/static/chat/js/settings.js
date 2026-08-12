@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { api } from './api.js';
 
 export function renderSettingsTab(contentNode) {
     const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
@@ -72,18 +73,10 @@ export function renderSettingsTab(contentNode) {
             formData.append('username', usernameInput.value.trim());
         }
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
         try {
-            const response = await fetch('/settings/edit/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                body: formData
-            });
+            const response = await api.settings.edit(formData);
 
-            const result = await response.json();
+            const result = await response.data;
             if (response.ok && result.success) {
                 if (successEl) {
                     successEl.textContent = "Settings updated successfully!";

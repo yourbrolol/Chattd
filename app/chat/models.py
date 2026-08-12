@@ -1,123 +1,178 @@
-from django.db import models
-from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.contrib.auth.base_user import BaseUserManager
+"""
+SQLAlchemy ORM Models - Fully Type-Checked Edition
 
-class UserManager(BaseUserManager):
-    def create_user(self, username, password=None, **extra_fields):
-        if not username:
-            raise ValueError("Username is required")
-        user = self.model(username=username, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
+Each class = one database table, fully annotated for Pyrefly / type checkers.
+"""
 
-    def create_superuser(self, username, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        return self.create_user(username, password, **extra_fields)
+from datetime import datetime
+import enum
+from typing import List, Optional
 
-def user_avatar_path(instance, filename):
-    ext = filename.split('.')[-1].lower() if '.' in filename else 'jpg'
-    ext = ''.join(c for c in ext if c.isalnum())
-    return f'avatars/user_{instance.pk}.{ext}'
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SQLEnum, UniqueConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.sql import func
 
-class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=20, unique=True)
-    avatar = models.ImageField(upload_to=user_avatar_path, null=True, blank=True)
+from app.core.database import Base
 
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
 
-    objects = UserManager()
+class User(Base):
+    """
+    User model - stores authentication and profile data.
+    """
+    __tablename__ = "users"
 
-    USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = []
+    # Primary key and core attributes
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    # Optional field (Pyrefly sees this as Optional[str] / str | None)
+    avatar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
 
-    def __str__(self):
+    # Boolean flags
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Timestamps (mapped to python datetime objects)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships (Using List[...] tells Pyrefly it's an iterable collection)
+    owned_chatrooms: Mapped[List["ChatRoom"]] = relationship(
+        "ChatRoom",
+        back_populates="owner",
+        foreign_keys="ChatRoom.owner_id",
+    )
+    room_memberships: Mapped[List["RoomMembership"]] = relationship(
+        "RoomMembership",
+        back_populates="user",
+    )
+    messages: Mapped[List["ChatMessage"]] = relationship(
+        "ChatMessage",
+        back_populates="user",
+    )
+    room_applications: Mapped[List["RoomApplication"]] = relationship(
+        "RoomApplication",
+        back_populates="applicant",
+    )
+    
+    @property
+    def is_authenticated(self) -> bool: return True
+    
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, username='{self.username}')>"
+
+    def __str__(self) -> str:
         return self.username
 
-class RoomMembership(models.Model):
-    """Through model for room membership with per-user roles."""
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "username": self.username,
+            "avatar": self.avatar,
+            "is_active": self.is_active,
+            "is_staff": self.is_staff,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
-    class Role(models.TextChoices):
-        OWNER = 'owner', 'Owner'
-        MEMBER = 'member', 'Member'
-        MODERATOR = 'moderator', 'Moderator'
-        ADMIN = 'admin', 'Admin'
 
-    room = models.ForeignKey(
-        'ChatRoom',
-        on_delete=models.CASCADE,
-        related_name='memberships',
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='room_memberships',
-    )
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.MEMBER,
-    )
-    joined_at = models.DateTimeField(auto_now_add=True)
+class ChatRoom(Base):
+    """Chat room model - matches Django's ChatRoom"""
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['room', 'user'],
-                condition=models.Q(user__isnull=False),
-                name='unique_room_user_membership',
-            ),
-        ]
-
-    def __str__(self):
-        username = self.user.username if self.user else '(deleted user)'
-        return f"{username} in {self.room.name} ({self.role})"
-
-class ChatRoom(models.Model):
-    class RoomTypes(models.TextChoices):
+    class RoomType(str, enum.Enum):
         PUBLIC = 'PUBLIC'
         UNLISTED = 'UNLISTED'
         PRIVATE = 'PRIVATE'
 
-    name = models.CharField(max_length=20, unique=True)
-    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="owned_chatrooms")
-    room_type = models.CharField(max_length=10, choices=RoomTypes.choices, default=RoomTypes.PUBLIC)
-    members = models.ManyToManyField(
-        User,
-        through=RoomMembership,
-        blank=True,
-        related_name='member_chatrooms',
+    __tablename__ = "chatrooms"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    
+    # owner_id can be None/Null if the owner deletes their account
+    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    owner: Mapped[Optional["User"]] = relationship(
+        "User", back_populates="owned_chatrooms", foreign_keys=[owner_id]
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-class RoomApplication(models.Model):
-    class Status(models.TextChoices):
-        PENDING = 'PENDING'
-        APPROVED = 'APPROVED'
-        REJECTED = 'REJECTED'
-
-    applicant = models.ForeignKey(User, null=True, blank=False, on_delete=models.SET_NULL)
-    room = models.ForeignKey(ChatRoom, null=True, blank=False, on_delete=models.SET_NULL, related_name='applications')
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class ChatMessage(models.Model):
-    room = models.ForeignKey(
-        ChatRoom,
-        on_delete=models.CASCADE,
-        related_name="messages"
+    
+    type: Mapped[RoomType] = mapped_column(
+        SQLEnum(RoomType),
+        default=RoomType.PUBLIC,
+        nullable=False,
     )
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
-    def __str__(self):
-        return f"[{self.room}] {self.content[:30]}"
+    applications: Mapped[List["RoomApplication"]] = relationship("RoomApplication", back_populates="room")
+    members: Mapped[List["RoomMembership"]] = relationship("RoomMembership", cascade="all, delete-orphan", back_populates="room", passive_deletes=True)
+    messages: Mapped[List["ChatMessage"]] = relationship("ChatMessage", cascade="all, delete-orphan", back_populates="room", passive_deletes=True)
+
+
+class RoomMembership(Base):
+    """Through model for room membership with per-user roles."""
+
+    class Role(str, enum.Enum):
+        OWNER = 'owner'
+        MEMBER = 'member'
+        MODERATOR = 'moderator'
+        ADMIN = 'admin'
+
+    __tablename__ = "room_memberships"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="room_memberships")
+    
+    room_id: Mapped[int] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
+    room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="members")
+    
+    role: Mapped[str] = mapped_column(
+        String(20),
+        default=Role.MEMBER,
+        nullable=False,
+    )
+    joined_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('room_id', 'user_id', name='unique_room_user_membership'),
+    )
+
+
+class ChatMessage(Base):
+    """Chat message model - stores room messages."""
+    __tablename__ = "chatmessages"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="messages")
+    
+    room_id: Mapped[int] = mapped_column(ForeignKey("chatrooms.id", ondelete="CASCADE"), nullable=False)
+    room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="messages")
+    
+    content: Mapped[str] = mapped_column(String(1000), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+
+class RoomApplication(Base):
+    """Room application model - user requests to join private rooms."""
+
+    class ApplicationStatus(str, enum.Enum):
+        PENDING = "PENDING"
+        APPROVED = "APPROVED"
+        REJECTED = "REJECTED"
+
+    __tablename__ = "room_applications"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    applicant_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    applicant: Mapped[Optional["User"]] = relationship("User", back_populates="room_applications")
+    
+    room_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("chatrooms.id", ondelete="SET NULL"), nullable=True)
+    room: Mapped[Optional["ChatRoom"]] = relationship("ChatRoom", back_populates="applications")
+    
+    status: Mapped[ApplicationStatus] = mapped_column(
+        SQLEnum(ApplicationStatus),
+        default=ApplicationStatus.PENDING,
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)

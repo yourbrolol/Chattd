@@ -1,8 +1,9 @@
 import logging
-
-from django.db import IntegrityError, transaction
-
-from chat.models import ChatRoom, RoomMembership, RoomApplication
+from typing import Optional, Tuple
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
+from app.chat.models import ChatRoom, RoomMembership, RoomApplication, User
 
 logger = logging.getLogger(__name__)
 
@@ -13,81 +14,141 @@ APP_AUTH_REQUIRED = "auth_required"
 APP_ALREADY_PENDING = "already_pending"
 APP_ALREADY_APPROVED = "already_approved"
 
-
-def apply_to_room_sync(room_name, user):
-    """
-    Create or reuse a RoomApplication for the given room and user.
-
-    Returns (application | None, status_code).
-    """
-    if user is None or not getattr(user, "is_authenticated", False):
+async def apply_to_room(
+    db: AsyncSession, room_name: str, user: User
+) -> Tuple[Optional[RoomApplication], str]:
+    if user is None:
         return None, APP_AUTH_REQUIRED
 
     room_name = (room_name or "").strip()
     if not room_name:
         return None, APP_NOT_FOUND
 
-    try:
-        room = ChatRoom.objects.get(name=room_name)
-    except ChatRoom.DoesNotExist:
+    stmt = select(ChatRoom).where(ChatRoom.name == room_name)
+    result = await db.execute(stmt)
+    room = result.scalars().first()
+    if not room:
         return None, APP_NOT_FOUND
 
-    if RoomMembership.objects.filter(room=room, user=user).exists():
+    member_stmt = select(RoomMembership).where(
+        RoomMembership.room_id == room.id, RoomMembership.user_id == user.id
+    )
+    member_result = await db.execute(member_stmt)
+    if member_result.scalars().first():
         return None, APP_ALREADY_MEMBER
 
-    try:
-        with transaction.atomic():
-            app, created = RoomApplication.objects.select_for_update().get_or_create(
-                applicant=user,
-                room=room,
-                defaults={"status": RoomApplication.Status.PENDING},
-            )
+    app_stmt = select(RoomApplication).where(
+        RoomApplication.room_id == room.id, RoomApplication.applicant_id == user.id
+    ).with_for_update()
+    app_result = await db.execute(app_stmt)
+    app = app_result.scalars().first()
 
-            if not created:
-                if app.status == RoomApplication.Status.APPROVED:
-                    return app, APP_ALREADY_APPROVED
-                if app.status == RoomApplication.Status.PENDING:
-                    return app, APP_ALREADY_PENDING
+    if not app:
+        app = RoomApplication(
+            applicant_id=user.id,
+            room_id=room.id,
+            status="PENDING",
+        )
+        db.add(app)
+        await db.commit()
+        await db.refresh(app)
+        return app, APP_OK
 
-                # Previously rejected – let the user re-apply by resetting to PENDING.
-                if app.status == RoomApplication.Status.REJECTED:
-                    app.status = RoomApplication.Status.PENDING
-                    app.save(update_fields=["status"])
+    if app.status == "APPROVED":
+        return app, APP_ALREADY_APPROVED
+    if app.status == "PENDING":
+        return app, APP_ALREADY_PENDING
 
-    except IntegrityError:
-        logger.exception("apply_to_room_sync: integrity error while creating application")
-        return None, "error"
+    if app.status == "REJECTED":
+        app.status = "PENDING"
+        await db.commit()
+        await db.refresh(app)
 
     return app, APP_OK
 
+async def review_application(
+    db: AsyncSession,
+    application_id: int,
+    acting_user: User,
+    approve: bool,
+    auto_create_membership=True,
+) -> Tuple[Optional[RoomApplication], Optional[str]]:
+    stmt = select(RoomApplication).where(RoomApplication.id == application_id)
+    result = await db.execute(stmt)
+    app = result.scalars().first()
+    if not app:
+        return None, None, APP_NOT_FOUND
 
-def review_application_sync(application_id, acting_user, approve: bool, auto_create_membership=True):
-    """
-    Approve or reject a RoomApplication.
+    room_stmt = select(ChatRoom).where(ChatRoom.id == app.room_id)
+    room_result = await db.execute(room_stmt)
+    room = room_result.scalars().first()
+    if not room or getattr(room, "owner_id") != acting_user.id:
+        return None, None, "forbidden"
 
-    Only the room owner (or a future admin role) may review.
-    Returns (application | None, error_code | None).
-    """
-    try:
-        app = RoomApplication.objects.select_related("room", "applicant").get(pk=application_id)
-    except RoomApplication.DoesNotExist:
-        return None, APP_NOT_FOUND
-
-    room = app.room
-    is_owner = room.owner_id == getattr(acting_user, "id", None)
-    if not is_owner:
-        return None, "forbidden"
-
-    new_status = RoomApplication.Status.APPROVED if approve else RoomApplication.Status.REJECTED
-
+    new_status = "APPROVED" if approve else "REJECTED"
     if app.status == new_status:
-        return app, None
+        return app, room.name, None
 
     app.status = new_status
-    app.save(update_fields=["status"])
 
     if auto_create_membership and approve:
-        RoomMembership.objects.get_or_create(user=app.applicant, room=app.room)
+        mem_stmt = select(RoomMembership).where(
+            RoomMembership.room_id == app.room_id, RoomMembership.user_id == app.applicant_id
+        )
+        mem_result = await db.execute(mem_stmt)
+        if not mem_result.scalars().first():
+            membership = RoomMembership(user_id=app.applicant_id, room_id=app.room_id)
+            db.add(membership)
+    
+    await db.commit()
+    await db.refresh(app)
+    return app, room.name, None
 
-    return app, None
 
+async def get_pending_applications_for_owner(db: AsyncSession, current_user: User) -> list[dict]:
+    stmt = (
+        select(RoomApplication)
+        .join(ChatRoom)
+        .options(selectinload(RoomApplication.applicant), selectinload(RoomApplication.room))
+        .where(ChatRoom.owner_id == current_user.id, RoomApplication.status == RoomApplication.ApplicationStatus.PENDING)
+        .order_by(RoomApplication.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    apps = result.scalars().all()
+    return [
+        {
+            "id": a.id,
+            "room": a.room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ]
+
+
+async def get_pending_applications_for_room(db: AsyncSession, room_name: str, current_user: User) -> Tuple[Optional[list[dict]], Optional[str]]:
+    room_stmt = select(ChatRoom).where(ChatRoom.name == room_name)
+    room_res = await db.execute(room_stmt)
+    room = room_res.scalars().first()
+    if not room:
+        return None, "room_not_found"
+    if room.owner_id != current_user.id:
+        return None, "forbidden"
+
+    stmt = (
+        select(RoomApplication)
+        .options(selectinload(RoomApplication.applicant))
+        .where(RoomApplication.room_id == room.id, RoomApplication.status == RoomApplication.ApplicationStatus.PENDING)
+        .order_by(RoomApplication.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    apps = result.scalars().all()
+    return [
+        {
+            "id": a.id,
+            "room": room.name,
+            "applicant": a.applicant.username if a.applicant else None,
+            "created_at": a.created_at.isoformat(),
+        }
+        for a in apps
+    ], None

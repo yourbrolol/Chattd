@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { api } from './api.js';
 
 const JOIN_ERROR_MESSAGES = {
     not_found: 'Room not found. Check the name and try again.',
@@ -38,36 +39,33 @@ export async function joinRoom(roomName) {
         return { ok: false, error: 'empty' };
     }
 
-    const formData = new URLSearchParams();
-    formData.append('csrfmiddlewaretoken', getCsrfToken());
-    formData.append('room_name', trimmed);
+    const formData = {
+        'room_name': trimmed,
+    }
 
     try {
-        const response = await fetch('/rooms/join/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData,
-        });
+        const response = await api.rooms.join(formData);
+        console.log(response)
 
         if (response.status === 401) {
             return { ok: false, error: 'auth_required' };
         }
-        if (response.status === 404) {
+        else if (response.status === 404) {
             return { ok: false, error: 'not_found' };
         }
-        if (response.status === 403) {
-            const data403 = await response.json().catch(() => ({}));
+        else if (response.status === 403) {
+            const data403 = response.error;
             // app_required / app_pending arrive as { warning: '...' }
-            const warning = data403?.warning;
+            const warning = data403.warning;
             if (warning === 'app_required') return { ok: false, error: 'app_required', roomName: trimmed };
             if (warning === 'app_pending') return { ok: false, error: 'app_pending' };
             return { ok: false, error: 'forbidden' };
         }
-        if (!response.ok) {
+        else if (!response.ok) {
             return { ok: false, error: 'network' };
         }
 
-        const data = await response.json();
+        const data = response.data;
         return { ok: true, name: data.name, roomType: data.room_type };
     } catch {
         return { ok: false, error: 'network' };
@@ -84,11 +82,7 @@ export function loadRooms(onRoomClick) {
 
     listDiv.innerHTML = '';
 
-    fetch('/rooms/')
-        .then(r => {
-            if (!r.ok) throw new Error('list failed');
-            return r.json();
-        })
+    api.rooms.list()
         .then(rooms => {
             rooms.forEach(r => {
                 const btn = document.createElement('div');

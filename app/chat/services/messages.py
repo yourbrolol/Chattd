@@ -1,71 +1,44 @@
-import logging
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from django.db import IntegrityError
-from channels.db import database_sync_to_async
-from chat.models import ChatMessage, ChatRoom, User
+from app.chat.models import ChatMessage, ChatRoom, User, RoomMembership
 
-from .rooms import is_room_member
+async def add_message(
+    db: AsyncSession, room_name: str, user_id: int, msg: str
+) -> ChatMessage | None:
+    if not (msg or '').strip(): return None
+    room_stmt = select(ChatRoom).where(ChatRoom.name == room_name)
+    user_stmt = select(User).where(User.id == user_id)
+    room_result = await db.execute(room_stmt)
+    room = room_result.scalars().first()
+    user_result = await db.execute(user_stmt)
+    user = user_result.scalars().first()
 
-logger = logging.getLogger(__name__)
+    if not room or not user: return None
 
-
-def add_message_sync(room_name, user_id, msg):
-    if not (msg or '').strip():
-        return None
-
-    try:
-        room = ChatRoom.objects.get(name=room_name)
-        user = User.objects.get(pk=user_id)
-    except (ChatRoom.DoesNotExist, User.DoesNotExist):
-        logger.warning(
-            "add_message_sync: room %r or user id %s not found",
-            room_name,
-            user_id,
-        )
-        return None
-
-    if not is_room_member(room, user):
-        logger.warning(
-            "add_message_sync: user %s is not a member of %s",
-            user_id,
-            room_name,
-        )
-        return None
+    membership_stmt = select(RoomMembership).where(
+        RoomMembership.room_id == room.id,
+        RoomMembership.user_id == user.id
+    )
+    membership_result = await db.execute(membership_stmt)
+    if not membership_result.scalars().first(): return None
 
     try:
-        return ChatMessage.objects.create(room=room, user=user, content=msg)
-    except IntegrityError:
-        logger.exception(
-            "add_message_sync: failed to save message for user %s in %s",
-            user_id,
-            room_name,
-        )
+        chat_message = ChatMessage(room_id=room.id, user_id=user.id, content=msg)
+        db.add(chat_message)
+        await db.commit()
+        await db.refresh(chat_message)
+        return chat_message
+    except Exception:
         return None
 
-
-async def add_message(room_name, user, msg):
-    if not msg or msg == '':
-        return None
-
-    if not user.is_authenticated:
-        return None
-
-    user_id = getattr(user, 'pk', None)
-    if not user_id:
-        return None
-
-    return await database_sync_to_async(add_message_sync)(room_name, user_id, msg)
-
-
-async def retrieve_messages(room, order, values):
-    room_id = room.pk
-
-    def _fetch():
-        return list(
-            ChatMessage.objects
-            .filter(room_id=room_id)
-            .order_by(order)
-            .values(*values)
-        )
-
-    return await database_sync_to_async(_fetch)()
+async def retrieve_messages(
+    db: AsyncSession, room: ChatRoom
+) -> list[ChatMessage]:
+    stmt = (
+        select(ChatMessage)
+        .where(ChatMessage.room_id == room.id)
+        .order_by(ChatMessage.timestamp.asc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())

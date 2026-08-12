@@ -1,4 +1,5 @@
 import { openChatTab, closeTab, getTabElementById } from './tabs.js';
+import { api } from './api.js';
 import { loadRooms } from './rooms.js';
 import { state } from './state.js';
 
@@ -26,23 +27,17 @@ export async function handleGroupSubmission(e, contentNode) {
         }
         return; // Stop the execution here so no fetch request is sent
     }
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    const formData = new URLSearchParams();
-    formData.append('csrfmiddlewaretoken', csrfToken);
-    formData.append('room_name', roomName); // Using the trimmed valid room name
-    formData.append('room_type', roomTypeSelect.value);
+    
+    const roomData = {
+        'room_name': roomName,
+        'room_type': roomTypeSelect.value,
+    };
 
     try {
-        const response = await fetch('/rooms/create/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
+        const response = await api.rooms.create(roomData);
+        const data = response.data
 
-        const isSuccess = response.redirected || !response.url.endsWith('/rooms/create');
-
-        if (response.ok && isSuccess) {
+        if (response.ok) {
             roomNameInput.value = '';
             if (errorsDiv) {
                 errorsDiv.classList.add('hidden');
@@ -63,7 +58,8 @@ export async function handleGroupSubmission(e, contentNode) {
 
             setTimeout(() => { void openChatTab(roomName); }, 100);
         } else if (errorsDiv) {
-            errorsDiv.textContent = 'An error occurred. Make sure the room name is unique and between 1-20 characters.';
+            console.log(response)
+            errorsDiv.textContent = response.error.detail || 'An error occurred while creating the room.';
             errorsDiv.classList.remove('hidden');
         }
     } catch (err) {

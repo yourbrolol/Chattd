@@ -255,8 +255,11 @@ export async function updateReviewBadge() {
 
 export async function joinRoomAndOpen(roomName) {
     const result = await joinRoom(roomName);
+    console.log(result)
     if (!result.ok) {
         if (result.error === 'app_required') {
+            console.warn("[WARN] init.js/joinRoomAndOpen: Application Required.")
+
             showJoinError('');
             
             // Switch current active tab to 'apply-room'
@@ -270,12 +273,16 @@ export async function joinRoomAndOpen(roomName) {
             }
             return false;
         }
+        console.warn("[WARN] init.js/joinRoomAndOpen: Forbidden.")
         showJoinError(getJoinErrorMessage(result.error));
         return false;
     }
 
     showJoinError('');
     loadRooms((name) => { void openChatTab(name); });
+
+    console.log("[INFO] init.js/joinRoomAndOpen: Success.")
+
     await openChatTab(result.name);
     return true;
 }

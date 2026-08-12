@@ -1,3 +1,5 @@
+import { api } from './api.js';
+
 function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
@@ -16,13 +18,9 @@ export async function applyToRoom(roomName) {
     body.append('room_name', trimmed);
 
     try {
-        const response = await fetch('/rooms/apply/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body,
-        });
+        const response = await api.applications.apply(trimmed);
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response.data;
 
         if (response.status === 401) return { ok: false, error: 'auth_required' };
         if (response.status === 404) return { ok: false, error: 'not_found' };
@@ -42,25 +40,16 @@ export async function applyToRoom(roomName) {
  * Returns { ok, app } or { ok: false, error }.
  */
 export async function reviewApplication(applicationId, action) {
-    const body = new URLSearchParams();
-    body.append('csrfmiddlewaretoken', getCsrfToken());
-    body.append('action', action);
-
     try {
-        const response = await fetch(`/rooms/applications/${applicationId}/review/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body,
-        });
-
-        const data = await response.json().catch(() => ({}));
+        const response = await api.applications.review(applicationId, action);
 
         if (response.status === 403) return { ok: false, error: 'forbidden' };
         if (response.status === 404) return { ok: false, error: 'not_found' };
         if (!response.ok) return { ok: false, error: 'network' };
 
         return { ok: true, app: data };
-    } catch {
+    } catch (e) {
+        console.error(e)
         return { ok: false, error: 'network' };
     }
 }
@@ -73,9 +62,9 @@ export async function loadRoomPendingApplications(roomName) {
     if (!roomName) return [];
     
     try {
-        const response = await fetch(`/rooms/${encodeURIComponent(roomName)}/applications/`);
+        const response = await api.applications.list(roomName);
         if (!response.ok) return [];
-        return await response.json();
+        return await response.data;
     } catch {
         return [];
     }
@@ -84,9 +73,9 @@ export async function loadRoomPendingApplications(roomName) {
 // SCRAPPED
 export async function loadPendingApplications() {
     try {
-        const response = await fetch('/rooms/applications/');
+        const response = await api.applications.pending();
         if (!response.ok) return [];
-        return await response.json();
+        return await response.data;
     } catch {
         return [];
     }
