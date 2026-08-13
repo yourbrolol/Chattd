@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class UserCreate(BaseModel):
     username: str = Field(..., max_length=20, description="The username of the user")
@@ -16,5 +16,6 @@ class UserResponse(BaseModel):
     id: int
     username: str
 
-    class Config:
+    model_config = ConfigDict(
         from_attributes = True
+    )
