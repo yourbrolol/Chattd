@@ -21,31 +21,65 @@ class EndpointMap(dict):
 
     def __init__(self, prefix="", iterable=None):
         super().__init__()
-        self.prefix = prefix.rstrip("/")
+        # allow setting attributes during init
+        object.__setattr__(self, "_frozen", False)
+        object.__setattr__(self, "prefix", (prefix or "").rstrip("/"))
+
         if iterable:
             for key, value in iterable.items():
+                # If a nested EndpointMap is provided, combine prefixes so
+                # attribute access returns fully-qualified paths.
+                # store child maps as-is; full prefixes are normalized later
                 self[key] = value
 
+        # freeze to prevent later mutation
+        object.__setattr__(self, "_frozen", True)
     def __getattr__(self, key):
+        # direct key
         try:
             value = self[key]
-        except KeyError as exc:
-            raise AttributeError(key) from exc
+        except KeyError:
+            # try placeholder key mapping: attribute `room_name` -> key `{room_name}`
+            placeholder = f"{{{key}}}"
+            if placeholder in self:
+                value = self[placeholder]
+            else:
+                # helpful AttributeError listing available keys
+                available = []
+                for k in self.keys():
+                    if isinstance(k, str) and k.startswith("{") and k.endswith("}"):
+                        available.append(k[1:-1])
+                    else:
+                        available.append(k)
+                raise AttributeError(f"'{key}' not found; available: {available}")
 
         if isinstance(value, EndpointMap):
             return value
 
         if isinstance(value, str):
-            return self._resolve(value)
+            return Endpoint(self._resolve(value))
 
-        print(value)
+        # For any other stored value, return as-is.
         return value
 
     def __setattr__(self, key, value):
+        # allow prefix and internal attrs
         if key == "prefix":
-            object.__setattr__(self, key, value.rstrip("/"))
+            object.__setattr__(self, key, (value or "").rstrip("/"))
             return
+        if key == "_frozen":
+            object.__setattr__(self, key, value)
+            return
+
+        if getattr(self, "_frozen", False):
+            raise TypeError("EndpointMap is frozen and cannot be mutated")
+
         super().__setattr__(key, value)
+
+    def __setitem__(self, key, value):
+        if getattr(self, "_frozen", False):
+            raise TypeError("EndpointMap is frozen and cannot be mutated")
+        super().__setitem__(key, value)
 
     def _resolve(self, value):
         if value == "":
@@ -57,6 +91,61 @@ class EndpointMap(dict):
         if candidate.startswith(self.prefix):
             return candidate
         return f"{self.prefix}{candidate}"
+
+    def _join_prefixes(self, base: str, child: str) -> str:
+        """Join base and child prefixes into a single normalized prefix.
+
+        Keeps leading slashes on child and strips trailing slashes.
+        Examples:
+        - base='' + child='/api' -> '/api'
+        - base='/api' + child='/auth' -> '/api/auth'
+        - base='/api' + child='auth' -> '/api/auth'
+        - base='/api' + child='' -> '/api'
+        """
+        base = (base or "").rstrip("/")
+        child = (child or "").rstrip("/")
+
+        if not base and not child:
+            return ""
+        if not base:
+            return child if child.startswith("/") else f"/{child}"
+        if not child:
+            return base
+        # ensure child has leading slash
+        child_candidate = child if child.startswith("/") else f"/{child}"
+        return f"{base}{child_candidate}"
+
+    def _normalize_prefixes(self, parent_prefix: str = ""):
+        """Recursively join prefixes from parent down to children.
+
+        This ensures nested EndpointMaps include the full path from the root.
+        """
+        # compute this node's absolute prefix
+        self.prefix = self._join_prefixes(parent_prefix, self.prefix)
+        for k, v in list(self.items()):
+            if isinstance(v, EndpointMap):
+                v._normalize_prefixes(self.prefix)
+
+
+class Endpoint(str):
+    """String-like endpoint with callable formatting.
+
+    Example:
+      ep = Endpoint('/api/rooms/{room_name}/')
+      str(ep) -> '/api/rooms/{room_name}/'
+      ep(room_name='x') -> '/api/rooms/x/'
+    """
+
+    def __new__(cls, fmt: str):
+        obj = str.__new__(cls, fmt)
+        obj.fmt = fmt
+        return obj
+
+    def __call__(self, /, *args, **kwargs):
+        try:
+            return self.fmt.format(*args, **kwargs)
+        except Exception:
+            return self.fmt
 
 
 ENDPOINTS = EndpointMap(
@@ -91,11 +180,26 @@ ENDPOINTS = EndpointMap(
                         )
                     },
                 ),
-                "user_detail": "/users/{user_id}",
-                "application_apply": "/applications",
-                "application_review": "/applications/{application_id}/review",
-                "application_pending": "/applications/pending",
-                "application_pending_room": "/applications/pending/{room_name}",
+                "users": EndpointMap(
+                    prefix="/users",
+                    iterable={
+                        "user_detail": "/{user_id}"
+                    },
+                ),
+                "applications": EndpointMap(
+                    prefix="/applications",
+                    iterable={
+                        "application_apply": "",
+                        "application_pending": "/pending",
+                        "application_pending_room": "/pending/{room_name}",
+                        "{application_id}": EndpointMap(
+                            prefix="/{application_id}",
+                            iterable={
+                                "application_review": "/",
+                            }
+                        )
+                    },
+                ),
             },
         ),
         "fe": EndpointMap(
@@ -106,6 +210,9 @@ ENDPOINTS = EndpointMap(
         ),
     },
 )
+
+# Normalize prefixes so every nested EndpointMap has full absolute prefix.
+ENDPOINTS._normalize_prefixes("")
 
 
 @pytest.fixture(scope="session", autouse=True)

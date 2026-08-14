@@ -31,7 +31,7 @@ def test_ws_connect_without_cookie_is_rejected(sync_client, endpoints):
 def test_revoke_while_connected_prevents_message_persistence(sync_client, login_helper_sync, endpoints):
     # Setup: Bob creates public room
     login_helper_sync(sync_client, "bob_ws", "pw")
-    r = sync_client.post(endpoints.api.room_create, json={"room_name": "publicroom", "room_type": "PUBLIC"})
+    r = sync_client.post(endpoints.api.rooms.room_create, json={"room_name": "publicroom", "room_type": "PUBLIC"})
     assert r.status_code == 201
 
     # Alice registers, logs in, joins
@@ -62,7 +62,7 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, login_
 def test_delete_account_while_connected_handles_gracefully(sync_client, login_helper_sync, endpoints):
     # Setup: owner creates room and user joins
     login_helper_sync(sync_client, "owner_ws", "pw")
-    r = sync_client.post(endpoints.api.room_create, json={"room_name": "deleteroom", "room_type": "PUBLIC"})
+    r = sync_client.post(endpoints.api.rooms.room_create, json={"room_name": "deleteroom", "room_type": "PUBLIC"})
     assert r.status_code == 201
 
     login_helper_sync(sync_client, "victim_ws", "pw")
