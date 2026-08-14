@@ -105,5 +105,5 @@ async def test_missing_access_token_cookie_blocks_user_endpoint(async_client, en
     uid = r.json()["id"]
 
     # Accessing protected endpoint without cookie should return 401
-    r = await async_client.get(endpoints.api.user_detail.format(user_id=uid))
+    r = await async_client.get(endpoints.api.users.user_detail.format(user_id=uid))
     assert r.status_code == 401

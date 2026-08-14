@@ -36,7 +36,7 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, login_
 
     # Alice registers, logs in, joins
     login_helper_sync(sync_client, "alice_ws", "pw")
-    r = sync_client.post(endpoints.api.room_join, json={"room_name": "publicroom"})
+    r = sync_client.post(endpoints.api.rooms.room_join, json={"room_name": "publicroom"})
     assert r.status_code == 200
 
     # Connect websocket as Alice
@@ -48,7 +48,7 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, login_
 
         # Bob (owner) kicks Alice
         login_helper_sync(sync_client, "bob_ws", "pw")
-        r = sync_client.post(endpoints.api.room_kick.format(room_name="publicroom"), json={"username": "alice_ws"})
+        r = sync_client.post(endpoints.api.rooms.room_name.room_kick(room_name="publicroom"), json={"username": "alice_ws"})
         assert r.status_code == 200
 
         # Alice sends a message while still connected
@@ -66,7 +66,7 @@ def test_delete_account_while_connected_handles_gracefully(sync_client, login_he
     assert r.status_code == 201
 
     login_helper_sync(sync_client, "victim_ws", "pw")
-    r = sync_client.post(endpoints.api.room_join, json={"room_name": "deleteroom"})
+    r = sync_client.post(endpoints.api.rooms.room_join, json={"room_name": "deleteroom"})
     assert r.status_code == 200
 
     # Connect websocket as victim

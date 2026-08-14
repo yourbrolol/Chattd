@@ -168,7 +168,7 @@ ENDPOINTS = EndpointMap(
                         "room_create": "/",
                         "room_join": "/join",
                         "room_list": "/",
-                        "{room_name}": EndpointMap(
+                        "room_name": EndpointMap(
                             prefix="/{room_name}",
                             iterable={
                                 "room_detail": "/",
@@ -192,7 +192,7 @@ ENDPOINTS = EndpointMap(
                         "application_apply": "",
                         "application_pending": "/pending",
                         "application_pending_room": "/pending/{room_name}",
-                        "{application_id}": EndpointMap(
+                        "application_id": EndpointMap(
                             prefix="/{application_id}",
                             iterable={
                                 "application_review": "/",
