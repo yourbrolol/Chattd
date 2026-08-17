@@ -1,6 +1,7 @@
 import os
 import asyncio
 import pytest
+import secrets
 
 from httpx import AsyncClient, ASGITransport
 from starlette.testclient import TestClient
@@ -275,3 +276,17 @@ def login_helper_async():
 @pytest.fixture
 def login_helper_sync():
     return _sync_login_and_set_cookie
+
+@pytest.fixture
+def new_credentials(
+    credentials: dict = None, 
+    requirements: dict = None
+):
+    cred = credentials or {"username": None, "password": None}
+    reqs = requirements or {"ulen": 8, "passlen": 12}
+    
+    for key, req_key in zip(cred.keys(), reqs.keys()):
+        if cred[key] is None:
+            cred[key] = secrets.token_hex(reqs[req_key])
+            
+    return cred
