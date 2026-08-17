@@ -32,6 +32,7 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, login_
     # Setup: Bob creates public room
     login_helper_sync(sync_client, "bob_ws", "pw")
     r = sync_client.post(endpoints.api.rooms.room_create, json={"room_name": "publicroom", "room_type": "PUBLIC"})
+    print("responce", r)
     assert r.status_code == 201
 
     # Alice registers, logs in, joins
