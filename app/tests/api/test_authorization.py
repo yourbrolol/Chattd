@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.anyio
-async def test_alice_cannot_access_bobs_private_room(async_client, login_helper_async, endpoints):
+async def test_private_room_access(async_client, login_helper_async, endpoints):
     # Bob creates a private room
     await login_helper_async(async_client, "bob", "pw")
     r = await async_client.post(endpoints.api.rooms.room_create, json={"room_name": "bobroom", "room_type": "PRIVATE"})
@@ -29,7 +29,7 @@ async def test_alice_cannot_access_bobs_private_room(async_client, login_helper_
 
 
 @pytest.mark.anyio
-async def test_alice_removed_while_session_still_valid(async_client, login_helper_async, endpoints):
+async def test_user_removed_while_session_still_valid(async_client, login_helper_async, endpoints):
     # Bob creates a public room and Alice joins
     await login_helper_async(async_client, "bob2", "pw")
     r = await async_client.post(endpoints.api.rooms.room_create, json={"room_name": "pubroom", "room_type": "PUBLIC"})

@@ -5,7 +5,7 @@ from app.chat.models import User
 
 
 @pytest.mark.anyio
-async def test_register_and_login_via_api(async_client, endpoints):
+async def test_account_creation(async_client, endpoints):
     # Register
     r = await async_client.post(endpoints.api.auth.register, json={"username": "alice", "password": "secret"})
     assert r.status_code == 201
@@ -21,7 +21,7 @@ async def test_register_and_login_via_api(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_wrong_password_and_nonexistent_username(async_client, endpoints):
+async def test_incorrect_credentials(async_client, endpoints):
     # Ensure user exists
     await async_client.post(endpoints.api.auth.register, json={"username": "carol", "password": "s3cret"})
 
@@ -37,7 +37,7 @@ async def test_wrong_password_and_nonexistent_username(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_empty_username_password_validation(async_client, endpoints):
+async def test_empty_credentials(async_client, endpoints):
     # Pydantic validation should reject empty values for registration/login
     r = await async_client.post(endpoints.api.auth.register, json={"username": "", "password": ""})
     assert r.status_code == 422
@@ -47,7 +47,7 @@ async def test_empty_username_password_validation(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_case_sensitivity_and_long_username(async_client, endpoints):
+async def test_case_sensitivity(async_client, endpoints):
     # Register lowercase
     await async_client.post(endpoints.api.auth.register, json={"username": "eve", "password": "pw"})
 
@@ -55,20 +55,24 @@ async def test_case_sensitivity_and_long_username(async_client, endpoints):
     r = await async_client.post(endpoints.api.auth.login, json={"username": "Eve", "password": "pw"})
     assert r.status_code == 400
 
-    # Username too long (>20) rejected by validation
+
+@pytest.mark.anyio
+async def test_long_credentials(async_client, endpoints):
     long_user = "u" * 21
     r2 = await async_client.post(endpoints.api.auth.register, json={"username": long_user, "password": "pw"})
     assert r2.status_code == 422
 
-
 @pytest.mark.anyio
-async def test_unicode_username_and_null_byte_password(async_client, endpoints):
+async def test_unicode_username(async_client, endpoints):
     uname = "用户"
-    pwd = "pa\x00ss\u2603"
-    r = await async_client.post(endpoints.api.auth.register, json={"username": uname, "password": pwd})
+    r = await async_client.post(endpoints.api.auth.register, json={"username": uname, "password": "s3cretpass"})
     assert r.status_code == 201
 
-    r = await async_client.post(endpoints.api.auth.login, json={"username": uname, "password": pwd})
+
+@pytest.mark.anyio
+async def test_unicode_username(async_client, endpoints):
+    pwd = "pa\x00ss\u2603"
+    r = await async_client.post(endpoints.api.auth.login, json={"username": "user", "password": pwd})
     assert r.status_code == 200
     assert r.json().get("access_token")
 
@@ -83,6 +87,12 @@ async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_
         r = await async_client.post(endpoints.api.auth.login, json={"username": "dave", "password": "wrong"})
         assert r.status_code == 400
 
+
+@pytest.mark.anyio
+async def test_login_after_deletion(async_client, db_session, endpoints):
+    # Register
+    await async_client.post(endpoints.api.auth.register, json={"username": "somebody", "password": "pw"})
+    
     # Delete user directly from DB
     async with db_session as session:
         stmt = select(User).where(User.username == "dave")
@@ -93,12 +103,11 @@ async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_
         await session.commit()
 
     # Login after deletion should fail
-    r = await async_client.post(endpoints.api.auth.login, json={"username": "dave", "password": "pw"})
+    r = await async_client.post(endpoints.api.auth.login, json={"username": "somebody", "password": "pw"})
     assert r.status_code == 400
 
-
 @pytest.mark.anyio
-async def test_missing_access_token_cookie_blocks_user_endpoint(async_client, endpoints):
+async def test_missing_access_token(async_client, endpoints):
     # Register a user to query
     r = await async_client.post(endpoints.api.auth.register, json={"username": "frank", "password": "pw"})
     assert r.status_code == 201
