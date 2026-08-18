@@ -70,6 +70,7 @@ async def test_long_credentials(async_client, endpoints):
     r2 = await async_client.post(endpoints.api.auth.register, json=c)
     assert r2.status_code == 422
 
+
 @pytest.mark.anyio
 async def test_unicode_username(async_client, endpoints):
     c = new_credentials(credentials={'username': "用户", 'password': None})
