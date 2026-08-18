@@ -286,7 +286,7 @@ class Credentials():
         userlen: int = 8,
         passlen: int = 12
     ):
-        if username or password is None: _username, _password = self.initialize(userlen=userlen, passlen=passlen)
+        _username, _password = self.initialize(userlen=userlen, passlen=passlen)
         self.username = username or _username
         self.password = password or _password
     def as_dict(self):
