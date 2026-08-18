@@ -2,13 +2,13 @@ import pytest
 from sqlalchemy import select
 
 from app.chat.models import User
-from app.tests.conftest import Credentials
+from ..conftest import new_credentials
 
 
 @pytest.mark.anyio
 async def test_account_creation(async_client, endpoints):
     # Register
-    u1 = Credentials().as_dict()
+    u1 = new_credentials()
     r = await async_client.post(endpoints.api.auth.register, json=u1)
     assert r.status_code == 201
     data = r.json()
@@ -25,7 +25,7 @@ async def test_account_creation(async_client, endpoints):
 @pytest.mark.anyio
 async def test_incorrect_credentials(async_client, endpoints):
     # Ensure user exists
-    u = Credentials().as_dict()
+    u = new_credentials()
     await async_client.post(endpoints.api.auth.register, json=u)
 
     # Wrong password
@@ -35,7 +35,7 @@ async def test_incorrect_credentials(async_client, endpoints):
 
     # Nonexistent user should get same external response
     # Use a generated username that was not registered to emulate nonexistent user
-    non = Credentials().as_dict()
+    non = new_credentials()
     r2 = await async_client.post(endpoints.api.auth.login, json={"username": non["username"], "password": "whatever"})
     assert r2.status_code == 400
     assert r2.json().get("detail") == r.json().get("detail")
@@ -44,7 +44,7 @@ async def test_incorrect_credentials(async_client, endpoints):
 @pytest.mark.anyio
 async def test_empty_credentials(async_client, endpoints):
     # Pydantic validation should reject empty values for registration/login
-    c = Credentials(**{'username': "", 'password': ""}).as_dict()
+    c = new_credentials(credentials={'username': "", 'password': ""})
     r = await async_client.post(endpoints.api.auth.register, json=c)
     assert r.status_code == 422
 
@@ -55,7 +55,7 @@ async def test_empty_credentials(async_client, endpoints):
 @pytest.mark.anyio
 async def test_case_sensitivity(async_client, endpoints):
     # Register lowercase-like username
-    u = Credentials().as_dict()
+    u = new_credentials()
     await async_client.post(endpoints.api.auth.register, json=u)
 
     # Different case should fail (alter the case of the username)
@@ -66,21 +66,21 @@ async def test_case_sensitivity(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_long_credentials(async_client, endpoints):
-    c = Credentials(**{'username': "u" * 21, 'password': None}).as_dict()
+    c = new_credentials(credentials={'username': "u" * 21, 'password': None})
     r2 = await async_client.post(endpoints.api.auth.register, json=c)
     assert r2.status_code == 422
 
 
 @pytest.mark.anyio
 async def test_unicode_username(async_client, endpoints):
-    c = Credentials(**{'username': "用户", 'password': None}).as_dict()
+    c = new_credentials(credentials={'username': "用户", 'password': None})
     r = await async_client.post(endpoints.api.auth.register, json=c)
     assert r.status_code == 201
 
 
 @pytest.mark.anyio
 async def test_null_bytes_username(async_client, endpoints):
-    u = Credentials(**{'username': None, 'password': "pa\x00ss\u2603"}).as_dict()
+    u = new_credentials(credentails={'username': None, 'password': "pa\x00ss\u2603"})
     r = await async_client.post(endpoints.api.auth.register, json=u)
     assert r.status_code == 201
 
@@ -92,7 +92,7 @@ async def test_null_bytes_username(async_client, endpoints):
 @pytest.mark.anyio
 async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_session, endpoints):
     # Register
-    u = Credentials().as_dict()
+    u = new_credentials()
     await async_client.post(endpoints.api.auth.register, json=u)
 
     # Repeated failed logins
@@ -104,7 +104,7 @@ async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_
 @pytest.mark.anyio
 async def test_login_after_deletion(async_client, db_session, endpoints):
     # Register
-    u = Credentials().as_dict()
+    u = new_credentials()
     await async_client.post(endpoints.api.auth.register, json=u)
 
     # Delete user directly from DB
@@ -124,7 +124,7 @@ async def test_login_after_deletion(async_client, db_session, endpoints):
 @pytest.mark.anyio
 async def test_protected_missing_access_token(async_client, endpoints):
     # Register a user to query
-    u = Credentials().as_dict()
+    u = new_credentials()
     r = await async_client.post(endpoints.api.auth.register, json=u)
     assert r.status_code == 201
     uid = r.json()["id"]
