@@ -137,7 +137,7 @@ async def test_accepting_app(async_client, endpoints, login_helper_async):
 
     # Owner approves
     await login_helper_async(async_client, owner['username'], owner['password'])
-    r = await async_client.post(endpoints.api.applications.application_id.application_review.format(application_id=app_id), json={"action": "approve"})
+    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "APPROVED"
@@ -166,7 +166,7 @@ async def test_rejecting_app(async_client, endpoints, login_helper_async):
 
     # Owner rejects
     await login_helper_async(async_client, owner['username'], owner['password'])
-    r = await async_client.post(endpoints.api.applications.application_id.application_review.format(application_id=app_id), json={"action": "reject"})
+    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "reject"})
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "REJECTED"
@@ -196,5 +196,5 @@ async def test_unauthorized_accepting(async_client, endpoints, login_helper_asyn
     # Another user (not owner) attempts to approve
     other = Credentials().as_dict()
     await login_helper_async(async_client, other['username'], other['password'])
-    r = await async_client.post(endpoints.api.applications.application_id.application_review.format(application_id=app_id), json={"action": "approve"})
+    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
     assert r.status_code == 403
