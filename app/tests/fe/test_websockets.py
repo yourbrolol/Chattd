@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.chat.models import ChatMessage, User
 from app.core.database import SessionLocal
-from app.tests.conftest import Credentials
+from app.tests.conftest import Credentials, create_room_sync
 
 
 def clear_cookies(client):
@@ -33,7 +33,7 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, login_
     # Setup: Bob creates public room
     bob = Credentials().as_dict()
     login_helper_sync(sync_client, bob["username"], bob["password"])
-    r = sync_client.post(endpoints.api.rooms.room_create, json={"room_name": "publicroom", "room_type": "PUBLIC"})
+    r = create_room_sync(sync_client, endpoints, "publicroom", "PUBLIC")
     print("responce", r)
     assert r.status_code == 201
 
@@ -67,7 +67,7 @@ def test_delete_account_while_connected_handles_gracefully(sync_client, login_he
     # Setup: owner creates room and user joins
     owner = Credentials().as_dict()
     login_helper_sync(sync_client, owner["username"], owner["password"])
-    r = sync_client.post(endpoints.api.rooms.room_create, json={"room_name": "deleteroom", "room_type": "PUBLIC"})
+    r = create_room_sync(sync_client, endpoints, "deleteroom", "PUBLIC")
     assert r.status_code == 201
 
     victim = Credentials().as_dict()

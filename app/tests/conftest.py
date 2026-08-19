@@ -2,6 +2,7 @@ import os
 import asyncio
 import pytest
 import secrets
+import inspect
 
 from httpx import AsyncClient, ASGITransport
 from starlette.testclient import TestClient
@@ -267,6 +268,14 @@ def _sync_login_and_set_cookie(client, username, password):
     client.cookies.set("access_token", token)
     return token
 
+
+def create_room_sync(client, endpoints, room_name, room_type):
+    return client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": room_type})
+
+
+async def create_room_async(client, endpoints, room_name, room_type):
+    return await client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": room_type})
+    
 
 @pytest.fixture
 def login_helper_async():

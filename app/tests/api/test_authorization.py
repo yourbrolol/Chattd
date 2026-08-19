@@ -1,5 +1,5 @@
 import pytest
-from app.tests.conftest import Credentials
+from app.tests.conftest import Credentials, create_room_async
 
 
 @pytest.mark.anyio
@@ -7,7 +7,7 @@ async def test_private_room_access(async_client, login_helper_async, endpoints):
     # Bob creates a private room
     bob = Credentials().as_dict()
     await login_helper_async(async_client, bob["username"], bob["password"])
-    r = await async_client.post(endpoints.api.rooms.room_create, json={"room_name": "bobroom", "room_type": "PRIVATE"})
+    r = await create_room_async(async_client, endpoints, "bobroom", "PRIVATE")
     assert r.status_code == 201
 
     # Alice logs in but is not a member
@@ -36,7 +36,7 @@ async def test_user_removed_while_session_still_valid(async_client, login_helper
     # Bob creates a public room and Alice joins
     bob = Credentials().as_dict()
     await login_helper_async(async_client, bob["username"], bob["password"])
-    r = await async_client.post(endpoints.api.rooms.room_create, json={"room_name": "pubroom", "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, "pubroom", "PUBLIC")
     assert r.status_code == 201
 
     # Alice logs in and joins

@@ -1,6 +1,6 @@
 import pytest
 
-from app.tests.conftest import Credentials
+from app.tests.conftest import Credentials, create_room_async
 
 
 @pytest.mark.anyio
@@ -9,7 +9,7 @@ async def test_listing_apps(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_listing"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -34,7 +34,7 @@ async def test_listing_room(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_listing_room"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -56,7 +56,7 @@ async def test_applying(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_apply"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -83,7 +83,7 @@ async def test_reapplying(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_reapply"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -104,7 +104,7 @@ async def test_member_reapplying(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_member_reapply"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     member = Credentials().as_dict()
@@ -126,7 +126,7 @@ async def test_accepting_app(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_accept"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -155,7 +155,7 @@ async def test_rejecting_app(async_client, endpoints, login_helper_async):
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_reject"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
@@ -184,7 +184,7 @@ async def test_unauthorized_accepting(async_client, endpoints, login_helper_asyn
     await login_helper_async(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_unauth_accept"
-    r = await async_client.post(endpoints.api.rooms.room_create.rstrip('/'), json={"room_name": room_name, "room_type": "PUBLIC"})
+    r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
     applicant = Credentials().as_dict()
