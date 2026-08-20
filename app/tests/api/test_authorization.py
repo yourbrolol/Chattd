@@ -8,7 +8,8 @@ from app.tests.conftest import (
 
 
 @pytest.mark.anyio
-async def test_private_room_access(async_client, endpoints):
+async def test_private_room_denies_non_member(async_client, endpoints):
+    """Non-member cannot view, delete, kick, or join a private room — all return 403."""
     # Bob creates a private room
     bob = user_payload_factory()
     await authenticated_client_for(async_client, bob["username"], bob["password"])
@@ -37,7 +38,8 @@ async def test_private_room_access(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_user_removed_while_session_still_valid(async_client, endpoints):
+async def test_kicked_user_loses_access(async_client, endpoints):
+    """After being kicked from a room, the user's next request to view room details returns 403."""
     # Bob creates a public room and Alice joins
     bob = user_payload_factory()
     await authenticated_client_for(async_client, bob["username"], bob["password"])

@@ -10,6 +10,7 @@ from app.tests.conftest import (
 
 @pytest.mark.anyio
 async def test_listing_apps(async_client, endpoints):
+    """Owner can list pending applications across all their rooms."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -35,6 +36,7 @@ async def test_listing_apps(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_listing_room(async_client, endpoints):
+    """Owner can list pending applications filtered by a specific room name."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -57,6 +59,7 @@ async def test_listing_room(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_applying(async_client, endpoints):
+    """User can apply to a room and the response returns PENDING status with the correct room name."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -75,6 +78,7 @@ async def test_applying(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_applying_to_nonexistent(async_client, endpoints):
+    """Applying to a non-existent room returns 404."""
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
@@ -84,6 +88,7 @@ async def test_applying_to_nonexistent(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_reapplying(async_client, endpoints):
+    """A second application to the same room returns 200 with detail already_pending."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -105,6 +110,7 @@ async def test_reapplying(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_member_reapplying(async_client, endpoints):
+    """A user who is already a member applying again returns 400 with detail already_member."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -127,6 +133,7 @@ async def test_member_reapplying(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_accepting_app(async_client, endpoints):
+    """Owner approving an application returns APPROVED status and adds the user to room members."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -156,6 +163,7 @@ async def test_accepting_app(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_rejecting_app(async_client, endpoints):
+    """Owner rejecting an application returns REJECTED status and the user is not added as a member."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -185,6 +193,7 @@ async def test_rejecting_app(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_unauthorized_accepting(async_client, endpoints):
+    """A non-owner attempting to approve an application is rejected with 403."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 

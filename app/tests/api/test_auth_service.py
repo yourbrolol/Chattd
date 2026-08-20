@@ -6,7 +6,8 @@ from app.tests.conftest import Credentials
 
 
 @pytest.mark.anyio
-async def test_account_creation(async_client, endpoints):
+async def test_register_and_login(async_client, endpoints):
+    """Register a new user and log in — verify 201 creation response and bearer token."""
     # Register
     u1 = Credentials().as_dict()
     r = await async_client.post(endpoints.REGISTER, json=u1)
@@ -23,7 +24,8 @@ async def test_account_creation(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_incorrect_credentials(async_client, endpoints):
+async def test_login_rejects_wrong_password(async_client, endpoints):
+    """Login with wrong or missing credentials returns 400 with a consistent detail message."""
     # Ensure user exists
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
@@ -42,7 +44,8 @@ async def test_incorrect_credentials(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_empty_credentials(async_client, endpoints):
+async def test_register_and_login_reject_empty_fields(async_client, endpoints):
+    """Register and login requests with empty username/password return 422 validation error."""
     # Pydantic validation should reject empty values for registration/login
     c = Credentials(**{'username': "", 'password': ""}).as_dict()
     r = await async_client.post(endpoints.REGISTER, json=c)
@@ -53,7 +56,8 @@ async def test_empty_credentials(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_case_sensitivity(async_client, endpoints):
+async def test_login_is_case_sensitive(async_client, endpoints):
+    """Login with wrong-cased username is rejected even if same letters."""
     # Register lowercase-like username
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
@@ -65,21 +69,24 @@ async def test_case_sensitivity(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_long_credentials(async_client, endpoints):
+async def test_register_rejects_long_username(async_client, endpoints):
+    """Usernames exceeding max length (20) return 422 validation error."""
     c = Credentials(**{'username': "u" * 21, 'password': None}).as_dict()
     r2 = await async_client.post(endpoints.REGISTER, json=c)
     assert r2.status_code == 422
 
 
 @pytest.mark.anyio
-async def test_unicode_username(async_client, endpoints):
+async def test_register_accepts_unicode(async_client, endpoints):
+    """Registration with unicode usernames is accepted."""
     c = Credentials(**{'username': "用户", 'password': None}).as_dict()
     r = await async_client.post(endpoints.REGISTER, json=c)
     assert r.status_code == 201
 
 
 @pytest.mark.anyio
-async def test_null_bytes_username(async_client, endpoints):
+async def test_login_accepts_special_password_chars(async_client, endpoints):
+    """Passwords with null bytes and special unicode chars are accepted."""
     u = Credentials(**{'username': None, 'password': "pa\x00ss\u2603"}).as_dict()
     r = await async_client.post(endpoints.REGISTER, json=u)
     assert r.status_code == 201
@@ -90,7 +97,8 @@ async def test_null_bytes_username(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_session, endpoints):
+async def test_repeated_bad_logins(async_client, db_session, endpoints):
+    """Repeated login attempts with wrong password all return 400."""
     # Register
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
@@ -102,7 +110,8 @@ async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_
 
 
 @pytest.mark.anyio
-async def test_login_after_deletion(async_client, db_session, endpoints):
+async def test_login_fails_after_db_deletion(async_client, db_session, endpoints):
+    """Login attempt for a user deleted from DB returns 400."""
     # Register
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
@@ -122,7 +131,8 @@ async def test_login_after_deletion(async_client, db_session, endpoints):
 
 
 @pytest.mark.anyio
-async def test_protected_missing_access_token(async_client, endpoints):
+async def test_protected_endpoint_requires_auth(async_client, endpoints):
+    """Accessing a protected endpoint without a cookie returns 401."""
     # Register a user to query
     u = Credentials().as_dict()
     r = await async_client.post(endpoints.REGISTER, json=u)

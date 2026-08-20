@@ -27,14 +27,16 @@ def query_messages(content: str):
     return asyncio.run(_q())
 
 
-def test_ws_connect_without_cookie_is_rejected(sync_client, endpoints):
+def test_ws_rejects_unauthenticated(sync_client, endpoints):
+    """Connecting to the WebSocket without a session cookie results in immediate disconnect."""
     clear_cookies(sync_client)
     with pytest.raises(WebSocketDisconnect):
         with sync_client.websocket_connect(endpoints.ws_chat("roomx")):
             pass
 
 
-def test_revoke_while_connected_prevents_message_persistence(sync_client, endpoints):
+def test_ws_kicked_user_message_not_persisted(sync_client, endpoints):
+    """Messages sent by a kicked user over an open WebSocket connection are not saved to the DB."""
     # Setup: Bob creates public room
     bob = user_payload_factory()
     authenticated_client_for_sync(sync_client, bob["username"], bob["password"])
@@ -68,7 +70,8 @@ def test_revoke_while_connected_prevents_message_persistence(sync_client, endpoi
     assert len(msgs) == 0
 
 
-def test_delete_account_while_connected_handles_gracefully(sync_client, endpoints):
+def test_ws_handles_account_deletion_gracefully(sync_client, endpoints):
+    """Deleting an account while the user has an open WebSocket connection does not crash the server."""
     # Setup: owner creates room and user joins
     owner = user_payload_factory()
     authenticated_client_for_sync(sync_client, owner["username"], owner["password"])

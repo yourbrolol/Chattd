@@ -5,7 +5,8 @@ from app.chat.services.users import get_user_avatar_base64, AVATAR_FILE_NOT_FOUN
 from app.tests.conftest import user_db_factory, authenticated_client_for
 
 @pytest.mark.anyio
-async def test_get_user_profile_existing_and_missing(async_client, db_session, endpoints):
+async def test_user_profile(async_client, db_session, endpoints):
+    """GET /api/users/{id} returns profile for existing user and 404 for missing id."""
     # Setup: Create Bob directly in DB
     bob = await user_db_factory(db_session, "bob", "bobpassword")
     
@@ -26,7 +27,8 @@ async def test_get_user_profile_existing_and_missing(async_client, db_session, e
 
 
 @pytest.mark.anyio
-async def test_get_user_avatar_base64_returns_base64_or_not_found(db_session, tmp_path):
+async def test_avatar_base64(db_session, tmp_path):
+    """Avatar base64 helper returns None when no file is set, AVATAR_FILE_NOT_FOUND for missing files, and valid b64 when the file exists."""
     # Setup user
     bob = await user_db_factory(db_session, "bobavatar", "pass123")
     
