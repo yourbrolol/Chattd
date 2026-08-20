@@ -22,12 +22,12 @@ async def test_listing_apps(async_client, endpoints):
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
     # apply to room
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
 
     # login as owner and list pending applications
     await login_as(async_client, owner['username'], owner['password'])
-    r = await async_client.get(endpoints.api.applications.application_pending)
+    r = await async_client.get(endpoints.APPLICATIONS_PENDING)
     assert r.status_code == 200
     data = r.json()
     assert any(item.get("applicant") == applicant['username'] for item in data)
@@ -44,11 +44,11 @@ async def test_listing_room(async_client, endpoints):
 
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
 
     await login_as(async_client, owner['username'], owner['password'])
-    r = await async_client.get(endpoints.api.applications.application_pending_room.format(room_name=room_name))
+    r = await async_client.get(endpoints.application_pending_room(room_name))
     assert r.status_code == 200
     data = r.json()
     assert len(data) >= 1
@@ -66,7 +66,7 @@ async def test_applying(async_client, endpoints):
 
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
     data = r.json()
     assert data.get("room") == room_name
@@ -78,7 +78,7 @@ async def test_applying_to_nonexistent(async_client, endpoints):
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": "no_such_room"})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": "no_such_room"})
     assert r.status_code == 404
 
 
@@ -94,10 +94,10 @@ async def test_reapplying(async_client, endpoints):
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
-    r1 = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r1 = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r1.status_code == 201
 
-    r2 = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r2 = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     # second attempt should return 200 with already_pending detail
     assert r2.status_code == 200
     assert r2.json().get("detail") == "already_pending"
@@ -116,11 +116,11 @@ async def test_member_reapplying(async_client, endpoints):
     await authenticated_client_for(async_client, member['username'], member['password'])
 
     # Join the public room to become a member
-    r = await async_client.post(endpoints.api.rooms.room_join, json={"room_name": room_name})
+    r = await async_client.post(endpoints.ROOM_JOIN, json={"room_name": room_name})
     assert r.status_code == 200
 
     # Now applying should be rejected as already_member
-    r2 = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r2 = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r2.status_code == 400
     assert r2.json().get("detail") == "already_member"
 
@@ -136,19 +136,19 @@ async def test_accepting_app(async_client, endpoints):
 
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Owner approves
     await login_as(async_client, owner['username'], owner['password'])
-    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
+    r = await async_client.post(endpoints.application_review(app_id), json={"action": "approve"})
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "APPROVED"
 
     # Verify membership by fetching room details as owner
-    r = await async_client.get(endpoints.api.rooms.room_name.room_detail.format(room_name=room_name))
+    r = await async_client.get(endpoints.room_detail(room_name))
     assert r.status_code == 200
     members = r.json().get("members_data", [])
     assert any(m.get("username") == applicant['username'] for m in members)
@@ -165,19 +165,19 @@ async def test_rejecting_app(async_client, endpoints):
 
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Owner rejects
     await login_as(async_client, owner['username'], owner['password'])
-    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "reject"})
+    r = await async_client.post(endpoints.application_review(app_id), json={"action": "reject"})
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "REJECTED"
 
     # Ensure applicant is not a member
-    r = await async_client.get(endpoints.api.rooms.room_name.room_detail.format(room_name=room_name))
+    r = await async_client.get(endpoints.room_detail(room_name))
     assert r.status_code == 200
     members = r.json().get("members_data", [])
     assert not any(m.get("username") == applicant['username'] for m in members)
@@ -194,12 +194,12 @@ async def test_unauthorized_accepting(async_client, endpoints):
 
     applicant = user_payload_factory()
     await authenticated_client_for(async_client, applicant['username'], applicant['password'])
-    r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
+    r = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Another user (not owner) attempts to approve
     other = user_payload_factory()
     await authenticated_client_for(async_client, other['username'], other['password'])
-    r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
+    r = await async_client.post(endpoints.application_review(app_id), json={"action": "approve"})
     assert r.status_code == 403

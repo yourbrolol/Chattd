@@ -9,13 +9,13 @@ from app.tests.conftest import Credentials
 async def test_account_creation(async_client, endpoints):
     # Register
     u1 = Credentials().as_dict()
-    r = await async_client.post(endpoints.api.auth.register, json=u1)
+    r = await async_client.post(endpoints.REGISTER, json=u1)
     assert r.status_code == 201
     data = r.json()
     assert data["username"] == u1['username']
 
     # Login
-    r = await async_client.post(endpoints.api.auth.login, json=u1)
+    r = await async_client.post(endpoints.LOGIN, json=u1)
     assert r.status_code == 200
     token = r.json()
     assert token["token_type"] == "bearer"
@@ -26,17 +26,17 @@ async def test_account_creation(async_client, endpoints):
 async def test_incorrect_credentials(async_client, endpoints):
     # Ensure user exists
     u = Credentials().as_dict()
-    await async_client.post(endpoints.api.auth.register, json=u)
+    await async_client.post(endpoints.REGISTER, json=u)
 
     # Wrong password
-    r = await async_client.post(endpoints.api.auth.login, json={"username": u["username"], "password": "wrong"})
+    r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong"})
     assert r.status_code == 400
     assert "Invalid" in r.json().get("detail", "")
 
     # Nonexistent user should get same external response
     # Use a generated username that was not registered to emulate nonexistent user
     non = Credentials().as_dict()
-    r2 = await async_client.post(endpoints.api.auth.login, json={"username": non["username"], "password": "whatever"})
+    r2 = await async_client.post(endpoints.LOGIN, json={"username": non["username"], "password": "whatever"})
     assert r2.status_code == 400
     assert r2.json().get("detail") == r.json().get("detail")
 
@@ -45,10 +45,10 @@ async def test_incorrect_credentials(async_client, endpoints):
 async def test_empty_credentials(async_client, endpoints):
     # Pydantic validation should reject empty values for registration/login
     c = Credentials(**{'username': "", 'password': ""}).as_dict()
-    r = await async_client.post(endpoints.api.auth.register, json=c)
+    r = await async_client.post(endpoints.REGISTER, json=c)
     assert r.status_code == 422
 
-    r = await async_client.post(endpoints.api.auth.login, json=c)
+    r = await async_client.post(endpoints.LOGIN, json=c)
     assert r.status_code == 422
 
 
@@ -56,35 +56,35 @@ async def test_empty_credentials(async_client, endpoints):
 async def test_case_sensitivity(async_client, endpoints):
     # Register lowercase-like username
     u = Credentials().as_dict()
-    await async_client.post(endpoints.api.auth.register, json=u)
+    await async_client.post(endpoints.REGISTER, json=u)
 
     # Different case should fail (alter the case of the username)
     alt = u["username"].capitalize()
-    r = await async_client.post(endpoints.api.auth.login, json={"username": alt, "password": u["password"]})
+    r = await async_client.post(endpoints.LOGIN, json={"username": alt, "password": u["password"]})
     assert r.status_code == 400
 
 
 @pytest.mark.anyio
 async def test_long_credentials(async_client, endpoints):
     c = Credentials(**{'username': "u" * 21, 'password': None}).as_dict()
-    r2 = await async_client.post(endpoints.api.auth.register, json=c)
+    r2 = await async_client.post(endpoints.REGISTER, json=c)
     assert r2.status_code == 422
 
 
 @pytest.mark.anyio
 async def test_unicode_username(async_client, endpoints):
     c = Credentials(**{'username': "用户", 'password': None}).as_dict()
-    r = await async_client.post(endpoints.api.auth.register, json=c)
+    r = await async_client.post(endpoints.REGISTER, json=c)
     assert r.status_code == 201
 
 
 @pytest.mark.anyio
 async def test_null_bytes_username(async_client, endpoints):
     u = Credentials(**{'username': None, 'password': "pa\x00ss\u2603"}).as_dict()
-    r = await async_client.post(endpoints.api.auth.register, json=u)
+    r = await async_client.post(endpoints.REGISTER, json=u)
     assert r.status_code == 201
 
-    r = await async_client.post(endpoints.api.auth.login, json=u)
+    r = await async_client.post(endpoints.LOGIN, json=u)
     assert r.status_code == 200
     assert r.json().get("access_token")
 
@@ -93,11 +93,11 @@ async def test_null_bytes_username(async_client, endpoints):
 async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_session, endpoints):
     # Register
     u = Credentials().as_dict()
-    await async_client.post(endpoints.api.auth.register, json=u)
+    await async_client.post(endpoints.REGISTER, json=u)
 
     # Repeated failed logins
     for _ in range(5):
-        r = await async_client.post(endpoints.api.auth.login, json={"username": u["username"], "password": "wrong"})
+        r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong"})
         assert r.status_code == 400
 
 
@@ -105,7 +105,7 @@ async def test_repeated_failed_logins_and_login_after_deletion(async_client, db_
 async def test_login_after_deletion(async_client, db_session, endpoints):
     # Register
     u = Credentials().as_dict()
-    await async_client.post(endpoints.api.auth.register, json=u)
+    await async_client.post(endpoints.REGISTER, json=u)
 
     # Delete user directly from DB
     async with db_session as session:
@@ -117,7 +117,7 @@ async def test_login_after_deletion(async_client, db_session, endpoints):
         await session.commit()
 
     # Login after deletion should fail
-    r = await async_client.post(endpoints.api.auth.login, json=u)
+    r = await async_client.post(endpoints.LOGIN, json=u)
     assert r.status_code == 400
 
 
@@ -125,10 +125,11 @@ async def test_login_after_deletion(async_client, db_session, endpoints):
 async def test_protected_missing_access_token(async_client, endpoints):
     # Register a user to query
     u = Credentials().as_dict()
-    r = await async_client.post(endpoints.api.auth.register, json=u)
+    r = await async_client.post(endpoints.REGISTER, json=u)
     assert r.status_code == 201
     uid = r.json()["id"]
 
     # Accessing protected endpoint without cookie should return 401
-    r = await async_client.get(endpoints.api.users.user_detail.format(user_id=uid))
+    r = await async_client.get(endpoints.user_detail(uid))
     assert r.status_code == 401
+
