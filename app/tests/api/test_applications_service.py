@@ -1,27 +1,32 @@
 import pytest
 
-from app.tests.conftest import Credentials, create_room_async
+from app.tests.conftest import (
+    user_payload_factory,
+    create_room_async,
+    login_as,
+    authenticated_client_for,
+)
 
 
 @pytest.mark.anyio
-async def test_listing_apps(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_listing_apps(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_listing"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
+    applicant = user_payload_factory()
     # register and login as applicant
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
     # apply to room
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
 
     # login as owner and list pending applications
-    await login_helper_async(async_client, owner['username'], owner['password'])
+    await login_as(async_client, owner['username'], owner['password'])
     r = await async_client.get(endpoints.api.applications.application_pending)
     assert r.status_code == 200
     data = r.json()
@@ -29,20 +34,20 @@ async def test_listing_apps(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_listing_room(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_listing_room(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_listing_room"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
 
-    await login_helper_async(async_client, owner['username'], owner['password'])
+    await login_as(async_client, owner['username'], owner['password'])
     r = await async_client.get(endpoints.api.applications.application_pending_room.format(room_name=room_name))
     assert r.status_code == 200
     data = r.json()
@@ -51,16 +56,16 @@ async def test_listing_room(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_applying(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_applying(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_apply"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
     data = r.json()
@@ -69,25 +74,25 @@ async def test_applying(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_applying_to_nonexistent(async_client, endpoints, login_helper_async):
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+async def test_applying_to_nonexistent(async_client, endpoints):
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": "no_such_room"})
     assert r.status_code == 404
 
 
 @pytest.mark.anyio
-async def test_reapplying(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_reapplying(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_reapply"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
 
     r1 = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r1.status_code == 201
@@ -99,16 +104,16 @@ async def test_reapplying(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_member_reapplying(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_member_reapplying(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_member_reapply"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    member = Credentials().as_dict()
-    await login_helper_async(async_client, member['username'], member['password'])
+    member = user_payload_factory()
+    await authenticated_client_for(async_client, member['username'], member['password'])
 
     # Join the public room to become a member
     r = await async_client.post(endpoints.api.rooms.room_join, json={"room_name": room_name})
@@ -121,22 +126,22 @@ async def test_member_reapplying(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_accepting_app(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_accepting_app(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_accept"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Owner approves
-    await login_helper_async(async_client, owner['username'], owner['password'])
+    await login_as(async_client, owner['username'], owner['password'])
     r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
     assert r.status_code == 200
     data = r.json()
@@ -150,22 +155,22 @@ async def test_accepting_app(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_rejecting_app(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_rejecting_app(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_reject"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Owner rejects
-    await login_helper_async(async_client, owner['username'], owner['password'])
+    await login_as(async_client, owner['username'], owner['password'])
     r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "reject"})
     assert r.status_code == 200
     data = r.json()
@@ -179,22 +184,22 @@ async def test_rejecting_app(async_client, endpoints, login_helper_async):
 
 
 @pytest.mark.anyio
-async def test_unauthorized_accepting(async_client, endpoints, login_helper_async):
-    owner = Credentials().as_dict()
-    await login_helper_async(async_client, owner['username'], owner['password'])
+async def test_unauthorized_accepting(async_client, endpoints):
+    owner = user_payload_factory()
+    await authenticated_client_for(async_client, owner['username'], owner['password'])
 
     room_name = "testroom_unauth_accept"
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
-    applicant = Credentials().as_dict()
-    await login_helper_async(async_client, applicant['username'], applicant['password'])
+    applicant = user_payload_factory()
+    await authenticated_client_for(async_client, applicant['username'], applicant['password'])
     r = await async_client.post(endpoints.api.applications.application_apply, json={"room_name": room_name})
     assert r.status_code == 201
     app_id = r.json().get("id")
 
     # Another user (not owner) attempts to approve
-    other = Credentials().as_dict()
-    await login_helper_async(async_client, other['username'], other['password'])
+    other = user_payload_factory()
+    await authenticated_client_for(async_client, other['username'], other['password'])
     r = await async_client.post(f"/api/applications/{app_id}/review", json={"action": "approve"})
     assert r.status_code == 403
