@@ -1,28 +1,55 @@
+import os
+import base64
 import pytest
+from app.chat.services.users import get_user_avatar_base64, AVATAR_FILE_NOT_FOUND, USER_OK
+from app.tests.conftest import user_db_factory, authenticated_client_for
+
+@pytest.mark.anyio
+async def test_get_user_profile_existing_and_missing(async_client, db_session, endpoints):
+    # Setup: Create Bob directly in DB
+    bob = await user_db_factory(db_session, "bob", "bobpassword")
+    
+    # Login as Bob to have authentication credentials
+    await authenticated_client_for(async_client, bob.username, bob.raw_password)
+
+    # 1. Test Existing User Profile
+    r = await async_client.get(endpoints.user_detail(bob.id))
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == bob.id
+    assert data["username"] == bob.username
+
+    # 2. Test Non-existent User Profile (e.g. 99999)
+    r_missing = await async_client.get(endpoints.user_detail(99999))
+    assert r_missing.status_code == 404
+    assert r_missing.json().get("detail") == "not_found"
 
 
 @pytest.mark.anyio
-async def test_get_user_profile_existing_and_missing(async_client, endpoints):
-	"""GET /api/users/{user_id}: returns user profile for existing user and 404 for nonexistent user."""
-	pytest.skip("placeholder: implement GET user profile test")
+async def test_get_user_avatar_base64_returns_base64_or_not_found(db_session, tmp_path):
+    # Setup user
+    bob = await user_db_factory(db_session, "bobavatar", "pass123")
+    
+    # 1. No avatar case
+    b64, code = get_user_avatar_base64(bob)
+    assert b64 is None
+    assert code == USER_OK
 
+    # 2. Avatar path set but file missing case
+    bob.avatar = "avatars/missing.png"
+    b64, code = get_user_avatar_base64(bob, media_dir=str(tmp_path))
+    assert b64 is None
+    assert code == AVATAR_FILE_NOT_FOUND
 
-@pytest.mark.anyio
-async def test_get_user_avatar_base64_returns_base64_or_not_found(db_session):
-	"""`get_user_avatar_base64` should return base64 string when avatar exists, else AVATAR_FILE_NOT_FOUND."""
-	pytest.skip("placeholder: implement avatar base64 test")
+    # 3. Avatar path set and file exists case
+    media_dir = tmp_path / "media"
+    avatar_dir = media_dir / "avatars"
+    os.makedirs(avatar_dir, exist_ok=True)
+    avatar_file = avatar_dir / "bob.png"
+    avatar_file.write_bytes(b"dummy_image_data")
 
+    bob.avatar = "avatars/bob.png"
+    b64, code = get_user_avatar_base64(bob, media_dir=str(media_dir))
+    assert code == USER_OK
+    assert b64 == base64.b64encode(b"dummy_image_data").decode("utf-8")
 
-def test_get_user_profile_returns_profile():
-	"""GET /api/users/{user_id} should return a user profile (id, username, avatar_url) when the user exists."""
-	assert True
-
-
-def test_get_user_not_found_returns_404():
-	"""GET /api/users/{user_id} should return 404 when the user does not exist."""
-	assert True
-
-
-def test_get_user_avatar_base64_returns_string_when_exists():
-	"""`get_user_avatar_base64` should return a base64 string when the user's avatar file exists, otherwise an error code."""
-	assert True
