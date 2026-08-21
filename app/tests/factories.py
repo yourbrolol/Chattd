@@ -11,8 +11,8 @@ class Credentials:
         passlen: int = 12
     ):
         _username, _password = self.initialize(userlen=userlen, passlen=passlen)
-        self.username = username or _username
-        self.password = password or _password
+        self.username = username if username is not None else _username
+        self.password = password if password is not None else _password
 
     def as_dict(self):
         return {'username': self.username, 'password': self.password}

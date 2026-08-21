@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import select
 
 from app.chat.models import User
-from app.tests.conftest import Credentials
+from app.tests.conftest import Credentials, user_payload_factory
 
 
 @pytest.mark.anyio
@@ -44,10 +44,10 @@ async def test_login_rejects_wrong_password(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_register_and_login_reject_empty_fields(async_client, endpoints):
+async def test_auth_reject_empty_fields(async_client, endpoints):
     """Register and login requests with empty username/password return 422 validation error."""
     # Pydantic validation should reject empty values for registration/login
-    c = Credentials(**{'username': "", 'password': ""}).as_dict()
+    c = user_payload_factory(username="", password="")
     r = await async_client.post(endpoints.REGISTER, json=c)
     assert r.status_code == 422
 
@@ -59,7 +59,7 @@ async def test_register_and_login_reject_empty_fields(async_client, endpoints):
 async def test_login_is_case_sensitive(async_client, endpoints):
     """Login with wrong-cased username is rejected even if same letters."""
     # Register lowercase-like username
-    u = Credentials().as_dict()
+    u = Credentials(username="aaa").as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
 
     # Different case should fail (alter the case of the username)
@@ -85,15 +85,15 @@ async def test_register_accepts_unicode(async_client, endpoints):
 
 
 @pytest.mark.anyio
-async def test_login_accepts_special_password_chars(async_client, endpoints):
-    """Passwords with null bytes and special unicode chars are accepted."""
+async def test_login_rejects_special_password_chars(async_client, endpoints):
+    """Passwords with null bytes and special unicode chars are rejected."""
     u = Credentials(**{'username': None, 'password': "pa\x00ss\u2603"}).as_dict()
     r = await async_client.post(endpoints.REGISTER, json=u)
-    assert r.status_code == 201
+    assert r.status_code == 422
 
     r = await async_client.post(endpoints.LOGIN, json=u)
-    assert r.status_code == 200
-    assert r.json().get("access_token")
+    assert r.status_code == 422
+    assert r.json().get("access_token") is None
 
 
 @pytest.mark.anyio

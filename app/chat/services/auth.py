@@ -1,3 +1,4 @@
+import unicodedata
 from typing import Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,9 +11,12 @@ from app.core.auth import create_access_token, hash_password, verify_password
 AUTH_OK = "ok"
 AUTH_USERNAME_TAKEN = "username_taken"
 AUTH_INVALID_CREDENTIALS = "invalid_credentials"
+AUTH_BAD_REQUEST = "bad_request"
 
 
 async def register_user(db: AsyncSession, user_data: UserCreate) -> Tuple[Optional[User], str]:
+    if any(unicodedata.category(c) == "Cc" for c in user_data.username+user_data.password):
+        return None, AUTH_BAD_REQUEST
     stmt = select(User).where(User.username == user_data.username)
     result = await db.execute(stmt)
     if result.scalars().first():
@@ -29,6 +33,8 @@ async def register_user(db: AsyncSession, user_data: UserCreate) -> Tuple[Option
 
 
 async def login_user(db: AsyncSession, user_data: UserLogin) -> Tuple[dict, str]:
+    if any(unicodedata.category(c) == "Cc" for c in user_data.username+user_data.password):
+        return None, AUTH_BAD_REQUEST
     stmt = select(User).where(User.username == user_data.username)
     result = await db.execute(stmt)
     user = result.scalars().first()
