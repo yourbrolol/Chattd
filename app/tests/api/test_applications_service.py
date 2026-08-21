@@ -2,6 +2,7 @@ import pytest
 
 from app.tests.conftest import (
     user_payload_factory,
+    room_payload_factory,
     create_room_async,
     login_as,
     authenticated_client_for,
@@ -40,7 +41,8 @@ async def test_listing_room(async_client, endpoints):
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
-    room_name = "testroom_listing_room"
+    room = room_payload_factory()
+    room_name = room['room_name']
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
@@ -114,7 +116,8 @@ async def test_member_reapplying(async_client, endpoints):
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
-    room_name = "testroom_member_reapply"
+    room = room_payload_factory()
+    room_name = room['room_name']
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
@@ -197,7 +200,8 @@ async def test_unauthorized_accepting(async_client, endpoints):
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
-    room_name = "testroom_unauth_accept"
+    room = room_payload_factory()
+    room_name = room['room_name']
     r = await create_room_async(async_client, endpoints, room_name, "PUBLIC")
     assert r.status_code == 201
 
