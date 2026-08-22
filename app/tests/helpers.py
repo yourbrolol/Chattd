@@ -11,6 +11,9 @@ class Routes:
     ROOMS_LIST = "/api/rooms"
     ROOM_CREATE = "/api/rooms"
     ROOM_JOIN = "/api/rooms/join"
+    
+    # User settings
+    EDIT_SETTINGS = "/api/settings/edit/"
 
     @staticmethod
     def room_detail(room_name: str) -> str:

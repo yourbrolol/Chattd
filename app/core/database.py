@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,     # Factory to create async session instances
 )
 from sqlalchemy.orm import declarative_base  # Base class for all ORM models
+from sqlalchemy.pool import StaticPool
 from decouple import config  # Load environment variables
 import logging
 
@@ -48,6 +49,7 @@ engine = create_async_engine(
     pool_pre_ping=True,      # Check if connection is alive before using it
     pool_recycle=3600,       # Recycle connections after 1 hour to prevent timeouts
     future=True,             # Use SQLAlchemy 2.0 style (required for async)
+    poolclass=StaticPool if "file:testmemdb" in DATABASE_URL else None,
 )
 
 # ============================================================================
@@ -118,6 +120,16 @@ async def init_db():
         async def startup():
             await init_db()
     """
+    # Ensure all model modules are imported so their tables are registered
+    # with SQLAlchemy's declarative `Base` before creating tables.
+    try:
+        # Local import to avoid top-level import side-effects / circular imports
+        import importlib
+
+        importlib.import_module("app.chat.models")
+    except Exception:
+        logger.exception("Failed to import app.chat.models before initializing DB")
+
     async with engine.begin() as conn:
         # Creates all tables defined by Base subclasses
         # Only creates tables that don't exist (safe to run multiple times)
