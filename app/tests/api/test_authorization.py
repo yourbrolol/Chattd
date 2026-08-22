@@ -1,0 +1,65 @@
+import pytest
+from app.tests.conftest import (
+    user_payload_factory,
+    create_room_async,
+    login_as,
+    authenticated_client_for,
+)
+
+
+@pytest.mark.anyio
+async def test_private_room_denies_non_member(async_client, endpoints):
+    """Non-member cannot view, delete, kick, or join a private room — all return 403."""
+    # Bob creates a private room
+    bob = user_payload_factory()
+    await authenticated_client_for(async_client, bob["username"], bob["password"])
+    r = await create_room_async(async_client, endpoints, "bobroom", "PRIVATE")
+    assert r.status_code == 201
+
+    # Alice logs in but is not a member
+    alice = user_payload_factory()
+    await authenticated_client_for(async_client, alice["username"], alice["password"])
+
+    # Alice should be forbidden from viewing private room details
+    r = await async_client.get(endpoints.room_detail("bobroom"))
+    assert r.status_code == 403
+
+    # Alice should not be able to delete Bob's room
+    r = await async_client.delete(endpoints.room_delete("bobroom"))
+    assert r.status_code == 403
+
+    # Alice should not be able to kick members
+    r = await async_client.post(endpoints.room_kick("bobroom"), json={"username": bob["username"]})
+    assert r.status_code == 403
+
+    # Alice trying to join should get application required or forbidden (403)
+    r = await async_client.post(endpoints.ROOM_JOIN, json={"room_name": "bobroom"})
+    assert r.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_kicked_user_loses_access(async_client, endpoints):
+    """After being kicked from a room, the user's next request to view room details returns 403."""
+    # Bob creates a public room and Alice joins
+    bob = user_payload_factory()
+    await authenticated_client_for(async_client, bob["username"], bob["password"])
+    r = await create_room_async(async_client, endpoints, "pubroom", "PUBLIC")
+    assert r.status_code == 201
+
+    # Alice logs in and joins
+    alice = user_payload_factory()
+    await authenticated_client_for(async_client, alice["username"], alice["password"])
+    r = await async_client.post(endpoints.ROOM_JOIN, json={"room_name": "pubroom"})
+    assert r.status_code == 200
+
+    # Now Bob (owner) kicks Alice
+    await login_as(async_client, bob["username"], bob["password"])
+    r = await async_client.post(endpoints.room_kick("pubroom"), json={"username": alice["username"]})
+    assert r.status_code == 200
+
+    # Alice's session still has cookie; confirm she is now forbidden from room details
+    await login_as(async_client, alice["username"], alice["password"])
+    r = await async_client.get(endpoints.room_detail("pubroom"))
+    assert r.status_code == 403
+
+

@@ -48,17 +48,31 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def parse_token(token: str):
-    # Parse str to dict
-    cleaned = token.replace("'", '"')
-    cleaned = json.loads(cleaned)
-    return cleaned
+    """Normalize either a raw JWT string or a serialized auth payload into a dict."""
+    if token is None:
+        return {}
+    if isinstance(token, dict):
+        return token
+
+    cleaned = str(token).strip()
+    if cleaned.lower().startswith("bearer "):
+        cleaned = cleaned[7:].strip()
+
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+    except (TypeError, ValueError, json.JSONDecodeError):
+        pass
+
+    return {"access_token": cleaned}
 
 async def authenticate_token(token: str, db: AsyncSession) -> User | UnauthenticatedUser:
     try:
         cleaned = await parse_token(token=token)
         access_token = cleaned.get('access_token')
         if access_token is None: return UnauthenticatedUser()
-        payload = jwt.decode(cleaned['access_token'], SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Decoded JWT payload: {payload}")
         user_id: str = payload.get("sub")
         if user_id is None: return UnauthenticatedUser()

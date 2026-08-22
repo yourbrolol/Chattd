@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import Depends, HTTPException, status, UploadFile, File, Form
+from app.core.router import APIRouter
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -1,7 +1,8 @@
 import logging
 import time
 
-from fastapi import APIRouter, Request
+from fastapi import Request
+from app.core.router import APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 

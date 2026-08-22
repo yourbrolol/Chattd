@@ -6,6 +6,7 @@ from typing import List, Optional
 class RoomCreate(BaseModel):
     room_name: str = Field(
         ...,
+        min_length=1,
         max_length=20,
         pattern=r'^[a-zA-Z0-9._-]+$',
         description="The name of the room to create"
@@ -19,7 +20,7 @@ class JoinRoom(BaseModel):
     room_name: str = Field(..., description="The name of the room to join")
 
 class EditRoom(BaseModel):
-    name: str = Field(..., max_length=20, description="The new name of the room")
+    name: str = Field(..., max_length=50, description="The new name of the room")
 
 class KickRoomMember(BaseModel):
     username: str = Field(..., description="The username of the member to kick")

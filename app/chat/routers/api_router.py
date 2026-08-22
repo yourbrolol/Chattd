@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from app.core.router import APIRouter
 
 from app.chat.routers.api.auth import router as auth_router
 from app.chat.routers.api.frontend import router as fe_router
