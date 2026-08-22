@@ -1,7 +1,8 @@
 import json
 import logging
 from typing import Dict, Set, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import WebSocket, WebSocketDisconnect, Depends
+from app.core.router import APIRouter
 from jose import jwt, JWTError
 from sqlalchemy.future import select
 
