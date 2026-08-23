@@ -57,7 +57,7 @@ async def review_application(
     approve = action == "approve"
     app, room_name, error = await apps_service.review_application(db, application_id, current_user, approve)
     
-    if error == apps_service.APP_NOT_FOUND or app is None:
+    if error == apps_service.APP_NOT_FOUND:
         raise HTTPException(status_code=404, detail="not_found")
     if error == "forbidden":
         raise HTTPException(status_code=403, detail="forbidden")
