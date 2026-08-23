@@ -47,7 +47,7 @@ export async function reviewApplication(applicationId, action) {
         if (response.status === 404) return { ok: false, error: 'not_found' };
         if (!response.ok) return { ok: false, error: 'network' };
 
-        return { ok: true, app: data };
+        return { ok: true, error: null };
     } catch (e) {
         console.error(e)
         return { ok: false, error: 'network' };
