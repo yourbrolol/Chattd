@@ -54,23 +54,18 @@ async def parse_token(token: str):
     if isinstance(token, dict):
         return token
 
-    cleaned = str(token).strip()
-    if cleaned.lower().startswith("bearer "):
-        cleaned = cleaned[7:].strip()
+    cleaned = token.replace("\'", "\"")
 
     try:
         parsed = json.loads(cleaned)
-        if isinstance(parsed, dict):
-            return parsed
-    except (TypeError, ValueError, json.JSONDecodeError):
-        pass
-
-    return {"access_token": cleaned}
+        return parsed.get('access_token')
+    except (TypeError, ValueError, json.JSONDecodeError) as e:
+        raise e
 
 async def authenticate_token(token: str, db: AsyncSession) -> User | UnauthenticatedUser:
     try:
-        cleaned = await parse_token(token=token)
-        access_token = cleaned.get('access_token')
+        access_token = await parse_token(token=token)
+        print("token", access_token)
         if access_token is None: return UnauthenticatedUser()
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Decoded JWT payload: {payload}")
