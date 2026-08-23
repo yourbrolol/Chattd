@@ -5,8 +5,9 @@ from httpx import AsyncClient, ASGITransport
 from starlette.testclient import TestClient
 
 # Ensure default testing environment is set before importing any app modules
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///file:testmemdb?mode=memory&cache=shared&uri=true")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./app/tests/test_db.sqlite3?cache=shared")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("TESTING", "true")
 
 from app.main import app
 from app.core.database import init_db, close_db, SessionLocal
