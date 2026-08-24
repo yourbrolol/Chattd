@@ -74,6 +74,8 @@ async def authenticate_token(token: str, db: AsyncSession) -> User | Unauthentic
     try:
         access_token = await parse_token(token=token)
         print("token", access_token)
+        if isinstance(access_token, dict):
+            access_token = access_token.get("access_token")
         if access_token is None: return UnauthenticatedUser()
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Decoded JWT payload: {payload}")

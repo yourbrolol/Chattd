@@ -23,6 +23,7 @@ import pytest
 from app.tests.conftest import (
     user_payload_factory,
     room_payload_factory,
+    authenticated_client_for_sync,
     create_room_sync,
     login_as_sync,
 )
@@ -41,7 +42,7 @@ def test_suite_1(sync_client, endpoints):
     """End-to-end scenario for two users sharing one public room."""
     # 1. User 1 registers and logs in,
     user1 = user_payload_factory()
-    login_as_sync(sync_client, user1["username"], user1["password"])
+    client = authenticated_client_for_sync(sync_client, user1['username'], user1['password'])
 
     # 2. User 1 creates a new public room
     room_name = room_payload_factory()["room_name"]
@@ -55,13 +56,13 @@ def test_suite_1(sync_client, endpoints):
 
     # 4. User 2 registers and logs in,
     user2 = user_payload_factory()
-    login_as_sync(sync_client, user2["username"], user2["password"])
+    client = authenticated_client_for_sync(sync_client, user2['username'], user2['password'])
 
     # 5. User 2 searches the room name,
     r = sync_client.get(f"{endpoints.ROOMS_LIST}/search?q={room_name}")
     assert r.status_code == 200
     data = r.json()
-    found_names = {item["name"] for item in data.get("joined_rooms", [])}
+    found_names = {item["name"] for item in data.get("public_rooms", [])}
     assert room_name in found_names
 
     # 6. If found, User 2 joins the room (2 times, bug check),
