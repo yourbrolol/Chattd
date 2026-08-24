@@ -54,13 +54,21 @@ async def parse_token(token: str):
     if isinstance(token, dict):
         return token
 
-    cleaned = token.replace("\'", "\"")
+    # Raw JWT strings are not JSON; only attempt to unwrap serialized payloads.
+    if isinstance(token, str):
+        parts = token.split(".")
+        if len(parts) == 3:
+            return token
 
-    try:
-        parsed = json.loads(cleaned)
-        return parsed.get('access_token')
-    except (TypeError, ValueError, json.JSONDecodeError) as e:
-        raise e
+        cleaned = token.replace("\'", "\"")
+        try:
+            parsed = json.loads(cleaned)
+            if isinstance(parsed, dict):
+                return parsed.get('access_token')
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
+
+    return None
 
 async def authenticate_token(token: str, db: AsyncSession) -> User | UnauthenticatedUser:
     try:
@@ -108,7 +116,7 @@ class JWTAuthBackend(AuthenticationBackend):
 
             async with SessionLocal() as db: user = await authenticate_token(token, db)
             
-            if user is UnauthenticatedUser(): return AuthCredentials([]), UnauthenticatedUser()
+            if isinstance(user, UnauthenticatedUser): return AuthCredentials([]), UnauthenticatedUser()
 
             print("User:", user)
 
