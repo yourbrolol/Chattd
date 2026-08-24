@@ -9,6 +9,11 @@ from app.core.websockets import router as ws_router
 
 from decouple import config
 
+from app.core.router import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 RUN_API = config("RUN_API", default=True)
 SERVE_FE = config("SERVE_FE", default=True)
 
@@ -21,6 +26,9 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 app = FastAPI(title="SpreadTalk API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 if RUN_API:
     from app.chat.routers.api_router import router as api_router
