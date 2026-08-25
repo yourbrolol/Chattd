@@ -80,9 +80,11 @@ async def websocket_endpoint(
         await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)
         return
 
-    if not ws_connect_limiter.allow(f"ws-connect:{user.username}"):
+    connect_key = f"ws-connect:{user.username}"
+    if not ws_connect_limiter.allow(connect_key):
         logger.warning("connect: rate limit exceeded for %s", user.username)
-        await websocket.close(code=WS_CLOSE_FORBIDDEN)
+        status = ws_connect_limiter.status(connect_key)
+        await websocket.close(code=4029, reason="rate_limited")
         return
 
     async with SessionLocal() as db:
@@ -103,7 +105,7 @@ async def websocket_endpoint(
             res = await db.execute(sender_stmt)
             sender = res.scalars().first()
             message_history.append({
-                "user": sender.username if sender else "(deleted user)",
+                "user": sender.username if sender else "[Deleted User]",
                 "content": msg.content,
                 "avatar": f"/media/{sender.avatar}" if sender and sender.avatar else None
             })
@@ -125,17 +127,21 @@ async def websocket_endpoint(
                 
             msg_type = msg_data.get("type")
             if msg_type == "chat_message":
-                if not ws_message_limiter.allow(f"ws-msg:{user.username}"):
+                msg_key = f"ws-msg:{user.username}"
+                if not ws_message_limiter.allow(msg_key):
                     logger.warning("send: rate limit exceeded for %s", user.username)
+                    status = ws_message_limiter.status(msg_key)
                     await websocket.send_text(json.dumps({
-                        "type": "error",
-                        "detail": "rate_limit_exceeded"
+                        "type": "rate_limited",
+                        "detail": "rate_limit_exceeded",
+                        "limit": status["limit"],
+                        "remaining": status["remaining"],
+                        "retry_after": status["reset"],
                     }))
                     continue
                 content = msg_data.get("message", "")
                 async with SessionLocal() as db:
                     saved_msg = await add_message(db, room_name, user.id, content)
-                    logger.error("saving")
                     if saved_msg:
                         avatar_url = f"/media/{user.avatar}" if user.avatar else None
                         await manager.broadcast_to_room(room_name, {
@@ -144,5 +150,12 @@ async def websocket_endpoint(
                             "content": saved_msg.content,
                             "avatar": avatar_url
                         })
+                        status = ws_message_limiter.status(msg_key)
+                        await websocket.send_text(json.dumps({
+                            "type": "quota_left",
+                            "limit": status["limit"],
+                            "remaining": status["remaining"],
+                            "retry_after": status["reset"],
+                        }))
     except WebSocketDisconnect:
         manager.disconnect(websocket, room_name)

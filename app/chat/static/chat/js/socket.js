@@ -55,6 +55,33 @@ export function appendMessage(data, contentNode) {
     chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+function disableInputForCooldown(contentNode, seconds) {
+    const input = contentNode?.querySelector('[data-role="chat-message-input"]') || contentNode?.querySelector('#chat-message-input');
+    const submitBtn = contentNode?.querySelector('[data-role="chat-message-submit"]') || contentNode?.querySelector('#chat-message-submit');
+    if (!input || !submitBtn) return;
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('rate-limited');
+
+    let remaining = seconds;
+    const updateLabel = () => {
+        submitBtn.textContent = remaining <= 0 ? 'Send' : `Send (${remaining.toFixed(1)}s)`;
+    };
+    updateLabel();
+
+    const interval = setInterval(() => {
+        remaining -= 0.1;
+        if (remaining <= 0) {
+            clearInterval(interval);
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('rate-limited');
+            submitBtn.textContent = 'Send';
+        } else {
+            updateLabel();
+        }
+    }, 100);
+}
+
 export function createChatSocket(room) {
     const tabInfo = Object.values(state.tabsById).find(t => t.type === 'room' && t.metadata?.room === room);
     if (!tabInfo) return null;
@@ -85,6 +112,10 @@ export function createChatSocket(room) {
             }
         } else if (data.type === 'chat_message') {
             appendMessage({ user: data.user, content: data.content, avatar: data.avatar }, contentNode);
+        } else if (data.type === 'rate_limited') {
+            disableInputForCooldown(contentNode, data.retry_after);
+        } else if (data.type === 'quota_left' && data.remaining === 0 && data.retry_after > 0) {
+            disableInputForCooldown(contentNode, data.retry_after);
         }
     };
 
@@ -96,6 +127,14 @@ export function createChatSocket(room) {
                 const notice = document.createElement('div');
                 notice.className = 'message message--error';
                 notice.textContent = 'You must join this room before you can chat.';
+                chatLog.appendChild(notice);
+            }
+        } else if (e.code === 4029) {
+            const chatLog = contentNode?.querySelector('[data-role="chat-log"]') || contentNode?.querySelector('#chat-log');
+            if (chatLog) {
+                const notice = document.createElement('div');
+                notice.className = 'message--error';
+                notice.textContent = 'Too many connection attempts. Please wait a moment and refresh.';
                 chatLog.appendChild(notice);
             }
         }
