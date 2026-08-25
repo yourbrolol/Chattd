@@ -17,10 +17,14 @@ from app.chat.services.rooms import (
     WS_CLOSE_NOT_FOUND
 )
 from app.chat.services.messages import add_message, retrieve_messages
+from app.core.ws_ratelimit import SlidingWindowLimiter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websockets"])
+
+ws_connect_limiter = SlidingWindowLimiter(max_events=3, per_seconds=3)
+ws_message_limiter = SlidingWindowLimiter(max_events=1, per_seconds=1)
 
 class ConnectionManager:
     def __init__(self):
@@ -76,6 +80,11 @@ async def websocket_endpoint(
         await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)
         return
 
+    if not ws_connect_limiter.allow(f"ws-connect:{user.username}"):
+        logger.warning("connect: rate limit exceeded for %s", user.username)
+        await websocket.close(code=WS_CLOSE_FORBIDDEN)
+        return
+
     async with SessionLocal() as db:
         room = await get_room(db, room_name)
         if not room:
@@ -116,9 +125,17 @@ async def websocket_endpoint(
                 
             msg_type = msg_data.get("type")
             if msg_type == "chat_message":
+                if not ws_message_limiter.allow(f"ws-msg:{user.username}"):
+                    logger.warning("send: rate limit exceeded for %s", user.username)
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "detail": "rate_limit_exceeded"
+                    }))
+                    continue
                 content = msg_data.get("message", "")
                 async with SessionLocal() as db:
                     saved_msg = await add_message(db, room_name, user.id, content)
+                    logger.error("saving")
                     if saved_msg:
                         avatar_url = f"/media/{user.avatar}" if user.avatar else None
                         await manager.broadcast_to_room(room_name, {
