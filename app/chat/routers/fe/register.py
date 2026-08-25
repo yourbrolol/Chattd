@@ -2,6 +2,7 @@ import time
 
 from fastapi import Request, Depends
 from app.core.router import APIRouter
+from app.core.csrf import CSRF_COOKIE_NAME, get_csrf_token
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,13 +23,13 @@ async def reg_page(request: Request):
         request=request, name="auth/register.html", context={
             "request": request,
             "form": form,
-            "timestamp": int(time.time()), # Replaces {% now "U" %}
-            "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
+            "timestamp": int(time.time()),
+            "csrf_token": request.cookies.get(CSRF_COOKIE_NAME, "")
         }
     )
 
 @router.post("/", name="reg_submit", response_class=RedirectResponse | HTMLResponse, tags=["register_page"])
-async def reg_page_post(request: Request, db: AsyncSession = Depends(get_db)):
+async def reg_page_post(request: Request, db: AsyncSession = Depends(get_db), csrf_token: str = Depends(get_csrf_token)):
     form = RegistrationForm(await request.form())
     if form.validate():
         user, code = await register_user(db=db, user_data=UserCreate(**form.data))
@@ -39,7 +40,7 @@ async def reg_page_post(request: Request, db: AsyncSession = Depends(get_db)):
                 "request": request,
                 "form": form,
                 "errors": form.errors,
-                "timestamp": int(time.time()), # Replaces {% now "U" %}
-                "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
+                "timestamp": int(time.time()),
+                "csrf_token": csrf_token
             }
         )

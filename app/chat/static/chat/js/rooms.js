@@ -11,10 +11,6 @@ const JOIN_ERROR_MESSAGES = {
     app_pending: 'Your application is pending. Please wait for the owner to review it.',
 };
 
-function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-}
-
 export function showJoinError(message) {
     const activeTab = document.querySelector('#tabs .tab.active');
     const tabId = activeTab?.getAttribute('data-tab-id');

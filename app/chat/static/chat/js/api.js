@@ -18,13 +18,14 @@ async function request(path, options = {}) {
     const finalHeaders = { ...headers };
     let finalBody = body;
 
+    if (!Object.prototype.hasOwnProperty.call(finalHeaders, "X-CSRFToken")) {
+        finalHeaders["X-CSRFToken"] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
     if (shouldStringify(body)) {
         finalBody = JSON.stringify(body);
         if (!Object.prototype.hasOwnProperty.call(finalHeaders, "Content-Type")) {
             finalHeaders["Content-Type"] = "application/json";
-        }
-        if (!Object.prototype.hasOwnProperty.call(finalHeaders, "X-CSRFToken")) {
-            finalHeaders["X-CSRFToken"] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         }
     }
 

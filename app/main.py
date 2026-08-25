@@ -10,6 +10,7 @@ from app.core.websockets import router as ws_router
 from decouple import config
 
 from app.core.router import limiter
+from app.core.csrf import CSRFMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -34,7 +35,8 @@ if RUN_API:
     from app.chat.routers.api_router import router as api_router
     from app.core.auth import JWTAuthBackend
     from starlette.middleware.authentication import AuthenticationMiddleware
-    
+
+    app.add_middleware(CSRFMiddleware)
     app.add_middleware(AuthenticationMiddleware, backend=JWTAuthBackend())
     
     os.makedirs("media", exist_ok=True)

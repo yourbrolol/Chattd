@@ -1,9 +1,5 @@
 import { api } from './api.js';
 
-function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-}
-
 /**
  * Submit a room application.
  * Returns { ok, status, app } on success or { ok: false, error } on failure.
@@ -12,10 +8,6 @@ function getCsrfToken() {
 export async function applyToRoom(roomName) {
     const trimmed = (roomName || '').trim();
     if (!trimmed) return { ok: false, error: 'empty' };
-
-    const body = new URLSearchParams();
-    body.append('csrfmiddlewaretoken', getCsrfToken());
-    body.append('room_name', trimmed);
 
     try {
         const response = await api.applications.apply(trimmed);
