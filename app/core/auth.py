@@ -9,14 +9,12 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from decouple import config
+from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
 
 from app.core.database import get_db, SessionLocal
 from app.chat.models import User
 
-SECRET_KEY = config("SECRET_KEY", default="supersecretkeyforjwt")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=1440, cast=int)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")

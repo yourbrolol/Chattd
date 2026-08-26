@@ -8,6 +8,8 @@ This module sets up:
 4. Dependency injection for FastAPI routes
 """
 
+import logging
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,           # Async session object - handles DB transactions
     create_async_engine,    # Creates async database engine
@@ -16,21 +18,14 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import declarative_base  # Base class for all ORM models
 from sqlalchemy.pool import StaticPool, NullPool
 from decouple import config  # Load environment variables
-import logging
+
+from app.core.config import DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
 # ============================================================================
 # DATABASE URL CONFIGURATION
 # ============================================================================
-
-# Get database URL from .env file
-# For SQLite (development): "sqlite+aiosqlite:///./db.sqlite3"
-# For PostgreSQL (production): "postgresql+asyncpg://user:password@localhost/dbname"
-DATABASE_URL = config(
-    "DATABASE_URL",
-    default="sqlite+aiosqlite:///./app/db.sqlite3"  # Default to local SQLite
-)
 
 logger.info(f"Database URL: {DATABASE_URL}")
 

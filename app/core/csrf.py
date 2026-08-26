@@ -1,13 +1,15 @@
 import secrets
 import logging
+
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from urllib.parse import parse_qs
 
+from app.core.config import CSRF_MAX_AGE
+
 logger = logging.getLogger(__name__)
 
 CSRF_COOKIE_NAME = "csrf_token"
-CSRF_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
 
 def _generate_token() -> str:

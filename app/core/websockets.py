@@ -18,13 +18,19 @@ from app.chat.services.rooms import (
 )
 from app.chat.services.messages import add_message, retrieve_messages
 from app.core.ws_ratelimit import SlidingWindowLimiter
+from app.core.config import (
+    WS_CONNECT_MAX_EVENTS,
+    WS_CONNECT_PER_SECONDS,
+    WS_MESSAGE_MAX_EVENTS,
+    WS_MESSAGE_PER_SECONDS,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websockets"])
 
-ws_connect_limiter = SlidingWindowLimiter(max_events=3, per_seconds=3)
-ws_message_limiter = SlidingWindowLimiter(max_events=1, per_seconds=1)
+ws_connect_limiter = SlidingWindowLimiter(max_events=WS_CONNECT_MAX_EVENTS, per_seconds=WS_CONNECT_PER_SECONDS)
+ws_message_limiter = SlidingWindowLimiter(max_events=WS_MESSAGE_MAX_EVENTS, per_seconds=WS_MESSAGE_PER_SECONDS)
 
 class ConnectionManager:
     def __init__(self):
