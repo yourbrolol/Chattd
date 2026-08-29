@@ -31,11 +31,11 @@ async def login_page(request: Request):
 async def login_page_post(request: Request, db: AsyncSession = Depends(get_db)):
     form = LoginForm(await request.form())
     if form.validate():
-        token, code = await login_user(db=db, user_data=UserLogin(**form.data))
+        token_payload, code = await login_user(db=db, user_data=UserLogin(**form.data))
         response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(
             key="access_token",
-            value=token,
+            value=token_payload["access_token"],
             httponly=True,
             max_age=3600,
             expires=3600,

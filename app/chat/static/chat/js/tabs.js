@@ -11,7 +11,8 @@ import {
     createReviewApplicationsContent,
     createSettingsContent,
     createPlaceholderContent,
-    createSearchContent
+    createSearchContent,
+    createUserDetailContent
 } from './factories.js';
 import {
     bindJoinRoom,
@@ -26,6 +27,7 @@ import {
 } from './init.js';
 import { renderRoomOverview } from './overview.js';
 import { renderSettingsTab } from './settings.js';
+import { renderUserDetail } from './users.js';
 
 export const TAB_HANDLERS = {
     'new-tab': {
@@ -76,6 +78,16 @@ export const TAB_HANDLERS = {
         onActivate: async (contentNode, tabInfo) => {
             const roomName = tabInfo.metadata?.relatedRoom || null;
             await renderRoomOverview(roomName, contentNode);
+        }
+    },
+    'user-detail': {
+        factory: createUserDetailContent,
+        dirty: true,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const username = tabInfo.metadata?.username || "Anonymous";
+            const avatarUrl = null;
+            await renderUserDetail(username, avatarUrl, contentNode);
         }
     },
     'apply-room': {
@@ -304,6 +316,13 @@ export function openOverviewTab(roomName = null) {
         unique: true,
         uniqueKey: 'relatedRoom'
     });
+}
+
+export function openUserDetailTab(username = null) {
+    openTab('user-detail', {
+        title: username || 'User',
+        metadata: { username: username }
+    })
 }
 
 export function openSettingsTab() {

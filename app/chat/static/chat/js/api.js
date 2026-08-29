@@ -141,5 +141,7 @@ export const api = {
 
     users: {
         me: () => http.get("/users/me"),
+        get: (userId, options = {}) => http.get(`/users/${encodeURIComponent(userId)}`, options),
+        getByUsername: (username, options = {}) => http.get(`/users/by-username/${encodeURIComponent(username)}`, options),
     },
 };

@@ -53,6 +53,10 @@ export async function createReviewApplicationsContent() {
     return await fetchTemplate('review_applications');
 }
 
+export async function createUserDetailContent() {
+    return await fetchTemplate('user_detail');
+}
+
 export async function createSettingsContent() {
     const element = await fetchTemplate('settings_view');
     const form = element.querySelector('form') || element;

@@ -1,4 +1,6 @@
 import { state } from './state.js';
+import { openUserDetailTab } from './tabs.js'
+
 function escapeHtml(string) {
     return String(string).replace(/[&<>"']/g, function (s) {
         return {
@@ -39,10 +41,22 @@ export function appendMessage(data, contentNode) {
         div.classList.add('own');
     }
     
-    div.innerHTML = `<strong>${escapeHtml(data.user)}</strong><br>${escapeHtml(data.content)}`;
+    const username_div = document.createElement('strong');
+    username_div.textContent = escapeHtml(data.user);
+    username_div.addEventListener('click', function() {
+        openUserDetailTab(data.user);
+    })
+
+    const line_break = document.createElement("br");
+
+    const content_div = document.createElement('div');
+    content_div.textContent = escapeHtml(data.content);
+
+    div.appendChild(username_div)
+    div.appendChild(line_break)
+    div.appendChild(content_div)
     
     if (data.user === state.username) {
-        
         messageRow.appendChild(div);
         messageRow.appendChild(avatar);
     } else {
