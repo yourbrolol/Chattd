@@ -7,7 +7,6 @@
 ### High
 
 - Messages should preload in chunks, not all at once
-- Add proper user detail / account frontend interface
 - Add user friendly error pages
 - Make specific tabs optionally work in background if needed
 - Add CSRF blacklist
@@ -33,4 +32,4 @@
 ### Implemented
 **Tasks that were implemented**
 
-- None
+- Add proper user detail / account frontend interface
