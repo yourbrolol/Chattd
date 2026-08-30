@@ -15,7 +15,6 @@
 
 ### Medium
 
-- Scroll down **every time** when opening a room 
 - Make jwt tokens last longer
 - Make rooms list update more often
 - Review and refactor tabs system (frontend)
@@ -25,6 +24,10 @@
 - Make user profiles clickable in chats
 
 ## Other
+### Processing (task -> branch name)
+
+- Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
+
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
 
