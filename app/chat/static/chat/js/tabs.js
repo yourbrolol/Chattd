@@ -188,6 +188,12 @@ export async function activateTab(tabElement) {
     // 8. Attach new contentNode to DOM
     attachTabContent(tabInfo.contentNode);
 
+    // 8b. Scroll chat to bottom on every activation
+    if (type === 'room') {
+        const chatLog = tabInfo.contentNode.querySelector('[data-role="chat-log"]');
+        if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
     // 9. Sync state.currentRoom
     if (type === 'room') {
         state.currentRoom = tabInfo.metadata?.room || tabInfo.title;
