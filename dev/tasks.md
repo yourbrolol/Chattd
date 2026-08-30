@@ -21,7 +21,7 @@
 
 ### Low
 
-- Make user profiles clickable in chats
+- None
 
 ## Other
 ### Processing (task -> branch name)
@@ -37,5 +37,6 @@
 ### Implemented (task -> branch name)
 **Tasks that were implemented**
 
-- Add proper user detail / account frontend interface
+- Add proper user detail / account frontend interface -> fix/app
+- Make user profiles clickable in chats -> fix/app
 - Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
