@@ -18,6 +18,7 @@
 - Scroll down **every time** when opening a room 
 - Make jwt tokens last longer
 - Make rooms list update more often
+- Review and refactor tabs system (frontend)
 
 ### Low
 
