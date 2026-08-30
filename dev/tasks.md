@@ -12,6 +12,7 @@
 - Add CSRF blacklist
 - Review overall project safety
 - Add basic E2EE
+- Write proper documentation
 
 ### Medium
 
