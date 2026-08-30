@@ -2,8 +2,7 @@
 ## Rated by importance
 ### Critical
 
-- Make jwt tokens more flexible
-- REMOVE the need for a jwt token in register and login pages
+- None
 
 ### High
 

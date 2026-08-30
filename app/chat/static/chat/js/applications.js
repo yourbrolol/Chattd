@@ -1,9 +1,5 @@
 import { api } from './api.js';
 
-function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-}
-
 /**
  * Submit a room application.
  * Returns { ok, status, app } on success or { ok: false, error } on failure.
@@ -12,10 +8,6 @@ function getCsrfToken() {
 export async function applyToRoom(roomName) {
     const trimmed = (roomName || '').trim();
     if (!trimmed) return { ok: false, error: 'empty' };
-
-    const body = new URLSearchParams();
-    body.append('csrfmiddlewaretoken', getCsrfToken());
-    body.append('room_name', trimmed);
 
     try {
         const response = await api.applications.apply(trimmed);
@@ -47,7 +39,7 @@ export async function reviewApplication(applicationId, action) {
         if (response.status === 404) return { ok: false, error: 'not_found' };
         if (!response.ok) return { ok: false, error: 'network' };
 
-        return { ok: true, app: data };
+        return { ok: true, error: null };
     } catch (e) {
         console.error(e)
         return { ok: false, error: 'network' };

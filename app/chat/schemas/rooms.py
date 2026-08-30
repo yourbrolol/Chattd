@@ -1,14 +1,15 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from app.core.settings import settings
 
 # --- Request Schemas ---
 
 class RoomCreate(BaseModel):
     room_name: str = Field(
         ...,
-        min_length=1,
-        max_length=20,
-        pattern=r'^[a-zA-Z0-9._-]+$',
+        min_length=settings.ROOM_NAME_MIN_LENGTH,
+        max_length=settings.ROOM_NAME_MAX_LENGTH,
+        pattern=settings.ROOM_NAME_PATTERN,
         description="The name of the room to create"
     )
     room_type: str = Field(..., description="The type of the room (e.g., public, private)")
@@ -20,7 +21,13 @@ class JoinRoom(BaseModel):
     room_name: str = Field(..., description="The name of the room to join")
 
 class EditRoom(BaseModel):
-    name: str = Field(..., max_length=50, description="The new name of the room")
+    name: str = Field(
+        ...,
+        min_length=settings.ROOM_NAME_MIN_LENGTH,
+        max_length=settings.ROOM_NAME_MAX_LENGTH,
+        pattern=settings.ROOM_NAME_PATTERN,
+        description="The new name of the room"
+    )
 
 class KickRoomMember(BaseModel):
     username: str = Field(..., description="The username of the member to kick")

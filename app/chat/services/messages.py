@@ -7,6 +7,7 @@ async def add_message(
     db: AsyncSession, room_name: str, user_id: int, msg: str
 ) -> ChatMessage | None:
     if not (msg or '').strip(): return None
+    if len(msg) > 200: return None
     room_stmt = select(ChatRoom).where(ChatRoom.name == room_name)
     user_stmt = select(User).where(User.id == user_id)
     room_result = await db.execute(room_stmt)

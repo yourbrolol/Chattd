@@ -8,29 +8,24 @@ This module sets up:
 4. Dependency injection for FastAPI routes
 """
 
+import logging
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,           # Async session object - handles DB transactions
     create_async_engine,    # Creates async database engine
     async_sessionmaker,     # Factory to create async session instances
 )
 from sqlalchemy.orm import declarative_base  # Base class for all ORM models
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, NullPool
 from decouple import config  # Load environment variables
-import logging
+
+from app.core.config import DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
 # ============================================================================
 # DATABASE URL CONFIGURATION
 # ============================================================================
-
-# Get database URL from .env file
-# For SQLite (development): "sqlite+aiosqlite:///./db.sqlite3"
-# For PostgreSQL (production): "postgresql+asyncpg://user:password@localhost/dbname"
-DATABASE_URL = config(
-    "DATABASE_URL",
-    default="sqlite+aiosqlite:///./app/db.sqlite3"  # Default to local SQLite
-)
 
 logger.info(f"Database URL: {DATABASE_URL}")
 
@@ -42,14 +37,20 @@ logger.info(f"Database URL: {DATABASE_URL}")
 # - "echo=True" prints all SQL queries (useful for debugging)
 # - "pool_pre_ping=True" tests connections before using them (prevents stale connections)
 # - "pool_recycle=3600" recycles connections every hour (prevents timeout issues)
+# Use NullPool in tests: each session opens/closes its own connection, avoiding
+# dangling connections when asyncio.run() helpers create short-lived event loops.
+_testing = config("TESTING", default=False, cast=bool)
+_pool_class = NullPool if _testing else None  # None → SQLAlchemy picks the default
+
 engine = create_async_engine(
     DATABASE_URL,
     # Set SQL_ECHO=True to see queries
     echo=config("SQL_ECHO", default=False, cast=bool),
-    pool_pre_ping=True,      # Check if connection is alive before using it
-    pool_recycle=3600,       # Recycle connections after 1 hour to prevent timeouts
+    **({"poolclass": _pool_class} if _pool_class else {
+        "pool_pre_ping": True,      # Check if connection is alive before using it
+        "pool_recycle": 3600,       # Recycle connections after 1 hour to prevent timeouts
+    }),
     future=True,             # Use SQLAlchemy 2.0 style (required for async)
-    poolclass=StaticPool if "file:testmemdb" in DATABASE_URL else None,
 )
 
 # ============================================================================

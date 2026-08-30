@@ -2,9 +2,17 @@ from typing import Any, Callable
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi.types import DecoratedCallable
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["20/second"])
 
 
 class APIRouter(FastAPIRouter):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("dependencies", [])
+        super().__init__(*args, **kwargs)
+
     def api_route(
         self,
         path: str,

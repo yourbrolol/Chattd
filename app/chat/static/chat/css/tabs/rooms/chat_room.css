@@ -166,3 +166,38 @@
     border-bottom-right-radius: 0; 
     border-bottom-left-radius: 1rem; 
 }
+
+.message--error {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: #7f1d1d;
+    border: 1px solid #991b1b;
+    border-radius: 0.5rem;
+    color: #fecaca;
+    font-size: 0.85rem;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+#chat-message-submit,
+.chat-message-submit {
+    transition: background 0.4s ease, transform 0.15s ease;
+}
+
+#chat-message-submit.rate-limited,
+.chat-message-submit.rate-limited {
+    background: #dc2626;
+    cursor: not-allowed;
+}
+
+#chat-message-submit:disabled:not(.rate-limited),
+.chat-message-submit:disabled:not(.rate-limited) {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #475569;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}

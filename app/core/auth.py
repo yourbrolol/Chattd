@@ -9,14 +9,12 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from decouple import config
+from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
 
 from app.core.database import get_db, SessionLocal
 from app.chat.models import User
 
-SECRET_KEY = config("SECRET_KEY", default="supersecretkeyforjwt")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=1440, cast=int)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -54,23 +52,28 @@ async def parse_token(token: str):
     if isinstance(token, dict):
         return token
 
-    cleaned = str(token).strip()
-    if cleaned.lower().startswith("bearer "):
-        cleaned = cleaned[7:].strip()
+    # Raw JWT strings are not JSON; only attempt to unwrap serialized payloads.
+    if isinstance(token, str):
+        parts = token.split(".")
+        if len(parts) == 3:
+            return token
 
-    try:
-        parsed = json.loads(cleaned)
-        if isinstance(parsed, dict):
-            return parsed
-    except (TypeError, ValueError, json.JSONDecodeError):
-        pass
+        cleaned = token.replace("\'", "\"")
+        try:
+            parsed = json.loads(cleaned)
+            if isinstance(parsed, dict):
+                return parsed.get('access_token')
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
 
-    return {"access_token": cleaned}
+    return None
 
 async def authenticate_token(token: str, db: AsyncSession) -> User | UnauthenticatedUser:
     try:
-        cleaned = await parse_token(token=token)
-        access_token = cleaned.get('access_token')
+        access_token = await parse_token(token=token)
+        print("token", access_token)
+        if isinstance(access_token, dict):
+            access_token = access_token.get("access_token")
         if access_token is None: return UnauthenticatedUser()
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.debug(f"Decoded JWT payload: {payload}")
@@ -113,7 +116,7 @@ class JWTAuthBackend(AuthenticationBackend):
 
             async with SessionLocal() as db: user = await authenticate_token(token, db)
             
-            if user is UnauthenticatedUser(): return AuthCredentials([]), UnauthenticatedUser()
+            if isinstance(user, UnauthenticatedUser): return AuthCredentials([]), UnauthenticatedUser()
 
             print("User:", user)
 

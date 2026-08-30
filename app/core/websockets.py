@@ -17,10 +17,20 @@ from app.chat.services.rooms import (
     WS_CLOSE_NOT_FOUND
 )
 from app.chat.services.messages import add_message, retrieve_messages
+from app.core.ws_ratelimit import SlidingWindowLimiter
+from app.core.config import (
+    WS_CONNECT_MAX_EVENTS,
+    WS_CONNECT_PER_SECONDS,
+    WS_MESSAGE_MAX_EVENTS,
+    WS_MESSAGE_PER_SECONDS,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websockets"])
+
+ws_connect_limiter = SlidingWindowLimiter(max_events=WS_CONNECT_MAX_EVENTS, per_seconds=WS_CONNECT_PER_SECONDS)
+ws_message_limiter = SlidingWindowLimiter(max_events=WS_MESSAGE_MAX_EVENTS, per_seconds=WS_MESSAGE_PER_SECONDS)
 
 class ConnectionManager:
     def __init__(self):
@@ -76,6 +86,13 @@ async def websocket_endpoint(
         await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)
         return
 
+    connect_key = f"ws-connect:{user.username}"
+    if not ws_connect_limiter.allow(connect_key):
+        logger.warning("connect: rate limit exceeded for %s", user.username)
+        status = ws_connect_limiter.status(connect_key)
+        await websocket.close(code=4029, reason="rate_limited")
+        return
+
     async with SessionLocal() as db:
         room = await get_room(db, room_name)
         if not room:
@@ -94,7 +111,7 @@ async def websocket_endpoint(
             res = await db.execute(sender_stmt)
             sender = res.scalars().first()
             message_history.append({
-                "user": sender.username if sender else "(deleted user)",
+                "user": sender.username if sender else "[Deleted User]",
                 "content": msg.content,
                 "avatar": f"/media/{sender.avatar}" if sender and sender.avatar else None
             })
@@ -116,6 +133,18 @@ async def websocket_endpoint(
                 
             msg_type = msg_data.get("type")
             if msg_type == "chat_message":
+                msg_key = f"ws-msg:{user.username}"
+                if not ws_message_limiter.allow(msg_key):
+                    logger.warning("send: rate limit exceeded for %s", user.username)
+                    status = ws_message_limiter.status(msg_key)
+                    await websocket.send_text(json.dumps({
+                        "type": "rate_limited",
+                        "detail": "rate_limit_exceeded",
+                        "limit": status["limit"],
+                        "remaining": status["remaining"],
+                        "retry_after": status["reset"],
+                    }))
+                    continue
                 content = msg_data.get("message", "")
                 async with SessionLocal() as db:
                     saved_msg = await add_message(db, room_name, user.id, content)
@@ -127,5 +156,12 @@ async def websocket_endpoint(
                             "content": saved_msg.content,
                             "avatar": avatar_url
                         })
+                        status = ws_message_limiter.status(msg_key)
+                        await websocket.send_text(json.dumps({
+                            "type": "quota_left",
+                            "limit": status["limit"],
+                            "remaining": status["remaining"],
+                            "retry_after": status["reset"],
+                        }))
     except WebSocketDisconnect:
         manager.disconnect(websocket, room_name)

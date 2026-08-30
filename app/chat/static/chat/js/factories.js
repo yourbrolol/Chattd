@@ -65,7 +65,7 @@ export async function createSettingsContent() {
     // Inject CSRF token hidden input dynamically!
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
-    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.name = 'csrf_token';
     csrfInput.value = csrfToken;
     form.insertBefore(csrfInput, form.firstChild);
 

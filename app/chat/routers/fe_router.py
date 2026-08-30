@@ -3,6 +3,7 @@ import time
 
 from fastapi import Request
 from app.core.router import APIRouter
+from app.core.csrf import CSRF_COOKIE_NAME
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -21,8 +22,8 @@ async def home_page(request: Request):
     return templates.TemplateResponse(
         request=request, name="chat/index.html", context={
             "request": request,
-            "timestamp": int(time.time()), # Replaces {% now "U" %}
-            "csrf_token": "your_csrf_token_here" # Pass your CSRF token if using security middleware
+            "timestamp": int(time.time()),
+            "csrf_token": request.cookies.get(CSRF_COOKIE_NAME, "")
         }
     )
 
