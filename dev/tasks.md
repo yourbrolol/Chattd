@@ -25,15 +25,17 @@
 
 ## Other
 ### Processing (task -> branch name)
+**Tasks / issues that are being done / fixed**
 
-- Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
+- None
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
 
 - Users logged out have incorrect behaviour, too restricted - should be able to access public resources (define)
 
-### Implemented
+### Implemented (task -> branch name)
 **Tasks that were implemented**
 
 - Add proper user detail / account frontend interface
+- Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
