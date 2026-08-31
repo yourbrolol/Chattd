@@ -18,7 +18,6 @@
 
 - Make jwt tokens last longer
 - Make rooms list update more often
-- Review and refactor tabs system (frontend)
 
 ### Low
 
@@ -28,7 +27,7 @@
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
-- None
+- Review and refactor tabs system (frontend)
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
