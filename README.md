@@ -1,110 +1,114 @@
-# Chattd - "Chat Daemon"
+# Chattd — pronounced "Chatted" — "Chat Daemon"
 
-## Thank you for cloning Chattd! This README will walk you through on how to set up and use the application
+A real-time chat application with WebSocket support, rate limiting, and role-based room access.
 
 ## Stack
 
-- Backend language: Python 3.12 / 3.13,
-- Web framework: Django 6,
-- ASGI server: Daphne 4,
-- Channeling: channels,
-- UI: Vanilla HTML / JS / CSS (latest).
+- Python 3.12+
+- FastAPI + Uvicorn
+- SQLAlchemy (async) + Alembic
+- WebSockets
+- Vanilla HTML / JS / CSS
 
-## Setting up
-
-**Here are the steps to set up the application. You need Python for this guide.**
-
-1. Clone the repo and go to it's root folder
+## Quick Start
 
 ```bash
-cd Chattd # previously SpreadTalk
-```
-
-2. Create a virtual enviroment
-
-```bash
-python3 -m venv .venv # change .venv to your name is needed; .venv name is recommended
-```
-
-3. Enter the virtual environment:
-
-- On Linux:
-```bash
-source .venv/bin/activate
-```
-
-- On Windows (Powershell / cmd):
-```pwsh
-.venv/Scripts/Activate # might be incorrect; haven't used Windows for a while
-```
-
-4. Download required packages
-
-```bash
+git clone <repo-url> Chattd
+cd Chattd
+python3 -m venv .venv
+source .venv/bin/activate        # Linux/macOS
 pip install -r app/requirements.txt
-```
-
-5. Clone .env.example to .env
-
-```bash
 cp app/.env.example app/.env
+alembic upgrade head
+uvicorn app.main:app --reload
 ```
 
-6. (if using a new db) Apply migrations
+<details>
+<summary>Windows setup</summary>
 
-```bash
-python app/manage.py makemigrations # optional; not recommended to run
-python app/manage.py migrate
-```
-
-**You're done with the setup! Now you can proceed to startup guide.**
-
-## Startup
-
-**Currently, there are 2 ways to start the application:**
-
-### Option 1: Run natively
-
-1. Enter the virtual environment:
-
-- On Linux:
-```bash
-source .venv/bin/activate
-```
-
-- On Windows (Powershell / cmd):
 ```pwsh
-.venv/Scripts/Activate # might be incorrect; haven't used Windows for a while
+.venv\Scripts\Activate
+pip install -r app\requirements.txt
 ```
+</details>
 
-2. Run the app:
-```bash
-python app/manage.py runserver # or python3
-# or via Daphne (for prod!): daphne -b 0.0.0.0 -p 8000 messenger.asgi:application
-```
-
-### Option 2: Docker Compose
-
-**(make sure you have Docker installed, for older versions you may also need to manually install docker-compose package)**
-
-1. Run via Docker Compose:
+<details>
+<summary>Docker setup</summary>
 
 ```bash
-docker compose up # or try docker-compose
+docker compose up
+```
+</details>
+
+## Configuration
+
+All configuration is done via environment variables in `app/.env`. Copy `app/.env.example` to get started.
+
+### Security
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET_KEY` | `hyper_secret_key` | JWT signing key. **Change this in production.** |
+| `SECURE` | `False` | Set to `True` for HTTPS-only cookies |
+| `CSRF_MAX_AGE` | `2592000` (30 days) | CSRF token lifetime in seconds |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24h) | JWT token expiry |
+
+### Database
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite+aiosqlite:///./app/db.sqlite3` | Async database connection string |
+
+### WebSocket Rate Limiting
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WS_CONNECT_MAX_EVENTS` | `3` | Max connection attempts per window |
+| `WS_CONNECT_PER_SECONDS` | `3` | Connection rate limit window (seconds) |
+| `WS_MESSAGE_MAX_EVENTS` | `1` | Max messages per window |
+| `WS_MESSAGE_PER_SECONDS` | `1` | Message rate limit window (seconds) |
+
+### Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL_MAIN` | `INFO` | Log level for application code |
+| `LOG_LEVEL_SEC` | `WARNING` | Log level for third-party packages |
+
+## Architecture
+
+```
+app/
+├── core/                  # Framework layer
+│   ├── auth.py            # JWT + password hashing
+│   ├── config.py          # Environment config
+│   ├── websockets.py      # WebSocket connection manager
+│   └── ws_ratelimit.py    # Sliding window rate limiter
+├── chat/                  # Business logic
+│   ├── models.py          # SQLAlchemy ORM models
+│   ├── schemas/           # Pydantic request/response models
+│   ├── services/          # Business logic
+│   └── routers/           # FastAPI route handlers
+│       ├── api/           # REST endpoints (/api/...)
+│       └── fe/            # Frontend page routes
+└── tests/                 # Test suites
 ```
 
-## The app should now start properly.
+**Request flow:** `Router → Service → Database`
 
-# User manual
+## API Overview
 
-### Backend
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Create account |
+| `/api/auth/login` | POST | Get JWT token |
+| `/api/auth/logout` | POST | Clear session |
+| `/ws/chat/{room}/` | WS | Real-time chat |
 
-**The main backend controller is the .env file. It stores the primary project configurations, such as:**
+## Frontend
 
-- **DEBUG**: controls if debug mode is on or off. for small hosts, turning it on (DEBUG=True) is recommended for stability. Otherwise, set it as False: will require configuring SSL keys (advanced).
-- **LOG_LEVEL_MAIN**: controls the log level of project's code, this does not include package logs. For regular usage, WARNING is recommended.
-- **LOG_LEVEL_SEC**: controls the log level of project packages such as Django, Daphne etc. WARNING is recommended for regular usage.
+Frontend files live in `app/chat/static/`. The app requires JavaScript enabled in the browser.
 
-### Frontend
-
-**Frontend is usually controlled by editing the stylesheets (.css), markup (.html) and Javascript (.js). The site requires Javascript at all times for the frontend to be usable.**
+- `*.html` — Page templates
+- `*.css` — Stylesheets
+- `*.js` — Client-side logic
