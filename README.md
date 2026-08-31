@@ -23,22 +23,18 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-<details>
-<summary>Windows setup</summary>
+### Windows
 
 ```pwsh
 .venv\Scripts\Activate
 pip install -r app\requirements.txt
 ```
-</details>
 
-<details>
-<summary>Docker setup</summary>
+### Docker
 
 ```bash
 docker compose up
 ```
-</details>
 
 ## Configuration
 
