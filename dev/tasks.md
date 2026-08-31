@@ -18,6 +18,7 @@
 
 - Make jwt tokens last longer
 - Make rooms list update more often
+- Refactor CSS codebase, optimize it for most-to-any kind of devices (even super small / huge ones).
 
 ### Low
 
