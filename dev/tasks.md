@@ -27,7 +27,7 @@
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
-- Review and refactor tabs system (frontend)
+- None
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
@@ -40,3 +40,4 @@
 - Add proper user detail / account frontend interface -> fix/app
 - Make user profiles clickable in chats -> fix/app
 - Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
+- Review and refactor tabs system (frontend)
