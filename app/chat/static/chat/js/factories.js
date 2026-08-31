@@ -1,6 +1,6 @@
 const templateCache = {};
 
-async function fetchTemplate(name) {
+export async function fetchTemplate(name) {
     if (templateCache[name]) {
         return templateCache[name].cloneNode(true);
     }

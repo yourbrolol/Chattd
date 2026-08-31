@@ -13,8 +13,7 @@ import {
     openTab,
     openSettingsTab,
     openApplicationsTab,
-    openSearchTab,
-    TAB_HANDLERS
+    openSearchTab
 } from './tabs.js';
 import { state } from './state.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
@@ -98,13 +97,11 @@ function bindTabKeyboard() {
             // Alt+5 shortcut: open/refresh overview for active room
             const activeTab = document.querySelector('#tabs .tab.active');
             const tabId = activeTab?.getAttribute('data-tab-id');
-            const tabInfo = tabId ? state.tabsById[tabId] : null;
-            if (tabInfo && tabInfo.type === 'room-overview') {
+            const tabInstance = tabId ? state.tabsById[tabId] : null;
+            if (tabInstance && tabInstance.type === 'room-overview') {
                 // Already on overview, refresh it!
-                const handler = TAB_HANDLERS[tabInfo.type];
-                if (handler && handler.onActivate) {
-                    handler.onActivate(tabInfo.contentNode, tabInfo);
-                }
+                tabInstance.dirty = true;
+                tabInstance.activate();
             } else if (state.currentRoom) {
                 openOverviewTab(state.currentRoom);
             }
