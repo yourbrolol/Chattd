@@ -6,8 +6,27 @@ __pycache__/
 venv/
 .venv/
 .env
+.env.example
 
 .git
 .gitignore
+.gitattributes
 
 *.log
+*.sqlite3
+
+**/media/
+**/tests/
+**/__pycache__/
+
+pytest_cache/
+.pytest_cache/
+
+docs/
+dev/
+alembic/
+alembic.ini
+
+Dockerfile
+docker-compose.yml
+README.md
