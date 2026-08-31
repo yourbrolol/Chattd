@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { api } from './api.js';
+import { openSettingsTab } from './tabs.js';
 
 export function renderSettingsTab(contentNode) {
     const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
@@ -111,5 +112,12 @@ export function renderSettingsTab(contentNode) {
                 submitBtn.textContent = "Save Changes";
             }
         }
+    });
+}
+
+export function bindSettings() {
+    const settingsBtn = document.getElementById('user');
+    settingsBtn?.addEventListener('click', () => {
+        openSettingsTab();
     });
 }

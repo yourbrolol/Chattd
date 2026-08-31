@@ -3,17 +3,9 @@ import { detachCurrentContent, attachTabContent } from './mount.js';
 import { createChatSocket } from './socket.js';
 import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
 import { fetchTemplate } from './factories.js';
-import {
-    bindJoinRoom,
-    bindGroupCreation,
-    bindRoomCreationForm,
-    bindApplyRoomView,
-    renderApplicationsList,
-    bindMessageInput,
-    updateReviewBadge,
-    bindSearchTab,
-    runSearchTab
-} from './init.js';
+import { bindJoinRoom, bindGroupCreation, bindRoomCreationForm, bindMessageInput } from './chat.js';
+import { bindApplyRoomView, renderApplicationsList, updateReviewBadge } from './applications.js';
+import { runSearchTab } from './search.js';
 import { renderRoomOverview } from './overview.js';
 import { renderSettingsTab } from './settings.js';
 import { renderUserDetail } from './users.js';

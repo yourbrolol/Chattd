@@ -1,4 +1,4 @@
-import { openChatTab } from "./tabs.js";
+import { openChatTab, openSearchTab } from "./tabs.js";
 import { api } from './api.js';
 
 function escapeHtml(str) {
@@ -95,5 +95,16 @@ export async function renderSearchTab(contentNode) {
                 console.error("Search fetch failure:", err);
             }
         }, 250);
+    });
+}
+
+export function runSearchTab(contentNode) {
+    if (!contentNode) return;
+    renderSearchTab(contentNode);
+}
+
+export function bindSearchTab() {
+    document.getElementById('search-tab-btn')?.addEventListener('click', () => {
+        openSearchTab();
     });
 }
