@@ -18,13 +18,18 @@
 
 - Make jwt tokens last longer
 - Make rooms list update more often
-- Refactor CSS codebase, optimize it for most-to-any kind of devices (even super small / huge ones).
 
 ### Low
 
 - None
 
 ## Other
+
+### Reserved (task -> contributor name)
+**Tasks / issues that have been reserved to someone to complete later**
+
+- Refactor CSS codebase, optimize it for most-to-any kind of devices (even super small / huge ones) -> yourbrolol
+
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
