@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import Depends, UploadFile, File, Form
 from app.core.router import APIRouter
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +8,7 @@ from app.core.auth import get_current_user
 from app.chat.models import User
 from app.chat.schemas.users import SettingsEditResponse
 from app.chat.services import users as users_service
+from app.chat.errors import AppError, ErrorCode
 
 router = APIRouter(tags=["frontend2"])
 
@@ -21,15 +22,12 @@ async def edit_settings(
     data, code = await users_service.update_user_settings(db, current_user, username, avatar)
 
     if code == "username_taken":
-        raise HTTPException(status_code=400, detail="This username is already taken.")
+        raise AppError(ErrorCode.USERNAME_TAKEN, status=400)
     if code == "file_too_large":
-        raise HTTPException(status_code=400, detail="File size exceeds limit of 2MB")
+        raise AppError(ErrorCode.FILE_TOO_LARGE, status=400)
     if code == "invalid_format":
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file format. Only PNG, JPG, JPEG, GIF, and WEBP are allowed."
-        )
+        raise AppError(ErrorCode.INVALID_FORMAT, status=400)
     if code == "no_changes":
-        raise HTTPException(status_code=400, detail="No changes detected.")
+        raise AppError(ErrorCode.NO_CHANGES, status=400)
 
     return data

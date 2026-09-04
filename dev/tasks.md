@@ -7,7 +7,6 @@
 ### High
 
 - Messages should preload in chunks, not all at once
-- Add user-friendly error messages
 - Make specific tabs optionally work in background if needed
 - Add CSRF blacklist
 - Review overall project safety
@@ -33,7 +32,7 @@
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
-- None
+- Add user-friendly error messages
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**

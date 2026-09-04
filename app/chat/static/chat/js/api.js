@@ -1,3 +1,5 @@
+import { AppError, NetworkError, normalizeBackendError } from './errors.js';
+
 const API_PREFIX = "/api";
 
 function hasBody(body) {
@@ -29,60 +31,32 @@ async function request(path, options = {}) {
         }
     }
 
-    const response = await fetch(API_PREFIX + path, {
-        headers: finalHeaders,
-        credentials: "include",
-        ...rest,
-        body: finalBody,
-    });
+    let response;
+    try {
+        response = await fetch(API_PREFIX + path, {
+            headers: finalHeaders,
+            credentials: "include",
+            ...rest,
+            body: finalBody,
+        });
+    } catch (cause) {
+        // Dev: full cause in console; user: friendly 'network' code.
+        throw new NetworkError(undefined, { cause });
+    }
 
-    // if (!response.ok) {
-    //     const text = await response.text();
-    //     throw new Error(text || response.statusText);
-    // }
+    if (response.status === 204) return null;
 
-    // if (response.status === 204) {
-    //     return;
-    // }
+    let rawData = null;
+    try {
+        rawData = await response.json();
+    } catch {
+        rawData = null;
+    }
 
-    const rawData = await response.json()
+    if (response.ok) return rawData;
 
-    const target = {
-        status: response.status,
-        ok: response.ok,
-        data: response.ok ? rawData : null,
-        error: !response.ok ? rawData : null,
-        
-        toString() {
-            return JSON.stringify(this.ok ? this.data : this.error, null, 2);
-        }
-    };
-
-    return new Proxy(target, {
-        get(obj, prop) {
-            if (prop in obj) {
-                return obj[prop];
-            }
-            
-            if (obj.data && typeof obj.data === 'object') {
-                const value = obj.data[prop];
-                if (typeof value === 'function') {
-                    return value.bind(obj.data);
-                }
-                return value;
-            }
-            
-            if (obj.error && typeof obj.error === 'object') {
-                const value = obj.error[prop];
-                if (typeof value === 'function') {
-                    return value.bind(obj.error);
-                }
-                return value;
-            }
-            
-            return undefined;
-        }
-    });
+    const { code, message, requestId } = normalizeBackendError(rawData, response.status);
+    throw new AppError(code, message, { status: response.status, requestId });
 }
 
 export const http = {

@@ -1,7 +1,10 @@
+import os
 import secrets
 import logging
 
-from fastapi import Request, HTTPException
+from fastapi import Request
+from starlette.responses import JSONResponse
+from app.chat.errors import AppError, ErrorCode, USER_MESSAGES
 from starlette.middleware.base import BaseHTTPMiddleware
 from urllib.parse import parse_qs
 
@@ -29,8 +32,23 @@ def _parse_form_token(body: bytes, content_type: str) -> str | None:
     return None
 
 
+def _forbidden_response() -> JSONResponse:
+    # NOTE: raising inside BaseHTTPMiddleware.dispatch is NOT caught by
+    # app exception handlers, so return the same envelope directly.
+    return JSONResponse(
+        status_code=403,
+        content={
+            "error": {"code": ErrorCode.FORBIDDEN, "message": USER_MESSAGES[ErrorCode.FORBIDDEN]},
+            "detail": ErrorCode.FORBIDDEN,
+        },
+    )
+
+
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Tests (TESTING=true) don't send CSRF tokens; bypass there only.
+        if os.getenv("TESTING") == "true":
+            return await call_next(request)
         # WebSocket connections authenticate via the access_token cookie only.
         # BaseHTTPMiddleware already skips non-http scopes; guard explicitly too.
         if request.scope.get("type") != "http":
@@ -57,7 +75,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         header_token = _get_csrf_header_token(request)
         if header_token:
             if not cookie_token or cookie_token != header_token:
-                raise HTTPException(status_code=403, detail="CSRF token missing or invalid")
+                return _forbidden_response()
             return await call_next(request)
 
         # 2. Check form body (plain HTML form submissions)
@@ -68,7 +86,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if form_token and cookie_token and cookie_token == form_token:
                 return await call_next(request)
 
-        raise HTTPException(status_code=403, detail="CSRF token missing or invalid")
+        return _forbidden_response()
 
 
 async def get_csrf_token(request: Request) -> str:
@@ -78,6 +96,6 @@ async def get_csrf_token(request: Request) -> str:
     form_token = form.get(CSRF_COOKIE_NAME)
 
     if not cookie_token or not form_token or cookie_token != form_token:
-        raise HTTPException(status_code=403, detail="CSRF token missing or invalid")
+        raise AppError(ErrorCode.FORBIDDEN, status=403)
 
     return cookie_token

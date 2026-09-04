@@ -1,392 +1,219 @@
 import { state } from './state.js';
 import { detachCurrentContent, attachTabContent } from './mount.js';
 import { createChatSocket } from './socket.js';
-import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
-import { fetchTemplate } from './factories.js';
-import { bindJoinRoom, bindGroupCreation, bindRoomCreationForm, bindMessageInput } from './chat.js';
-import { bindApplyRoomView, renderApplicationsList, updateReviewBadge } from './applications.js';
-import { runSearchTab } from './search.js';
+import { joinRoom, showJoinError } from './rooms.js';
+import { toUserMessage } from './errors.js';
+import {
+    createNewTabContent,
+    createChatContent,
+    createRoomCreationContent,
+    createRoomOverviewContent,
+    createApplyRoomContent,
+    createReviewApplicationsContent,
+    createSettingsContent,
+    createPlaceholderContent,
+    createSearchContent,
+    createUserDetailContent
+} from './factories.js';
+import {
+    bindJoinRoom,
+    bindGroupCreation,
+    bindRoomCreationForm,
+    bindApplyRoomView,
+    renderApplicationsList,
+    bindMessageInput,
+    updateReviewBadge,
+    bindSearchTab,
+    runSearchTab
+} from './init.js';
 import { renderRoomOverview } from './overview.js';
 import { renderSettingsTab } from './settings.js';
 import { renderUserDetail } from './users.js';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Base Tab Class
-// ─────────────────────────────────────────────────────────────────────────────
+export const TAB_HANDLERS = {
+    'new-tab': {
+        factory: createNewTabContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            bindJoinRoom(contentNode);
+            bindGroupCreation(contentNode);
+        }
+    },
+    'room-creation': {
+        factory: createRoomCreationContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            bindRoomCreationForm(contentNode);
+        }
+    },
+    'room': {
+        factory: createChatContent,
+        dirty: false,
+        noCache: false,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.room || tabInfo.title;
+            
+            // Bind hamburger button
+            const hamburgerBtn = contentNode.querySelector('[data-role="hamburger-btn"]');
+            hamburgerBtn?.addEventListener('click', () => {
+                openOverviewTab(roomName);
+            });
 
-class Tab {
-    constructor(id, title, metadata = {}, type = 'tab') {
-        this.id = id;
-        this.title = title;
-        this.type = type;
-        this.metadata = metadata;
-        this.contentNode = null;
-        this.dirty = false;
-        this.noCache = true;
-    }
+            // Bind message input
+            bindMessageInput(contentNode);
 
-    async render() {
-        throw new Error('render() must be implemented by subclass');
-    }
-
-    async activate() {
-        if (!this.contentNode) {
-            this.contentNode = await this.render();
-        } else if (this.dirty) {
-            this.contentNode = await this.render();
-            this.dirty = false;
+            // Bind dynamic avatar in input row
+            const navAvatar = document.getElementById('user-icon');
+            const chatAvatar = contentNode.querySelector('[data-role="avatar"]');
+            if (chatAvatar && navAvatar) {
+                chatAvatar.innerHTML = `<img src="${navAvatar.src}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+        }
+    },
+    'room-overview': {
+        factory: createRoomOverviewContent,
+        dirty: true,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            await renderRoomOverview(roomName, contentNode);
+        }
+    },
+    'user-detail': {
+        factory: createUserDetailContent,
+        dirty: true,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const username = tabInfo.metadata?.username || "Anonymous";
+            const avatarUrl = null;
+            await renderUserDetail(username, avatarUrl, contentNode);
+        }
+    },
+    'apply-room': {
+        factory: createApplyRoomContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            bindApplyRoomView(contentNode, roomName);
+        }
+    },
+    'review-applications': {
+        factory: createReviewApplicationsContent,
+        dirty: true,
+        noCache: false,
+        onActivate: async (contentNode, tabInfo) => {
+            const roomName = tabInfo.metadata?.relatedRoom || null;
+            await renderApplicationsList(contentNode, roomName);
+        }
+    },
+    'settings': {
+        factory: createSettingsContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            renderSettingsTab(contentNode);
+        }
+    },
+    'search': {
+        factory: createSearchContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            runSearchTab(contentNode);
+        }
+    },
+    'placeholder': {
+        factory: createPlaceholderContent,
+        dirty: false,
+        noCache: true,
+        onActivate: async (contentNode, tabInfo) => {
+            // Placeholder has no actions
         }
     }
-
-    deactivate() {}
-
-    destroy() {
-        this.contentNode = null;
-    }
-
-    getRoomName() {
-        return this.metadata?.room || this.metadata?.relatedRoom || null;
-    }
-
-    toJSON() {
-        return {
-            id: this.id,
-            title: this.title,
-            type: this.type,
-            metadata: this.metadata,
-            contentNode: this.contentNode,
-            dirty: this.dirty,
-            noCache: this.noCache
-        };
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Subclasses
-// ─────────────────────────────────────────────────────────────────────────────
-
-class NewTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('new_tab');
-    }
-
-    async activate() {
-        await super.activate();
-        bindJoinRoom(this.contentNode);
-        bindGroupCreation(this.contentNode);
-    }
-}
-
-class RoomCreationTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('room_creation');
-    }
-
-    async activate() {
-        await super.activate();
-        bindRoomCreationForm(this.contentNode);
-    }
-}
-
-class RoomTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = false;
-        this.roomLoaded = false;
-    }
-
-    async render() {
-        return await fetchTemplate('chat_view');
-    }
-
-    async activate() {
-        await super.activate();
-
-        const roomName = this.metadata?.room || this.title;
-
-        const hamburgerBtn = this.contentNode.querySelector('[data-role="hamburger-btn"]');
-        hamburgerBtn?.addEventListener('click', () => {
-            openOverviewTab(roomName);
-        });
-
-        bindMessageInput(this.contentNode);
-
-        const navAvatar = document.getElementById('user-icon');
-        const chatAvatar = this.contentNode.querySelector('[data-role="avatar"]');
-        if (chatAvatar && navAvatar) {
-            chatAvatar.innerHTML = `<img src="${navAvatar.src}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-        }
-
-        const chatLog = this.contentNode.querySelector('[data-role="chat-log"]');
-        if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    deactivate() {}
-
-    destroy() {
-        this.roomLoaded = false;
-        super.destroy();
-    }
-}
-
-class RoomOverviewTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.dirty = true;
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('room_overview');
-    }
-
-    async activate() {
-        await super.activate();
-        const roomName = this.metadata?.relatedRoom || null;
-        await renderRoomOverview(roomName, this.contentNode);
-    }
-}
-
-class UserDetailTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.dirty = true;
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('user_detail');
-    }
-
-    async activate() {
-        await super.activate();
-        const username = this.metadata?.username || "Anonymous";
-        const avatarUrl = null;
-        await renderUserDetail(username, avatarUrl, this.contentNode);
-    }
-}
-
-class ApplyRoomTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('apply_room');
-    }
-
-    async activate() {
-        await super.activate();
-        const roomName = this.metadata?.relatedRoom || null;
-        bindApplyRoomView(this.contentNode, roomName);
-    }
-}
-
-class ReviewApplicationsTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.dirty = true;
-        this.noCache = false;
-    }
-
-    async render() {
-        return await fetchTemplate('review_applications');
-    }
-
-    async activate() {
-        await super.activate();
-        const roomName = this.metadata?.relatedRoom || null;
-        await renderApplicationsList(this.contentNode, roomName);
-    }
-}
-
-class SettingsTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        const element = await fetchTemplate('settings_view');
-        const form = element.querySelector('form') || element;
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        
-        // Inject CSRF token hidden input dynamically
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrf_token';
-        csrfInput.value = csrfToken;
-        form.insertBefore(csrfInput, form.firstChild);
-
-        return element;
-    }
-
-    async activate() {
-        await super.activate();
-        renderSettingsTab(this.contentNode);
-    }
-}
-
-class SearchTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('search_view');
-    }
-
-    async activate() {
-        await super.activate();
-        runSearchTab(this.contentNode);
-    }
-}
-
-class PlaceholderTab extends Tab {
-    constructor(id, title, metadata, type) {
-        super(id, title, metadata, type);
-        this.noCache = true;
-    }
-
-    async render() {
-        return await fetchTemplate('placeholder_view');
-    }
-
-    async activate() {
-        await super.activate();
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Type Registry
-// ─────────────────────────────────────────────────────────────────────────────
-
-const TAB_TYPES = {
-    'new-tab': NewTab,
-    'room-creation': RoomCreationTab,
-    'room': RoomTab,
-    'room-overview': RoomOverviewTab,
-    'user-detail': UserDetailTab,
-    'apply-room': ApplyRoomTab,
-    'review-applications': ReviewApplicationsTab,
-    'settings': SettingsTab,
-    'search': SearchTab,
-    'placeholder': PlaceholderTab
 };
-
-function createTabInstance(type, id, title, metadata) {
-    const TabClass = TAB_TYPES[type];
-    if (!TabClass) {
-        throw new Error(`Unknown tab type: ${type}`);
-    }
-    return new TabClass(id, title, metadata, type);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab DOM Element Creation
-// ─────────────────────────────────────────────────────────────────────────────
-
-function createTabElement(titleText, typeAttr, metadata = {}) {
-    const tabDiv = document.createElement('div');
-    tabDiv.className = 'tab';
-    tabDiv.setAttribute('role', 'tab');
-    tabDiv.setAttribute('aria-selected', 'false');
-
-    const tabId = `t-${Date.now().toString(36)}-${Math.floor(Math.random() * 10000).toString(36)}`;
-    tabDiv.setAttribute('data-tab-id', tabId);
-
-    const metaCopy = Object.assign({}, metadata || {});
-    if (typeAttr === 'room') {
-        tabDiv.setAttribute('data-room', titleText);
-        metaCopy.room = titleText;
-    } else {
-        tabDiv.setAttribute('data-special', typeAttr);
-    }
-
-    Object.keys(metaCopy).forEach(k => {
-        const attrName = 'data-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
-        const value = metaCopy[k];
-        if (value === undefined || value === null) return;
-        tabDiv.setAttribute(attrName, (typeof value === 'object') ? JSON.stringify(value) : String(value));
-    });
-
-    const span = document.createElement('span');
-    span.className = 'tab-title';
-    span.textContent = titleText;
-
-    const closeBtn = document.createElement('span');
-    closeBtn.className = 'tab-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeTab(tabDiv);
-    });
-
-    tabDiv.appendChild(span);
-    tabDiv.appendChild(closeBtn);
-
-    const tabInstance = createTabInstance(typeAttr, tabId, String(titleText), metaCopy);
-    state.tabsById[tabId] = tabInstance;
-
-    return tabDiv;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Lifecycle
-// ─────────────────────────────────────────────────────────────────────────────
 
 export async function activateTab(tabElement) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return;
 
+    // 1. Get previously active tab info
     const activeTabEl = tabsContainer.querySelector('.tab.active');
     const activeTabId = activeTabEl?.getAttribute('data-tab-id');
-    const prevTab = activeTabId ? state.tabsById[activeTabId] : null;
+    const prevTabInfo = activeTabId ? state.tabsById[activeTabId] : null;
 
+    // 2. Remove active state from all tabs
     const tabs = tabsContainer.querySelectorAll('.tab');
     tabs.forEach(tab => {
         tab.classList.remove('active');
         tab.setAttribute('aria-selected', 'false');
     });
 
+    // 3. Mark the new tab as active
     tabElement.classList.add('active');
     tabElement.setAttribute('aria-selected', 'true');
 
-    if (prevTab && prevTab.noCache) {
-        prevTab.destroy();
+    // 4. Clean up previous tab if it has noCache
+    if (prevTabInfo) {
+        const prevHandler = TAB_HANDLERS[prevTabInfo.type];
+        if (prevHandler?.noCache) {
+            prevTabInfo.contentNode = null;
+            prevTabInfo.roomLoaded = false;
+        }
     }
 
+    // 5. Detach current view content
     detachCurrentContent();
 
+    // 6. Look up the new tab's info and handler
     const tabId = tabElement.getAttribute('data-tab-id');
-    const currentTab = tabId ? state.tabsById[tabId] : null;
-    if (!currentTab) return;
+    const tabInfo = tabId ? state.tabsById[tabId] : null;
+    if (!tabInfo) return;
 
-    await currentTab.activate();
+    const type = tabInfo.type;
+    const handler = TAB_HANDLERS[type];
+    if (!handler) {
+        console.error('No handler found for tab type:', type);
+        return;
+    }
 
-    attachTabContent(currentTab.contentNode);
+    // 7. Create contentNode if null
+    let justCreated = false;
+    if (!tabInfo.contentNode) {
+        tabInfo.contentNode = await handler.factory();
+        justCreated = true;
+    }
 
-    if (currentTab instanceof RoomTab) {
-        state.currentRoom = currentTab.metadata?.room || currentTab.title;
-    } else if (currentTab instanceof RoomOverviewTab) {
-        state.currentRoom = currentTab.metadata?.relatedRoom || null;
+    // 8. Attach new contentNode to DOM
+    attachTabContent(tabInfo.contentNode);
+
+    // 8b. Scroll chat to bottom on every activation
+    if (type === 'room') {
+        const chatLog = tabInfo.contentNode.querySelector('[data-role="chat-log"]');
+        if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // 9. Sync state.currentRoom
+    if (type === 'room') {
+        state.currentRoom = tabInfo.metadata?.room || tabInfo.title;
+    } else if (type === 'room-overview') {
+        state.currentRoom = tabInfo.metadata?.relatedRoom || null;
     } else {
         state.currentRoom = null;
     }
 
-    if (!(currentTab instanceof RoomTab)) {
+    // 10. Run onActivate handler if justCreated or dirty
+    if (justCreated || handler.dirty || tabInfo.dirty) {
+        tabInfo.dirty = false;
+        if (handler.onActivate) {
+            await handler.onActivate(tabInfo.contentNode, tabInfo);
+        }
+    }
+
+    // 11. Manage WebSocket connections
+    if (type !== 'room') {
         if (state.chatSocket) {
             state.chatSocket.close();
             state.chatSocket = null;
@@ -404,6 +231,7 @@ export function openTab(type, opts = {}) {
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) return null;
 
+    // If opening any tab that is not a placeholder, close any open placeholder tabs first!
     if (type !== 'placeholder') {
         Object.keys(state.tabsById).forEach(id => {
             const t = state.tabsById[id];
@@ -444,6 +272,7 @@ export function openTab(type, opts = {}) {
         }
     }
 
+    // If opening placeholder, ensure we close any existing placeholders first to avoid duplicates
     if (type === 'placeholder') {
         Object.keys(state.tabsById).forEach(id => {
             const t = state.tabsById[id];
@@ -462,46 +291,13 @@ export function openTab(type, opts = {}) {
     return newTab;
 }
 
-export function closeTab(tabElement) {
-    const tabsContainer = document.getElementById('tabs');
-    if (!tabsContainer) return;
-
-    const isActive = tabElement.classList.contains('active');
-    const tabId = tabElement.getAttribute('data-tab-id');
-
-    if (tabId && state.tabsById[tabId]) {
-        state.tabsById[tabId].destroy();
-        delete state.tabsById[tabId];
-    }
-
-    tabElement.remove();
-
-    if (isActive) {
-        const remainingTabs = tabsContainer.querySelectorAll('.tab');
-        if (remainingTabs.length > 0) {
-            activateTab(remainingTabs[remainingTabs.length - 1]);
-        } else {
-            state.currentRoom = null;
-            if (state.chatSocket) {
-                state.chatSocket.close();
-                state.chatSocket = null;
-            }
-            openTab('placeholder', { title: 'Welcome!', unique: true });
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Convenience Openers
-// ─────────────────────────────────────────────────────────────────────────────
-
 export async function openChatTab(roomName) {
     const trimmed = (roomName || '').trim();
     if (!trimmed) return false;
 
     const joinResult = await joinRoom(trimmed);
     if (!joinResult.ok) {
-        showJoinError(getJoinErrorMessage(joinResult.error));
+        showJoinError(toUserMessage({ code: joinResult.error }));
         return false;
     }
     showJoinError('');
@@ -533,7 +329,7 @@ export function openUserDetailTab(username = null) {
     openTab('user-detail', {
         title: username || 'User',
         metadata: { username: username }
-    });
+    })
 }
 
 export function openSettingsTab() {
@@ -544,12 +340,12 @@ export function openApplicationsTab(roomName) {
     if (!roomName) return;
 
     const title = `Applications - ${roomName}`;
-
+    
     openTab('review-applications', {
         title: title,
         metadata: { relatedRoom: roomName },
         unique: true,
-        uniqueKey: 'relatedRoom'
+        uniqueKey: 'relatedRoom' // Scopes the tab uniquely to this specific room name field
     });
 }
 
@@ -557,9 +353,55 @@ export function openSearchTab() {
     openTab('search', { title: 'Find Rooms', unique: true });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab Navigation & Utilities
-// ─────────────────────────────────────────────────────────────────────────────
+function createTabElement(titleText, typeAttr, metadata = {}) {
+    const tabDiv = document.createElement('div');
+    tabDiv.className = 'tab';
+    tabDiv.setAttribute('role', 'tab');
+    tabDiv.setAttribute('aria-selected', 'false');
+
+    const tabId = `t-${Date.now().toString(36)}-${Math.floor(Math.random()*10000).toString(36)}`;
+    tabDiv.setAttribute('data-tab-id', tabId);
+
+    const metaCopy = Object.assign({}, metadata || {});
+    if (typeAttr === 'room') {
+        tabDiv.setAttribute('data-room', titleText);
+        metaCopy.room = titleText;
+    } else {
+        tabDiv.setAttribute('data-special', typeAttr);
+    }
+
+    Object.keys(metaCopy).forEach(k => {
+        const attrName = 'data-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
+        const value = metaCopy[k];
+        if (value === undefined || value === null) return;
+        tabDiv.setAttribute(attrName, (typeof value === 'object') ? JSON.stringify(value) : String(value));
+    });
+
+    const span = document.createElement('span');
+    span.className = 'tab-title';
+    span.textContent = titleText;
+
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'tab-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(tabDiv);
+    });
+
+    tabDiv.appendChild(span);
+    tabDiv.appendChild(closeBtn);
+
+    state.tabsById[tabId] = {
+        id: tabId,
+        title: String(titleText),
+        type: typeAttr,
+        metadata: metaCopy,
+        contentNode: null,
+        dirty: false
+    };
+    return tabDiv;
+}
 
 function getTabs() {
     const tabsContainer = document.getElementById('tabs');
@@ -592,6 +434,37 @@ export function closeActiveTab() {
     if (activeTab) closeTab(activeTab);
 }
 
+export function closeTab(tabElement) {
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return;
+
+    const isActive = tabElement.classList.contains('active');
+    const tabId = tabElement.getAttribute('data-tab-id');
+    
+    // clean up central registry
+    if (tabId && state.tabsById[tabId]) {
+        state.tabsById[tabId].contentNode = null;
+        delete state.tabsById[tabId];
+    }
+    
+    tabElement.remove();
+
+    if (isActive) {
+        const remainingTabs = tabsContainer.querySelectorAll('.tab');
+        if (remainingTabs.length > 0) {
+            activateTab(remainingTabs[remainingTabs.length - 1]);
+        } else {
+            state.currentRoom = null;
+            if (state.chatSocket) {
+                state.chatSocket.close();
+                state.chatSocket = null;
+            }
+            // Mount the placeholder tab
+            openTab('placeholder', { title: 'Welcome!', unique: true });
+        }
+    }
+}
+
 export function getTabElementById(tabId) {
     if (!tabId) return null;
     return document.querySelector(`#tabs .tab[data-tab-id="${tabId}"]`);
@@ -620,19 +493,19 @@ export function setTabMetadata(tabId, metadata) {
         }
     });
     if (state.tabsById[tabId]) {
-        const tab = state.tabsById[tabId];
-        tab.metadata = Object.assign({}, tab.metadata, meta);
-
-        const oldType = tab.type;
+        state.tabsById[tabId].metadata = Object.assign({}, state.tabsById[tabId].metadata, meta);
+        
+        const oldType = state.tabsById[tabId].type;
+        // if special/type changed, keep the typed field in sync and discard old DOM contentNode
         if (meta.special && String(meta.special) !== oldType) {
-            tab.type = String(meta.special);
-            tab.destroy();
-            if (tab instanceof RoomTab) tab.roomLoaded = false;
+            state.tabsById[tabId].type = String(meta.special);
+            state.tabsById[tabId].contentNode = null;
+            state.tabsById[tabId].roomLoaded = false;
         }
         if (meta.type && String(meta.type) !== oldType) {
-            tab.type = String(meta.type);
-            tab.destroy();
-            if (tab instanceof RoomTab) tab.roomLoaded = false;
+            state.tabsById[tabId].type = String(meta.type);
+            state.tabsById[tabId].contentNode = null;
+            state.tabsById[tabId].roomLoaded = false;
         }
     }
     return true;
@@ -641,5 +514,3 @@ export function setTabMetadata(tabId, metadata) {
 export function getTabMetadata(tabId) {
     return state.tabsById[tabId] ? state.tabsById[tabId].metadata : null;
 }
-
-export { Tab, TAB_TYPES };

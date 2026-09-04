@@ -29,6 +29,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="SpreadTalk API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+from app.chat.errors import AppError, app_error_handler
+app.add_exception_handler(AppError, app_error_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 if RUN_API:

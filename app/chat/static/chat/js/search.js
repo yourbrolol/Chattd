@@ -33,8 +33,7 @@ export async function renderSearchTab(contentNode) {
         // Debounce backend hits by 250ms to keep it performant
         debounceTimeout = setTimeout(async () => {
             try {
-                const response = await api.rooms.search(query);
-                const data = response.data
+                const data = await api.rooms.search(query);
 
                 // Clear previous cycles
                 if (joinedList) joinedList.innerHTML = '';
