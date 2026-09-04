@@ -6,16 +6,14 @@
 
 ### High
 
-- Messages should preload in chunks, not all at once
+- Make messages preload in chunks, not all at once
 - Make specific tabs optionally work in background if needed
-- Add CSRF blacklist
 - Review overall project safety
 - Add basic E2EE
 - Write proper documentation
 
 ### Medium
 
-- Make jwt tokens last longer
 - Make rooms list update more often
 
 ### Low
@@ -32,7 +30,8 @@
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
-- Add user-friendly error messages
+- Add JWT blacklist -> refactor/jwt
+- Make jwt tokens last longer -> refactor/jwt
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
@@ -46,3 +45,4 @@
 - Make user profiles clickable in chats -> fix/app
 - Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
 - Review and refactor tabs system (frontend)
+- Add user-friendly error messages
