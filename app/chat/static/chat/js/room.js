@@ -2,6 +2,7 @@ import { openChatTab, closeTab, getTabElementById } from './tabs.js';
 import { api } from './api.js';
 import { loadRooms } from './rooms.js';
 import { state } from './state.js';
+import { AppError, toUserMessage } from './errors.js';
 
 export async function handleGroupSubmission(e, contentNode) {
     e.preventDefault();
@@ -27,45 +28,38 @@ export async function handleGroupSubmission(e, contentNode) {
         }
         return; // Stop the execution here so no fetch request is sent
     }
-    
+
     const roomData = {
         'room_name': roomName,
         'room_type': roomTypeSelect.value,
     };
 
     try {
-        const response = await api.rooms.create(roomData);
-        const data = response.data
+        await api.rooms.create(roomData);
 
-        if (response.ok) {
-            roomNameInput.value = '';
-            if (errorsDiv) {
-                errorsDiv.classList.add('hidden');
-                errorsDiv.textContent = '';
-            }
-
-            loadRooms((name) => { void openChatTab(name); });
-
-            // remove any temporary "room-creation" tabs via central registry
-            Object.keys(state.tabsById).forEach(id => {
-                const t = state.tabsById[id];
-                if (t && t.type === 'room-creation') {
-                    const el = getTabElementById(id);
-                    if (el) el.remove();
-                    delete state.tabsById[id];
-                }
-            });
-
-            setTimeout(() => { void openChatTab(roomName); }, 100);
-        } else if (errorsDiv) {
-            console.log(response)
-            errorsDiv.textContent = response.error.detail || 'An error occurred while creating the room.';
-            errorsDiv.classList.remove('hidden');
-        }
-    } catch (err) {
-        console.error(err);
+        roomNameInput.value = '';
         if (errorsDiv) {
-            errorsDiv.textContent = 'Network error. Please try again.';
+            errorsDiv.classList.add('hidden');
+            errorsDiv.textContent = '';
+        }
+
+        loadRooms((name) => { void openChatTab(name); });
+
+        // remove any temporary "room-creation" tabs via central registry
+        Object.keys(state.tabsById).forEach(id => {
+            const t = state.tabsById[id];
+            if (t && t.type === 'room-creation') {
+                const el = getTabElementById(id);
+                if (el) el.remove();
+                delete state.tabsById[id];
+            }
+        });
+
+        setTimeout(() => { void openChatTab(roomName); }, 100);
+    } catch (err) {
+        console.error('createRoom failed:', err instanceof AppError ? err.toLogString() : err);
+        if (errorsDiv) {
+            errorsDiv.textContent = toUserMessage(err);
             errorsDiv.classList.remove('hidden');
         }
     }

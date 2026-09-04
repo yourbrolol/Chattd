@@ -1,5 +1,6 @@
 import { openChatTab, closeTab, getTabElementById, openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
 import { api } from './api.js';
+import { AppError, toUserMessage } from './errors.js';
 import { state } from './state.js';
 
 function escapeHtml(str) {
@@ -27,32 +28,24 @@ function closeRoomTabs(roomName) {
 async function deleteRoom(roomName) {
     if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
     try {
-        const delRes = await api.rooms.delete(roomName);
-        if (!delRes.ok) {
-            alert('Failed to delete room. You might not have permission to do this.');
-            return;
-        }
+        await api.rooms.delete(roomName);
         alert('Room deleted successfully.');
         closeRoomTabs(roomName);
     } catch (err) {
-        alert('An error occurred while trying to delete the room.');
-        console.error('Delete room error:', err);
+        alert(toUserMessage(err));
+        console.error('Delete room error:', err instanceof AppError ? err.toLogString() : err);
     }
 }
 
 async function leaveRoom(roomName) {
     if (!confirm('Are you sure you want to leave this room?')) return;
     try {
-        const leaveRes = await api.rooms.leave(roomName);
-        if (!leaveRes.ok) {
-            alert('Failed to leave room. You might not have permission to do this.');
-            return;
-        }
+        await api.rooms.leave(roomName);
         alert('You have left the room.');
         closeRoomTabs(roomName);
     } catch (err) {
-        alert('An error occurred while trying to leave the room.');
-        console.error('Leave room error:', err);
+        alert(toUserMessage(err));
+        console.error('Leave room error:', err instanceof AppError ? err.toLogString() : err);
     }
 }
 
@@ -60,20 +53,14 @@ async function updateRoomName(oldName, newName, contentNode) {
     if (!newName || newName.trim() === "" || oldName === newName) return oldName;
 
     try {
-        const response = await api.rooms.update(oldName, { name: newName.trim() });
-
-        if (!response.ok) {
-            const data = await response.data;
-            alert(data.error || 'Failed to update room name.');
-            return oldName;
-        }
+        await api.rooms.update(oldName, { name: newName.trim() });
 
         alert('Room renamed successfully.');
 
         return newName.trim();
     } catch (err) {
-        alert('An error occurred while updating the room name.');
-        console.error('Update room name error:', err);
+        alert(toUserMessage(err));
+        console.error('Update room name error:', err instanceof AppError ? err.toLogString() : err);
         return oldName;
     }
 }
@@ -86,19 +73,14 @@ async function kickMember(member, contentNode) {
     if (!confirm(`Are you sure you want to kick ${member.username}?`)) return false;
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const res = await api.rooms.kick(state.currentRoom, member.username, { headers: { 'X-CSRFToken': csrfToken } });
-        if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            alert(data.error || 'Failed to kick member. You might not have permission to do this.');
-            return;
-        }
+        await api.rooms.kick(state.currentRoom, member.username, { headers: { 'X-CSRFToken': csrfToken } });
         alert(`${member.username} has been kicked from the room.`);
         contentNode.querySelector(`[data-member="${member.username}"]`)?.remove();
         return true;
     }
     catch (err) {
-        alert('An error occurred while trying to kick the member.');
-        console.error('Kick member error:', err);
+        alert(toUserMessage(err));
+        console.error('Kick member error:', err instanceof AppError ? err.toLogString() : err);
         return false;
     }
 }
@@ -237,17 +219,7 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
     if (typeEl) typeEl.textContent = '';
 
     try {
-        const res = await api.rooms.get(targetRoom);
-
-        if (!res.ok) {
-            if (errEl) {
-                errEl.classList.remove('hidden');
-                errEl.textContent = 'Room not found or you are not a member.';
-            }
-            return;
-        }
-
-        const room = await res.data;
+        const room = await api.rooms.get(targetRoom);
         if (typeEl) typeEl.textContent = `Type: ${escapeHtml(room.room_type)}`;
 
         const isOwner = room.owner === state.username;
@@ -280,7 +252,10 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         }
     } catch (err) {
         const list = contentNode.querySelector('[data-role="overview-members-list"]') || contentNode.querySelector('#overview-members-list');
-        if (list) list.textContent = 'Failed to load room details.';
-        console.error('renderRoomOverview error:', err);
+        if (errEl) {
+            errEl.classList.remove('hidden');
+            errEl.textContent = toUserMessage(err);
+        } else if (list) list.textContent = toUserMessage(err);
+        console.error('renderRoomOverview error:', err instanceof AppError ? err.toLogString() : err);
     }
 }

@@ -3,7 +3,7 @@ import json
 import logging
 from starlette.authentication import AuthenticationBackend, AuthCredentials, AuthenticationError, UnauthenticatedUser
 from typing import Optional
-from fastapi import Depends, HTTPException, Request, WebSocket, status
+from fastapi import Depends, Request, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -26,10 +26,8 @@ async def get_token_from_cookie(request: Request) -> str:
 
     if token is None:
         logger.error("No token found in cookies")
-        raise HTTPException(
-            status_code=401,
-            detail="Not authenticated"
-        )
+        from app.chat.errors import AppError, ErrorCode
+        raise AppError(ErrorCode.AUTH_REQUIRED, status=401)
 
     return token
 

@@ -1,6 +1,5 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from app.core.router import APIRouter
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -9,6 +8,7 @@ from app.core.auth import get_current_user
 from app.chat.models import User
 from app.chat.schemas.users import UserProfileResponse
 from app.chat.services import users as users_service
+from app.chat.errors import AppError, ErrorCode
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -22,7 +22,7 @@ async def get_user_by_username(
     result = await db.execute(stmt)
     user = result.scalars().first()
     if not user:
-        raise HTTPException(status_code=404, detail="not_found")
+        raise AppError(ErrorCode.NOT_FOUND, status=404)
     return {
         "id": user.id,
         "username": user.username,
@@ -38,7 +38,7 @@ async def get_user(
 ):
     data, code = await users_service.get_user_profile_data(db, user_id)
     if code == users_service.USER_NOT_FOUND:
-        raise HTTPException(status_code=404, detail="not_found")
+        raise AppError(ErrorCode.NOT_FOUND, status=404)
     return {
         "id": data["id"],
         "username": data["username"],

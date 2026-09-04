@@ -30,15 +30,17 @@ async def test_login_rejects_wrong_password(async_client, endpoints):
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
 
-    # Wrong password
-    r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong"})
+    # Wrong password (must satisfy min-length so it reaches credential check -> 400)
+    r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong_password_123"})
     assert r.status_code == 400
-    assert "Invalid" in r.json().get("detail", "")
+    body = r.json()
+    assert body.get("detail") == "invalid_credentials"
+    assert "Invalid" in body.get("error", {}).get("message", "")
 
     # Nonexistent user should get same external response
     # Use a generated username that was not registered to emulate nonexistent user
     non = Credentials().as_dict()
-    r2 = await async_client.post(endpoints.LOGIN, json={"username": non["username"], "password": "whatever"})
+    r2 = await async_client.post(endpoints.LOGIN, json={"username": non["username"], "password": "whatever_password_123"})
     assert r2.status_code == 400
     assert r2.json().get("detail") == r.json().get("detail")
 
@@ -79,7 +81,7 @@ async def test_register_rejects_long_username(async_client, endpoints):
 @pytest.mark.anyio
 async def test_register_accepts_unicode(async_client, endpoints):
     """Registration with unicode usernames is accepted."""
-    c = Credentials(**{'username': "用户", 'password': None}).as_dict()
+    c = Credentials(**{'username': "用户测试", 'password': None}).as_dict()
     r = await async_client.post(endpoints.REGISTER, json=c)
     assert r.status_code == 201
 
@@ -103,9 +105,9 @@ async def test_repeated_bad_logins(async_client, db_session, endpoints):
     u = Credentials().as_dict()
     await async_client.post(endpoints.REGISTER, json=u)
 
-    # Repeated failed logins
+    # Repeated failed logins (valid-length wrong password -> 400 each time)
     for _ in range(5):
-        r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong"})
+        r = await async_client.post(endpoints.LOGIN, json={"username": u["username"], "password": "wrong_password_123"})
         assert r.status_code == 400
 
 

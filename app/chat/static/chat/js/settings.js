@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { api } from './api.js';
+import { AppError, toUserMessage } from './errors.js';
 
 export function renderSettingsTab(contentNode) {
     const usernameEl = contentNode.querySelector('[data-role="settings-username"]');
@@ -48,7 +49,7 @@ export function renderSettingsTab(contentNode) {
         if (errorsEl) errorsEl.classList.add('hidden');
 
         const fileInput = contentNode.querySelector('[data-role="avatar-input"]');
-        
+
         const hasNewAvatar = fileInput && fileInput.files[0];
         const hasNewUsername = usernameInput && usernameInput.value.trim() !== "" && usernameInput.value.trim() !== (state.username || '');
 
@@ -74,15 +75,13 @@ export function renderSettingsTab(contentNode) {
         }
 
         try {
-            const response = await api.settings.edit(formData);
-
-            const result = await response.data;
-            if (response.ok && result.success) {
+            const result = await api.settings.edit(formData);
+            if (result.success) {
                 if (successEl) {
                     successEl.textContent = "Settings updated successfully!";
                     successEl.classList.remove('hidden');
                 }
-                
+
                 if (hasNewUsername) {
                     state.username = usernameInput.value.trim();
                 }
@@ -91,18 +90,16 @@ export function renderSettingsTab(contentNode) {
                 if (navAvatar && result.avatar_url) {
                     navAvatar.src = result.avatar_url;
                 }
-                
+
                 if (fileInput) fileInput.value = '';
-            } else {
-                if (errorsEl) {
-                    errorsEl.textContent = result.error || "An error occurred while saving.";
-                    errorsEl.classList.remove('hidden');
-                }
+            } else if (errorsEl) {
+                errorsEl.textContent = "An error occurred while saving.";
+                errorsEl.classList.remove('hidden');
             }
         } catch (err) {
-            console.error("Settings save error:", err);
+            console.error("Settings save error:", err instanceof AppError ? err.toLogString() : err);
             if (errorsEl) {
-                errorsEl.textContent = "Network error. Please try again.";
+                errorsEl.textContent = toUserMessage(err);
                 errorsEl.classList.remove('hidden');
             }
         } finally {

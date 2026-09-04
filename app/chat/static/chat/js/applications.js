@@ -1,28 +1,23 @@
 import { api } from './api.js';
+import { AppError } from './errors.js';
 
 /**
  * Submit a room application.
  * Returns { ok, status, app } on success or { ok: false, error } on failure.
- *   status: 'ok' | 'already_pending' | 'already_approved' | 'already_member'
+ *   status: 'ok' | 'already_pending' | 'already_approved' | 'PENDING' | ...
+ * Backend returns 201 for new, 200 {status} for idempotent re-apply.
  */
 export async function applyToRoom(roomName) {
     const trimmed = (roomName || '').trim();
     if (!trimmed) return { ok: false, error: 'empty' };
 
     try {
-        const response = await api.applications.apply(trimmed);
-
-        const data = await response.data;
-
-        if (response.status === 401) return { ok: false, error: 'auth_required' };
-        if (response.status === 404) return { ok: false, error: 'not_found' };
-        if (response.status === 400) return { ok: false, error: data.error || 'unknown' };
-        if (!response.ok && response.status !== 200) return { ok: false, error: 'network' };
-
-        // 201 = new application, 200 = already_pending / already_approved
-        return { ok: true, status: data.warning || 'ok', app: data };
-    } catch {
-        return { ok: false, error: 'network' };
+        const data = await api.applications.apply(trimmed);
+        // data: { id, room, status: 'PENDING', result: 'created'|'already_pending'|'already_approved' }
+        return { ok: true, status: data?.result || 'ok', app: data };
+    } catch (err) {
+        console.error('applyToRoom failed:', err instanceof AppError ? err.toLogString() : err);
+        return { ok: false, error: err instanceof AppError ? err.code : 'network' };
     }
 }
 
@@ -33,16 +28,11 @@ export async function applyToRoom(roomName) {
  */
 export async function reviewApplication(applicationId, action) {
     try {
-        const response = await api.applications.review(applicationId, action);
-
-        if (response.status === 403) return { ok: false, error: 'forbidden' };
-        if (response.status === 404) return { ok: false, error: 'not_found' };
-        if (!response.ok) return { ok: false, error: 'network' };
-
-        return { ok: true, error: null };
-    } catch (e) {
-        console.error(e)
-        return { ok: false, error: 'network' };
+        const data = await api.applications.review(applicationId, action);
+        return { ok: true, error: null, app: data };
+    } catch (err) {
+        console.error('reviewApplication failed:', err instanceof AppError ? err.toLogString() : err);
+        return { ok: false, error: err instanceof AppError ? err.code : 'network' };
     }
 }
 
@@ -51,13 +41,11 @@ export async function reviewApplication(applicationId, action) {
  * Returns an array of { id, room, applicant, status } objects, or [].
  */
 export async function loadRoomPendingApplications(roomName) {
-    if (!roomName) return [];
-    
     try {
-        const response = await api.applications.list(roomName);
-        if (!response.ok) return [];
-        return await response.data;
-    } catch {
+        if (roomName) return await api.applications.list(roomName);
+        return await api.applications.pending();
+    } catch (err) {
+        console.error('loadRoomPendingApplications failed:', err instanceof AppError ? err.toLogString() : err);
         return [];
     }
 }
@@ -65,10 +53,9 @@ export async function loadRoomPendingApplications(roomName) {
 // SCRAPPED
 export async function loadPendingApplications() {
     try {
-        const response = await api.applications.pending();
-        if (!response.ok) return [];
-        return await response.data;
-    } catch {
+        return await api.applications.pending();
+    } catch (err) {
+        console.error('loadPendingApplications failed:', err instanceof AppError ? err.toLogString() : err);
         return [];
     }
 }

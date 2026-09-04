@@ -18,7 +18,8 @@ import {
 } from './tabs.js';
 import { state } from './state.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
-import { loadRooms, joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
+import { loadRooms, joinRoom, showJoinError } from './rooms.js';
+import { toUserMessage } from './errors.js';
 import { applyToRoom, reviewApplication, loadRoomPendingApplications } from './applications.js';
 import { renderRoomOverview } from './overview.js';
 import { renderSearchTab } from './search.js';
@@ -133,15 +134,8 @@ export function bindApplyRoomView(contentNode, roomName) {
         const result = await applyToRoom(roomName);
 
         if (!result.ok) {
-            const msgs = {
-                auth_required: 'You must be logged in.',
-                not_found: 'Room not found.',
-                already_member: 'You are already a member.',
-                empty: 'No room specified.',
-                network: 'Network error. Please try again.',
-            };
             if (errEl) {
-                errEl.textContent = msgs[result.error] || 'Something went wrong.';
+                errEl.textContent = toUserMessage({ code: result.error });
                 errEl.classList.remove('hidden');
             }
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Request'; }
@@ -225,7 +219,7 @@ async function handleReview(applicationId, action, contentNode, roomName) {
     if (result.ok) {
         await renderApplicationsList(contentNode, roomName);
     } else {
-        alert(`Failed to execute review: ${result.error}`);
+        alert(toUserMessage({ code: result.error }));
         if (cardEl) {
             cardEl.classList.remove('application-card--loading');
             cardEl.querySelectorAll('button').forEach(btn => btn.disabled = false);
@@ -274,7 +268,7 @@ export async function joinRoomAndOpen(roomName) {
             return false;
         }
         console.warn("[WARN] init.js/joinRoomAndOpen: Forbidden.")
-        showJoinError(getJoinErrorMessage(result.error));
+        showJoinError(toUserMessage({ code: result.error }));
         return false;
     }
 

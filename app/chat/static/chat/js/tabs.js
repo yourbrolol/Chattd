@@ -1,7 +1,8 @@
 import { state } from './state.js';
 import { detachCurrentContent, attachTabContent } from './mount.js';
 import { createChatSocket } from './socket.js';
-import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
+import { joinRoom, showJoinError } from './rooms.js';
+import { toUserMessage } from './errors.js';
 import {
     createNewTabContent,
     createChatContent,
@@ -296,7 +297,7 @@ export async function openChatTab(roomName) {
 
     const joinResult = await joinRoom(trimmed);
     if (!joinResult.ok) {
-        showJoinError(getJoinErrorMessage(joinResult.error));
+        showJoinError(toUserMessage({ code: joinResult.error }));
         return false;
     }
     showJoinError('');

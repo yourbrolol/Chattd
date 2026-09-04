@@ -1,4 +1,5 @@
 import { api } from './api.js';
+import { AppError, toUserMessage } from './errors.js';
 
 function escapeHtml(str) {
     return String(str || '')
@@ -42,16 +43,7 @@ export async function renderUserDetail(username = "Anonymous", avatarUrl = null,
     if (!username || username === "Anonymous") return;
 
     try {
-        const res = await api.users.getByUsername(username);
-        if (!res.ok) {
-            if (errEl) {
-                errEl.classList.remove('hidden');
-                errEl.textContent = "User not found.";
-            }
-            return;
-        }
-
-        const user = res.data;
+        const user = await api.users.getByUsername(username);
         if (!user) return;
 
         if (displayNameEl) displayNameEl.textContent = user.username || username;
@@ -60,8 +52,8 @@ export async function renderUserDetail(username = "Anonymous", avatarUrl = null,
     } catch (err) {
         if (errEl) {
             errEl.classList.remove('hidden');
-            errEl.textContent = "Failed to load user details.";
+            errEl.textContent = toUserMessage(err);
         }
-        console.error('renderUserDetail error:', err);
+        console.error('renderUserDetail error:', err instanceof AppError ? err.toLogString() : err);
     }
 }

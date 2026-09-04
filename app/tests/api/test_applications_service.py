@@ -90,7 +90,7 @@ async def test_applying_to_nonexistent(async_client, endpoints):
 
 @pytest.mark.anyio
 async def test_reapplying(async_client, endpoints):
-    """A second application to the same room returns 200 with detail already_pending."""
+    """A second application to the same room returns 200 idempotent result already_pending."""
     owner = user_payload_factory()
     await authenticated_client_for(async_client, owner['username'], owner['password'])
 
@@ -105,9 +105,9 @@ async def test_reapplying(async_client, endpoints):
     assert r1.status_code == 201
 
     r2 = await async_client.post(endpoints.APPLICATIONS_APPLY, json={"room_name": room_name})
-    # second attempt should return 200 with already_pending detail
+    # second attempt is idempotent: 200 with result=already_pending (not an error envelope)
     assert r2.status_code == 200
-    assert r2.json().get("detail") == "already_pending"
+    assert r2.json().get("result") == "already_pending"
 
 
 @pytest.mark.anyio
