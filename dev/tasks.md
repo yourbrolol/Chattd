@@ -30,8 +30,7 @@
 ### Processing (task -> branch name)
 **Tasks / issues that are being done / fixed**
 
-- Add JWT blacklist -> refactor/jwt
-- Make jwt tokens last longer -> refactor/jwt
+- None
 
 ### Investigating
 **Tasks / issues that are to be investigated deeper**
@@ -46,3 +45,5 @@
 - Scroll down **every time** when opening a room -> fix/scroll-down-in-chats
 - Review and refactor tabs system (frontend)
 - Add user-friendly error messages
+- Add JWT blacklist -> refactor/jwt
+- Make jwt tokens last longer -> refactor/jwt
