@@ -14,13 +14,20 @@
 ### Medium
 
 - Make rooms list update more often
+- Stop using alert()s as they are synchronous and blocking
+- Keep track of account pages by user ids rather than usernames
+- Keep certain things (like tab contexts) in cache / user db for short time
+- Add a DM (direct message) system
 
 ### Low
 
-- None
+- Update username in logout when changing one
+- Make clicking the avatars in chats (including the one near the message bar) open users' profiles
+- Make inactive tabs' backgrounds be different from tab bar background
+- Add bios and room descriptions
+- Make overview preload n members, not everyone, move applications button to the top near open room btn
 
 ## Other
-
 ### Reserved (task -> contributor name)
 **Tasks / issues that have been reserved to someone to complete later**
 
