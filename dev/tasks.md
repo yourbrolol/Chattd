@@ -7,7 +7,6 @@
 ### High
 
 - Make messages preload in chunks, not all at once
-- Make specific tabs optionally work in background if needed
 - Review overall project safety
 - Add basic E2EE
 - Write proper documentation
@@ -36,6 +35,7 @@
 **Tasks / issues that are to be investigated deeper**
 
 - Users logged out have incorrect behaviour, too restricted - should be able to access public resources (define)
+- Make specific tabs optionally work in background if needed
 
 ### Implemented (task -> branch name)
 **Tasks that were implemented**
