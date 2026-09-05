@@ -1,9 +1,10 @@
-from fastapi import Depends, status
+from fastapi import Depends, Request, status
 from app.core.router import APIRouter
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.auth import get_token_from_cookie, revoke_token
 from app.chat.schemas.auth import UserCreate, UserLogin, TokenResponse, UserResponse
 from app.chat.services import auth as auth_service
 from app.chat.errors import AppError, ErrorCode
@@ -31,7 +32,10 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return token_payload
 
 @router.post("/logout")
-async def logout():
+async def logout(request: Request, db: AsyncSession = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if token:
+        await revoke_token(token, db)
     redirect_response = RedirectResponse(url="/login", status_code=303)
 
     redirect_response.delete_cookie(

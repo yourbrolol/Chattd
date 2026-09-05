@@ -153,6 +153,35 @@ class ChatMessage(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
 
+class RevokedToken(Base):
+    """JWT blacklist entry — one row per revoked token (keyed by ``jti``).
+
+    Storage design (req. 1 — "huge amount with ease"):
+      * ``jti`` is the PRIMARY KEY → O(log N) point lookup on every request,
+        no full-table scan no matter how large the blacklist grows.
+      * ``expires_at`` carries a B-tree index → the DB keeps entries ordered
+        by expiry, which is the persistent equivalent of a min-heap/min-stack
+        keyed on expiry: ``DELETE ... WHERE expires_at <= now()`` always hits
+        the smallest (most expired) entries first via the index.
+      * Rows are deleted once expired (see ``token_blacklist`` service), so
+        the table only ever holds *currently valid but revoked* tokens —
+        bounded by ``#logouts within one token lifetime``.
+    """
+    __tablename__ = "revoked_tokens"
+
+    jti: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    revoked_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<RevokedToken(jti={self.jti}, expires_at={self.expires_at})>"
+
+
 class RoomApplication(Base):
     """Room application model - user requests to join private rooms."""
 

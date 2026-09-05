@@ -38,9 +38,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    import uuid
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc), "jti": str(uuid.uuid4())})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def parse_token(token: str):
@@ -77,6 +78,10 @@ async def authenticate_token(token: str, db: AsyncSession) -> User | Unauthentic
         logger.debug(f"Decoded JWT payload: {payload}")
         user_id: str = payload.get("sub")
         if user_id is None: return UnauthenticatedUser()
+        from app.core import token_blacklist
+        if await token_blacklist.is_revoked(db, payload.get("jti")):
+            logger.debug("Rejected blacklisted token jti=%s", payload.get("jti"))
+            return UnauthenticatedUser()
     except JWTError as e:
         logger.error(f"Error decoding JWT token {token}, exception: {e}")
         raise AuthenticationError("Error decoding JWT token.")
@@ -85,6 +90,40 @@ async def authenticate_token(token: str, db: AsyncSession) -> User | Unauthentic
     user = result.scalars().first()
     if user is None: return UnauthenticatedUser()
     return user
+
+async def revoke_token(token: str, db: AsyncSession) -> bool:
+    """Blacklist the token identified by its ``jti``. Returns True if stored."""
+    from app.core import token_blacklist
+    try:
+        access_token = await parse_token(token=token)
+        if isinstance(access_token, dict):
+            access_token = access_token.get("access_token")
+        if access_token is None:
+            return False
+        try:
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        except JWTError:
+            # Token already expired/invalid — fall back to unverified claims
+            # so logout still records the jti until its natural expiry.
+            payload = jwt.get_unverified_claims(access_token)
+        jti = payload.get("jti")
+        if not jti:
+            return False  # legacy token without jti — nothing to blacklist
+        exp = payload.get("exp")
+        expires_at = (
+            datetime.fromtimestamp(exp, tz=timezone.utc)
+            if isinstance(exp, (int, float))
+            else datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+        sub = payload.get("sub")
+        await token_blacklist.revoke(
+            db, jti=jti, expires_at=expires_at,
+            user_id=int(sub) if str(sub or "").isdigit() else None,
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to blacklist token")
+        return False
 
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
