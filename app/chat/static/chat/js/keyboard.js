@@ -3,7 +3,9 @@ import {
     cycleTabRight,
     closeActiveTab,
     openNewTab,
-    openOverviewTab
+    openOverviewTab,
+    activateTab,
+    getTabElementById
 } from './tabs.js';
 import { state } from './state.js';
 
@@ -54,8 +56,10 @@ export function bindTabKeyboard() {
             const tabId = activeTab?.getAttribute('data-tab-id');
             const tabInstance = tabId ? state.tabsById[tabId] : null;
             if (tabInstance && tabInstance.type === 'room-overview') {
-                tabInstance.dirty = true;
-                tabInstance.activate();
+                // Re-activate through activateTab so the re-rendered
+                // node actually gets attached to the DOM.
+                const el = getTabElementById(tabId);
+                if (el) activateTab(el);
             } else if (state.currentRoom) {
                 openOverviewTab(state.currentRoom);
             }

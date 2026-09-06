@@ -7,7 +7,8 @@ import {
     getTabElementById
 } from './tabs.js';
 import { state } from './state.js';
-import { joinRoom, showJoinError, getJoinErrorMessage } from './rooms.js';
+import { joinRoom, showJoinError } from './rooms.js';
+import { toUserMessage } from './errors.js';
 import { loadRooms } from './rooms.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 
@@ -43,7 +44,7 @@ export async function joinRoomAndOpen(roomName) {
             return false;
         }
         console.warn("[WARN] chat.js/joinRoomAndOpen: Forbidden.")
-        showJoinError(getJoinErrorMessage(result.error));
+        showJoinError(toUserMessage({ code: result.error }));
         return false;
     }
 
