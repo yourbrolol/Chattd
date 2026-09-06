@@ -23,7 +23,6 @@
 ### Low
 
 - Update username in logout when changing one
-- Make clicking the avatars in chats (including the one near the message bar) open users' profiles
 - Make inactive tabs' backgrounds be different from tab bar background
 - Add bios and room descriptions
 - Make overview preload n members, not everyone, move applications button to the top near open room btn
@@ -55,3 +54,4 @@
 - Add user-friendly error messages
 - Add JWT blacklist -> refactor/jwt
 - Make jwt tokens last longer -> refactor/jwt
+- Make clicking the avatars in chats (including the one near the message bar) open users' profiles
