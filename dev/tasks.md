@@ -23,7 +23,6 @@
 ### Low
 
 - Update username in logout when changing one
-- Make inactive tabs' backgrounds be different from tab bar background
 - Add bios and room descriptions
 - Make overview preload n members, not everyone, move applications button to the top near open room btn
 
