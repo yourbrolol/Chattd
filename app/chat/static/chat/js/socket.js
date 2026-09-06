@@ -26,6 +26,9 @@ export function appendMessage(data, contentNode) {
     
     const avatar = document.createElement('div');
     avatar.className = 'avatar chat-avatar';
+    avatar.addEventListener('click', function() {
+        openUserDetailTab(data.user);
+    })
     
     if (data.avatar) {
         avatar.innerHTML = `<img src="${data.avatar}" alt="${escapeHtml(data.user)}" class="member-avatar-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
