@@ -10,6 +10,7 @@
 - Review overall project safety
 - Add basic E2EE
 - Write proper documentation
+- Login (and potentially register) form(s) have to show errors
 
 ### Medium
 
