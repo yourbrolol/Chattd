@@ -136,7 +136,7 @@ function bindInlineNameEditing(nameEl, nameInput, targetRoom, isOwner, contentNo
     }
 }
 
-function createMemberCard(member, memberTemplate, membersList, isOwner = false, contentNode) {
+function createMemberCard(member, memberTemplate, membersList, isOwner = false, contentNode, roomName = null) {
     if (!memberTemplate) return;
     const memberEl = memberTemplate.cloneNode(true);
     memberEl.classList.remove('hidden');
@@ -146,12 +146,23 @@ function createMemberCard(member, memberTemplate, membersList, isOwner = false, 
     const metaSpan = memberEl.querySelector('.member-card__meta');
     if (nameSpan) nameSpan.textContent = member.username;
     if (metaSpan) metaSpan.textContent = member.role;
-    if (isOwner) {
-        const kickBtn = memberEl.querySelector('.member-card__kick-btn');
-        if (kickBtn) kickBtn.classList.remove('hidden');
-        kickBtn.onclick = async () => {
-            kicked = await kickMember(member, contentNode);
-        };
+    const isSelf = member.username === state.username;
+    if (isSelf) memberEl.dataset.self = 'true';
+    const kickBtn = memberEl.querySelector('.member-card__kick-btn');
+    if (kickBtn) {
+        if (isSelf) {
+            kickBtn.textContent = 'Leave';
+            kickBtn.classList.remove('hidden');
+            kickBtn.onclick = async () => {
+                await leaveRoom(roomName || state.currentRoom);
+            };
+        } else if (isOwner) {
+            kickBtn.textContent = 'Kick';
+            kickBtn.classList.remove('hidden');
+            kickBtn.onclick = async () => {
+                await kickMember(member, contentNode);
+            };
+        }
     }
 
     const avatarDiv = memberEl.querySelector('.member-card__avatar');
@@ -239,9 +250,16 @@ export async function renderRoomOverview(roomName = null, contentNode = null) {
         }
 
         let total = 0;
+        console.log(room.members_data)
+
+        room.members_data.sort((a, b) => {
+            if (a.username === state.username) return -1;
+            if (b.username === state.username) return 1;
+            return 0;
+        });
 
         room.members_data.forEach(member => {
-            const memberEl = createMemberCard(member, memberTemplate, membersList, isOwner, contentNode);
+            const memberEl = createMemberCard(member, memberTemplate, membersList, isOwner, contentNode, room.name);
             if (memberEl) membersList?.appendChild(memberEl);
             total++;
         });
