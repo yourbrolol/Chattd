@@ -1,8 +1,8 @@
 import { openChatTab, closeTab, getTabElementById } from './tabs.js';
-import { api } from './api.js';
-import { loadRooms } from './rooms.js';
-import { state } from './state.js';
-import { AppError, toUserMessage } from './errors.js';
+import { api } from '../core/api.js';
+import { loadRooms } from '../core/rooms.js';
+import { state } from '../core/state.js';
+import { AppError, toUserMessage } from '../core/errors.js';
 
 export async function handleGroupSubmission(e, contentNode) {
     e.preventDefault();

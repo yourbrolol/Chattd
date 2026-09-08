@@ -1,4 +1,4 @@
-import { sendMessage } from './socket.js';
+import { sendMessage } from '../core/socket.js';
 import {
     openChatTab,
     activateTab,
@@ -6,10 +6,10 @@ import {
     setTabMetadata,
     getTabElementById
 } from './tabs.js';
-import { state } from './state.js';
-import { joinRoom, showJoinError } from './rooms.js';
-import { toUserMessage } from './errors.js';
-import { loadRooms } from './rooms.js';
+import { state } from '../core/state.js';
+import { joinRoom, showJoinError } from '../core/rooms.js';
+import { toUserMessage } from '../core/errors.js';
+import { loadRooms } from '../core/rooms.js';
 import { handleGroupSubmission, cancelGroupCreation } from './room.js';
 
 export function bindMessageInput(contentNode) {

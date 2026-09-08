@@ -1,9 +1,9 @@
-import { state } from './state.js';
-import { detachCurrentContent, attachTabContent } from './mount.js';
-import { createChatSocket } from './socket.js';
-import { joinRoom, showJoinError } from './rooms.js';
-import { toUserMessage } from './errors.js';
-import { fetchTemplate } from './factories.js';
+import { state } from '../core/state.js';
+import { detachCurrentContent, attachTabContent } from '../core/mount.js';
+import { createChatSocket } from '../core/socket.js';
+import { joinRoom, showJoinError } from '../core/rooms.js';
+import { toUserMessage } from '../core/errors.js';
+import { fetchTemplate } from '../core/factories.js';
 import { bindJoinRoom, bindGroupCreation, bindRoomCreationForm, bindMessageInput } from './chat.js';
 import { bindApplyRoomView, renderApplicationsList, updateReviewBadge } from './applications.js';
 import { runSearchTab } from './search.js';

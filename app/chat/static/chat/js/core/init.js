@@ -1,11 +1,11 @@
 import { state } from './state.js';
-import { openTab, activateTab } from './tabs.js';
+import { openTab, activateTab } from '../tabs/tabs.js';
 import { bindTabKeyboard, bindSlashFocus } from './keyboard.js';
-import { bindJoinRoom, bindGroupCreation } from './chat.js';
-import { bindSettings } from './settings.js';
-import { bindSearchTab } from './search.js';
+import { bindJoinRoom, bindGroupCreation } from '../tabs/chat.js';
+import { bindSettings } from '../tabs/settings.js';
+import { bindSearchTab } from '../tabs/search.js';
 import { loadRooms } from './rooms.js';
-import { openChatTab } from './tabs.js';
+import { openChatTab } from '../tabs/tabs.js';
 
 function setUsername() {
     const userEl = document.getElementById('username-p');
@@ -14,7 +14,7 @@ function setUsername() {
 
 function bindTabs() {
     document.getElementById('add-tab-btn')?.addEventListener('click', () => {
-        import('./tabs.js').then(m => m.openNewTab());
+        import('../tabs/tabs.js').then(m => m.openNewTab());
     });
 
     document.getElementById('tabs')?.addEventListener('click', (e) => {

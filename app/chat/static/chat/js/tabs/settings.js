@@ -1,6 +1,6 @@
-import { state } from './state.js';
-import { api } from './api.js';
-import { AppError, toUserMessage } from './errors.js';
+import { state } from '../core/state.js';
+import { api } from '../core/api.js';
+import { AppError, toUserMessage } from '../core/errors.js';
 import { openSettingsTab } from './tabs.js';
 
 export function renderSettingsTab(contentNode) {

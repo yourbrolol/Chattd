@@ -1,7 +1,7 @@
 import { openChatTab, closeTab, getTabElementById, openOverviewTab, openApplicationsTab, closeActiveTab } from './tabs.js';
-import { api } from './api.js';
-import { AppError, toUserMessage } from './errors.js';
-import { state } from './state.js';
+import { api } from '../core/api.js';
+import { AppError, toUserMessage } from '../core/errors.js';
+import { state } from '../core/state.js';
 
 function escapeHtml(str) {
     return String(str || '')

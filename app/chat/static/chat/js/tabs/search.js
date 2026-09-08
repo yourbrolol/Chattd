@@ -1,5 +1,5 @@
 import { openChatTab, openSearchTab } from "./tabs.js";
-import { api } from './api.js';
+import { api } from '../core/api.js';
 
 function escapeHtml(str) {
     return String(str || '')

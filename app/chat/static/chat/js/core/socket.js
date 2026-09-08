@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { openUserDetailTab } from './tabs.js'
+import { openUserDetailTab } from '../tabs/tabs.js'
 
 function escapeHtml(string) {
     return String(string).replace(/[&<>"']/g, function (s) {

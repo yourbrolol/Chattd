@@ -1,5 +1,5 @@
-import { api } from './api.js';
-import { AppError, toUserMessage } from './errors.js';
+import { api } from '../core/api.js';
+import { AppError, toUserMessage } from '../core/errors.js';
 import {
     activateTab,
     updateTabTitle,

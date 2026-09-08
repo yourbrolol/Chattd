@@ -80,7 +80,6 @@ async def websocket_endpoint(
     room_name: str,
     #user: User | None = Depends(get_current_ws_user),
 ):
-    print("Enter websocket.")
     user = websocket.user
     if not user.is_authenticated:
         await websocket.close(code=WS_CLOSE_AUTH_REQUIRED)

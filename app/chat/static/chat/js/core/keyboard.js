@@ -6,7 +6,7 @@ import {
     openOverviewTab,
     activateTab,
     getTabElementById
-} from './tabs.js';
+} from '../tabs/tabs.js';
 import { state } from './state.js';
 
 function isTypingTarget(target) {
