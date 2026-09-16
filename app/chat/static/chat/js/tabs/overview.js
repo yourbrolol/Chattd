@@ -25,13 +25,55 @@ function closeRoomTabs(roomName) {
     });
 }
 
-async function deleteRoom(roomName) {
-    if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) return;
+const DELETE_CONFIRM_TIMEOUT_MS = 1000;
+
+function resetDeleteButton(deleteBtn) {
+    if (deleteBtn._disarmTimeout) {
+        clearTimeout(deleteBtn._disarmTimeout);
+        deleteBtn._disarmTimeout = null;
+    }
+    delete deleteBtn.dataset.armed;
+    if (deleteBtn.dataset.originalText !== undefined) {
+        deleteBtn.textContent = deleteBtn.dataset.originalText;
+        delete deleteBtn.dataset.originalText;
+    }
+    deleteBtn.classList.remove('danger-armed');
+    deleteBtn.disabled = false;
+}
+
+// Two-step inline confirm: first click arms ("Are you sure?"),
+// second click within the timeout confirms. Returns true if confirmed.
+function requestDeleteConfirmation(deleteBtn, timeoutMs = DELETE_CONFIRM_TIMEOUT_MS) {
+    if (deleteBtn.dataset.armed === 'true') {
+        return true;
+    }
+    if (deleteBtn.dataset.originalText === undefined) {
+        deleteBtn.dataset.originalText = deleteBtn.textContent;
+    }
+    deleteBtn.dataset.armed = 'true';
+    deleteBtn.textContent = 'Are you sure?';
+    deleteBtn.classList.add('danger-armed');
+
+    if (deleteBtn._disarmTimeout) clearTimeout(deleteBtn._disarmTimeout);
+    deleteBtn._disarmTimeout = setTimeout(() => {
+        resetDeleteButton(deleteBtn);
+    }, timeoutMs);
+
+    return false;
+}
+
+async function deleteRoom(roomName, deleteBtn) {
+    if (deleteBtn && !requestDeleteConfirmation(deleteBtn)) return;
     try {
+        if (deleteBtn) deleteBtn.disabled = true;
         await api.rooms.delete(roomName);
+        if (deleteBtn) resetDeleteButton(deleteBtn);
         alert('Room deleted successfully.');
         closeRoomTabs(roomName);
     } catch (err) {
+        if (deleteBtn) {
+            resetDeleteButton(deleteBtn);
+        }
         alert(toUserMessage(err));
         console.error('Delete room error:', err instanceof AppError ? err.toLogString() : err);
     }
@@ -197,8 +239,10 @@ function bindActionButtons(contentNode, room, isOwner) {
     if (deleteBtn) {
         if (isOwner) deleteBtn.classList.remove('hidden');
         else deleteBtn.classList.add('hidden');
-        deleteBtn.onclick = async () => {
-            await deleteRoom(room.name);
+        resetDeleteButton(deleteBtn);
+        deleteBtn.onclick = async (e) => {
+            e.preventDefault();
+            await deleteRoom(room.name, deleteBtn);
         };
     }
 
