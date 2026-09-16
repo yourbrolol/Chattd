@@ -9,7 +9,6 @@
 - Make messages preload in chunks, not all at once
 - Review overall project safety
 - Add basic E2EE
-- Write proper documentation
 - Login (and potentially register) form(s) have to show errors
 
 ### Medium
@@ -54,3 +53,4 @@
 - Add JWT blacklist -> refactor/jwt
 - Make jwt tokens last longer -> refactor/jwt
 - Make clicking the avatars in chats (including the one near the message bar) open users' profiles
+- Write proper documentation

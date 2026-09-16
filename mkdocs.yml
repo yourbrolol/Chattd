@@ -1,0 +1,46 @@
+site_name: Chattd
+site_description: Real-time chat built on the FastAPI framework
+repo_url: https://github.com/yourbrolol/Chattd
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+
+docs_dir: docs
+site_dir: site
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            docstring_style: google
+
+nav:
+  - Home: index.md
+  - Getting Started: GETTING-STARTED.md
+  - Configuration: CONFIGURATION.md
+  - Architecture: ARCHITECTURE.md
+  - REST API: API-REST.md
+  - Websockets: API-WEBSOCKETS.md
+  - Database: DATABASE.md
+  - Auth Security: AUTH-SECURITY.md
+  - Frontend: FRONTEND.md
+  - Deployment: DEPLOYMENT.md
+  - Testing: TESTING.md
+  - Contributing: CONTRIBUTING.md
